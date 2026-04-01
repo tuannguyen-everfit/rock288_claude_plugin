@@ -1,0 +1,12 @@
+{
+  "name": "rock288-claude-kit",
+  "description": "Rock288's Claude Code plugin — skills, agents, hooks, and rules for all repos",
+  "version": "1.0.0",
+  "author": {
+    "name": "rock288",
+    "email": ""
+  },
+  "homepage": "https://github.com/rock288/claude-plugin",
+  "repository": "https://github.com/rock288/claude-plugin",
+  "license": "MIT"
+}

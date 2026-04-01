@@ -1,0 +1,20 @@
+{
+  "name": "rock288-plugins",
+  "owner": {
+    "name": "rock288"
+  },
+  "metadata": {
+    "description": "Rock288's Claude Code plugins marketplace"
+  },
+  "plugins": [
+    {
+      "name": "claude-kit",
+      "source": "./plugins/claude-kit",
+      "description": "Full Claude kit — skills, agents, hooks, rules, scripts",
+      "version": "1.0.0",
+      "author": { "name": "rock288" },
+      "homepage": "https://github.com/rock288/claude-plugin",
+      "license": "MIT"
+    }
+  ]
+}
