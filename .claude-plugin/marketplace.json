@@ -1,5 +1,5 @@
 {
-  "name": "rock288-plugins",
+  "name": "claude-plugin",
   "owner": {
     "name": "rock288"
   },
@@ -8,12 +8,12 @@
   },
   "plugins": [
     {
-      "name": "claude-kit",
-      "source": "./plugins/claude-kit",
+      "name": "rock288",
+      "source": "./plugins/rock288",
       "description": "Full Claude kit — skills, agents, hooks, rules, scripts",
       "version": "1.0.0",
       "author": { "name": "rock288" },
-      "homepage": "https://github.com/rock288/claude-plugin",
+      "homepage": "https://github.com/tuannguyen-everfit/rock288_claude_plugin",
       "license": "MIT"
     }
   ]
