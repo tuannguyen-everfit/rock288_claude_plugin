@@ -9,24 +9,27 @@ Claude Code plugin containing reusable skills, agents, hooks, and rules for all 
 claude plugin marketplace add https://github.com/tuannguyen-everfit/rock288_claude_plugin
 
 # Install plugin
-claude plugin install rock288@claude-plugin
+claude plugin install rock288@rk-kit
 ```
 
 ## Update
 
 ```bash
-# Update plugin to latest version
-claude plugin update rock288@claude-plugin
+# Update marketplace first (pull latest version info)
+claude plugin marketplace update rk-kit
+
+# Then update plugin
+claude plugin update rock288@rk-kit
 ```
 
 ## Uninstall
 
 ```bash
 # Remove plugin
-claude plugin uninstall rock288@claude-plugin
+claude plugin uninstall rock288@rk-kit
 
 # Remove marketplace (optional)
-claude plugin marketplace remove claude-plugin
+claude plugin marketplace remove rk-kit
 ```
 
 ## Contents
