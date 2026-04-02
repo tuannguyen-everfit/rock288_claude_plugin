@@ -33,9 +33,9 @@ claude plugin marketplace remove claude-plugin
 
 | Type | Count | Description |
 |------|-------|-------------|
-| Skills | 85 | Slash commands for dev workflows (fix, debug, plan, test, etc.) |
+| Skills | 79 | Slash commands for dev workflows (fix, debug, plan, test, etc.) |
 | Agents | 14 | Specialized subagents (code-reviewer, tester, planner, etc.) |
-| Hooks | 15 | Event handlers (session-init, privacy-block, dev-rules, etc.) |
+| Hooks | 14 | Event handlers (session-init, privacy-block, dev-rules, etc.) |
 | Rules | 5 | Development rules, workflow, orchestration, documentation |
 
 ## Usage
@@ -49,7 +49,6 @@ After installation, skills use the `rk:` prefix (short for **R**oc**K**288). Typ
 | `/rk:cook` | Autonomous full workflow (research → implement → review → commit) |
 | `/rk:fix [issue]` | Fix bugs, errors, test failures, CI/CD issues |
 | `/rk:debug [error]` | Systematic debugging with root cause analysis |
-| `/rk:implement [task]` | Implement a feature/task from plan or ticket |
 | `/rk:plan [feature]` | Create implementation plans and architecture |
 | `/rk:test` | Run unit, integration, e2e tests and coverage |
 | `/rk:code-review` | Review code quality before PRs |
@@ -83,7 +82,7 @@ After installation, skills use the `rk:` prefix (short for **R**oc**K**288). Typ
 | `/rk:threejs` | 3D web apps with Three.js |
 | `/rk:shader` | GLSL fragment shaders for procedural graphics |
 | `/rk:web-design-guidelines` | Web design principles and guidelines |
-| `/rk:tanstack` | TanStack Router, Query, Table |
+| `/rk:tanstack` | TanStack Start, Form, and AI |
 | `/rk:mermaidjs-v11` | Mermaid.js diagrams |
 | `/rk:remotion` | Programmatic video with Remotion |
 
@@ -112,7 +111,6 @@ After installation, skills use the `rk:` prefix (short for **R**oc**K**288). Typ
 | Skill | Description |
 |-------|-------------|
 | `/rk:git` | Git operations with conventional commits |
-| `/rk:review-pr [PR#]` | Review GitHub pull requests |
 | `/rk:scout` | Fast codebase scouting with parallel agents |
 | `/rk:team` | Orchestrate agent teams for parallel work |
 | `/rk:autonomous-loop [task]` | Autonomous task loop with safety guardrails (Ralph technique) |
@@ -143,7 +141,7 @@ After installation, skills use the `rk:` prefix (short for **R**oc**K**288). Typ
 | `/rk:copywriting` | Conversion copywriting formulas |
 | `/rk:blogging [topic]` | Create, manage, and publish blog posts with SEO |
 | `/rk:markdown-novel-viewer` | Markdown novel/book viewer |
-| `/rk:gkg` | Google Knowledge Graph search |
+| `/rk:gkg` | GitLab Knowledge Graph — semantic code analysis |
 
 ### Learning & Process
 
