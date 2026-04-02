@@ -11,7 +11,7 @@
       "name": "rock288",
       "source": "./plugins/rock288",
       "description": "Full Claude kit — skills, agents, hooks, rules, scripts",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": { "name": "rock288" },
       "homepage": "https://github.com/tuannguyen-everfit/rock288_claude_plugin",
       "license": "MIT"
