@@ -10,7 +10,7 @@
     {
       "name": "rock288",
       "source": "./plugins/rock288",
-      "description": "Full Claude kit — skills, agents, hooks, rules, scripts",
+      "description": "Rock288's skills, agents, hooks, and rules for Claude Code",
       "version": "1.1.1",
       "author": { "name": "rock288" },
       "homepage": "https://github.com/tuannguyen-everfit/rock288_claude_plugin",
