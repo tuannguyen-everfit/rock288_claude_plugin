@@ -1,7 +1,10 @@
 {
   "name": "rock288",
+  "version": "1.0.0",
   "description": "Rock288's Claude Code kit — skills, agents, hooks, rules for all repos",
   "author": {
     "name": "rock288"
-  }
+  },
+  "homepage": "https://github.com/tuannguyen-everfit/rock288_claude_plugin",
+  "license": "MIT"
 }

@@ -1,7 +1,10 @@
 ---
-name: rk:project-management
+name: ck:project-management
 description: "Track progress, update plan statuses, manage Claude Tasks, generate reports, coordinate docs updates. Use for project oversight, status checks, plan completion, task hydration, cross-session continuity."
 argument-hint: "[task: status, hydrate, sync, report]"
+metadata:
+  author: claudekit
+  version: "1.0.0"
 ---
 
 # Project Management
@@ -20,12 +23,23 @@ Project oversight and coordination using Claude native Tasks with persistent pla
 - Verifying task completeness against acceptance criteria
 - Cross-session resume of multi-phase work
 
+## Tool Availability
+
+`TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` are **CLI-only** — disabled in VSCode extension (`isTTY` check).
+
+| Environment | Task Tools | Fallback |
+|-------------|-----------|----------|
+| CLI terminal | Available | — |
+| VSCode extension | **Disabled** | `TodoWrite` |
+
+**Fallback behavior:** If Task tools error, use `TodoWrite` for progress tracking. Plan file sync-back (checkbox updates, YAML frontmatter) works identically without Task tools. Core PM workflow remains functional.
+
 ## Core Capabilities
 
 ### 1. Task Operations
 Load: `references/task-operations.md`
 
-Use `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` to manage session-scoped tasks.
+Use `TaskCreate`, `TaskUpdate`, `TaskGet`, `TaskList` to manage session-scoped tasks (CLI only; see Tool Availability above).
 - Create tasks with metadata (phase, priority, effort, planDir, phaseFile)
 - Track status: `pending` → `in_progress` → `completed`
 - Manage dependencies with `addBlockedBy` / `addBlocks`
@@ -37,7 +51,7 @@ Load: `references/hydration-workflow.md`
 Tasks are ephemeral. Plan files are persistent. The hydration pattern bridges them:
 - **Hydrate:** Read plan `[ ]` items → `TaskCreate` per unchecked item
 - **Work:** `TaskUpdate` tracks progress in real-time
-- **Sync-bark:** Reconcile all completed tasks against all phase files, update `[ ]` → `[x]`, update YAML frontmatter status
+- **Sync-back:** Reconcile all completed tasks against all phase files, update `[ ]` → `[x]`, update YAML frontmatter status
 - **Resume:** Next session re-hydrates from remaining `[ ]` items
 
 ### 3. Progress Tracking
@@ -117,6 +131,6 @@ Update `status` when plan state changes.
 
 ## Related Skills
 
-- `rk:plan` — Creates implementation plans (planning phase)
-- `rk:cook` — Implements plans (execution phase, invokes project-manager at finalize)
+- `ck:plan` — Creates implementation plans (planning phase)
+- `ck:cook` — Implements plans (execution phase, invokes project-manager at finalize)
 - `plans-kanban` — Visual dashboard for plan viewing

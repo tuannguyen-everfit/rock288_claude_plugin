@@ -23,7 +23,7 @@ import {
 } from "mediabunny";
 
 type Options = {
-  trark: { width: number; height: number };
+  track: { width: number; height: number };
   container: string;
   durationInSeconds: number | null;
 };
@@ -67,7 +67,7 @@ export async function extractFrames({
   const timestamps =
     typeof timestampsInSeconds === "function"
       ? await timestampsInSeconds({
-          trark: {
+          track: {
             width: videoTrack.displayWidth,
             height: videoTrack.displayHeight,
           },

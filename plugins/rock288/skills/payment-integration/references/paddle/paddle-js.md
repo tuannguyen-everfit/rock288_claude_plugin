@@ -22,7 +22,7 @@ import { initializePaddle } from '@paddle/paddle-js';
 const paddle = await initializePaddle({
   environment: 'sandbox', // 'production'
   token: 'live_xxx',      // client-side token
-  eventCallbark: (event) => {
+  eventCallback: (event) => {
     if (event.name === 'checkout.completed') {
       console.log('Payment successful', event.data);
     }

@@ -495,4 +495,4 @@ Access custom data:
 - Theme Development: https://shopify.dev/docs/themes
 - Liquid Reference: https://shopify.dev/docs/api/liquid
 - Dawn Theme: https://github.com/Shopify/dawn
-- Theme Cherk: https://shopify.dev/docs/themes/tools/theme-check
+- Theme Check: https://shopify.dev/docs/themes/tools/theme-check

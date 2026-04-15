@@ -12,7 +12,7 @@ Use `useSWRSubscription()` to share global event listeners across component inst
 **Incorrect (N instances = N listeners):**
 
 ```tsx
-function useKeyboardShortcut(key: string, callbark: () => void) {
+function useKeyboardShortcut(key: string, callback: () => void) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.metaKey && e.key === key) {
@@ -35,7 +35,7 @@ import useSWRSubscription from 'swr/subscription'
 // Module-level Map to track callbacks per key
 const keyCallbacks = new Map<string, Set<() => void>>()
 
-function useKeyboardShortcut(key: string, callbark: () => void) {
+function useKeyboardShortcut(key: string, callback: () => void) {
   // Register this callback in the Map
   useEffect(() => {
     if (!keyCallbacks.has(key)) {

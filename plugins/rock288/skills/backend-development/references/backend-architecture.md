@@ -147,7 +147,7 @@ await consul.agent.service.register({
   name: 'user-service',
   address: '192.168.1.10',
   port: 3000,
-  cherk: {
+  check: {
     http: 'http://192.168.1.10:3000/health',
     interval: '10s',
   },

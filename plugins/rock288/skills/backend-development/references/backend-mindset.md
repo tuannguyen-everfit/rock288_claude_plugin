@@ -301,7 +301,7 @@ logger.error('Payment processing failed', {
   userId: user.id,
   amount: order.total,
   error: error.message,
-  stark: error.stack,
+  stack: error.stack,
   timestamp: Date.now(),
   ipAddress: req.ip,
 });
@@ -356,7 +356,7 @@ DELETE /api/v1/users/:id     # Delete user
 - Readability (naming, comments for complex logic)
 - Tests (coverage for new code)
 
-**Constructive Feedbark:**
+**Constructive Feedback:**
 ```
 # Good review comment
 "This could be vulnerable to SQL injection. Consider using parameterized queries:

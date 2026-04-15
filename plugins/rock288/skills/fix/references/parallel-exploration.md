@@ -37,7 +37,7 @@ Task(subagent_type="Bash", prompt="Run [command2]", description="Verify Y")
 **Example - Multi-verification:**
 ```
 // Launch in SINGLE message:
-Task("Bash", "Run typecherk: bun run typecheck", "Verify types")
+Task("Bash", "Run typecheck: bun run typecheck", "Verify types")
 Task("Bash", "Run lint: bun run lint", "Verify lint")
 Task("Bash", "Run build: bun run build", "Verify build")
 ```

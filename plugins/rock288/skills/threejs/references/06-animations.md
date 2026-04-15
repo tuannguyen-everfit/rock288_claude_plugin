@@ -4,7 +4,7 @@ Animate objects, cameras, and imported models.
 
 ## Animation System
 
-Three.js uses AnimationMixer for playbark:
+Three.js uses AnimationMixer for playback:
 
 ```javascript
 // Create mixer for object
@@ -49,7 +49,7 @@ loader.load('model.gltf', (gltf) => {
 
 ## Animation Actions
 
-Control playbark:
+Control playback:
 
 ```javascript
 const action = mixer.clipAction(clip);

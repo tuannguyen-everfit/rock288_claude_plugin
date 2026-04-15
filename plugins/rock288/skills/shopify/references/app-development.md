@@ -15,7 +15,7 @@ https://{shop}.myshopify.com/admin/oauth/authorize?
   state={nonce}
 ```
 
-**2. Handle Callbark:**
+**2. Handle Callback:**
 ```javascript
 app.get('/auth/callback', async (req, res) => {
   const { code, shop, state } = req.query;

@@ -18,14 +18,18 @@ try {
   const os = require('os');
   const {
     loadConfig,
+    readSessionState,
     writeEnv,
-    writeSessionState,
+    updateSessionState,
     resolvePlanPath,
     getReportsPath,
     resolveNamingPattern,
     extractTaskListId,
     isHookEnabled
   } = require('./lib/ck-config-utils.cjs');
+  const { createHookTimer, logHookCrash } = require('./lib/hook-logger.cjs');
+  const { loadState, refreshStatuslineSnapshot } = require('./lib/session-state-manager.cjs');
+  const { createEmptyActivitySnapshot } = require('./lib/statusline-session-cache.cjs');
 
   // Early exit if hook disabled in config
   if (!isHookEnabled('session-init')) {
@@ -37,19 +41,16 @@ try {
     detectProjectType,
     detectPackageManager,
     detectFramework,
-    getPythonVersion,
-    getGitRemoteUrl,
     getGitBranch,
     getGitRoot,
     getCodingLevelStyleName,
     getCodingLevelGuidelines,
-    buildContextOutput,
-    execSafe
+    buildContextOutput
   } = require('./lib/project-detector.cjs');
 
 /**
  * One-time cleanup for orphaned .shadowed/ directories from skill-dedup hook (Issue #422)
- * The hook was disabled due to race conditions; this restores any orphaned skills.
+ * The hook is disabled, but existing orphaned skills still need recovery on startup.
  */
 function cleanupOrphanedShadowedSkills() {
   const shadowedDir = path.join(process.cwd(), '.claude', 'skills', '.shadowed');
@@ -58,7 +59,7 @@ function cleanupOrphanedShadowedSkills() {
   const skillsDir = path.join(process.cwd(), '.claude', 'skills');
   const restored = [];
   const skipped = [];
-  const kept = []; // Skills kept for manual review (content differs)
+  const kept = [];
 
   try {
     const entries = fs.readdirSync(shadowedDir, { withFileTypes: true });
@@ -71,40 +72,38 @@ function cleanupOrphanedShadowedSkills() {
         if (!fs.existsSync(dest)) {
           fs.renameSync(src, dest);
           restored.push(entry.name);
-        } else {
-          // Skill exists in local - verify content match before deleting orphaned copy
-          const orphanedSkill = path.join(src, 'SKILL.md');
-          const localSkill = path.join(dest, 'SKILL.md');
-          if (fs.existsSync(orphanedSkill) && fs.existsSync(localSkill)) {
-            const orphanedContent = fs.readFileSync(orphanedSkill, 'utf8');
-            const localContent = fs.readFileSync(localSkill, 'utf8');
-            if (orphanedContent === localContent) {
-              // Content identical - safe to remove orphaned duplicate
-              fs.rmSync(src, { recursive: true, force: true });
-              skipped.push(entry.name);
-            } else {
-              // Content differs - user may have edited orphaned version, keep for review
-              kept.push(entry.name);
-            }
-          } else {
-            // Missing SKILL.md - safe to remove orphaned copy
+          continue;
+        }
+
+        const orphanedSkill = path.join(src, 'SKILL.md');
+        const localSkill = path.join(dest, 'SKILL.md');
+        if (fs.existsSync(orphanedSkill) && fs.existsSync(localSkill)) {
+          const orphanedContent = fs.readFileSync(orphanedSkill, 'utf8');
+          const localContent = fs.readFileSync(localSkill, 'utf8');
+          if (orphanedContent === localContent) {
             fs.rmSync(src, { recursive: true, force: true });
             skipped.push(entry.name);
+          } else {
+            kept.push(entry.name);
           }
+        } else {
+          fs.rmSync(src, { recursive: true, force: true });
+          skipped.push(entry.name);
         }
-      } catch (err) {
-        process.stderr.write(`[session-init] Failed to process "${entry.name}": ${err.message}\n`);
+      } catch (error) {
+        process.stderr.write(`[session-init] Failed to process "${entry.name}": ${error.message}\n`);
       }
     }
-    // Clean up manifest and shadowed dir if empty
+
     const manifestFile = path.join(shadowedDir, '.dedup-manifest.json');
     if (fs.existsSync(manifestFile)) fs.unlinkSync(manifestFile);
-    // Only remove shadowed dir if empty (kept skills may remain)
-    const remaining = fs.readdirSync(shadowedDir);
-    if (remaining.length === 0) fs.rmdirSync(shadowedDir);
+    if (fs.existsSync(shadowedDir) && fs.readdirSync(shadowedDir).length === 0) {
+      fs.rmdirSync(shadowedDir);
+    }
+
     return { restored, skipped, kept };
-  } catch (err) {
-    process.stderr.write(`[session-init] Shadowed cleanup error: ${err.message}\n`);
+  } catch (error) {
+    process.stderr.write(`[session-init] Shadowed cleanup error: ${error.message}\n`);
     return { restored, skipped, kept };
   }
 }
@@ -139,21 +138,27 @@ function detectAgentTeam() {
   }
 }
 
+function shouldWarmStatuslineCache(source, snapshot) {
+  if (!['startup', 'resume', 'compact'].includes(source)) return false;
+  return !snapshot || snapshot.warmed !== true;
+}
+
 /**
  * Main hook execution
  */
 async function main() {
+  const timer = createHookTimer('session-init', { event: 'SessionStart' });
   try {
-    // Issue #422: One-time cleanup of orphaned .shadowed/ from disabled skill-dedup hook
     const shadowedCleanup = cleanupOrphanedShadowedSkills();
-
     const stdin = fs.readFileSync(0, 'utf-8').trim();
     const data = stdin ? JSON.parse(stdin) : {};
     const envFile = process.env.CLAUDE_ENV_FILE;
     const source = data.source || 'unknown';
     const sessionId = data.session_id || null;
+    const existingSession = sessionId ? readSessionState(sessionId) : null;
 
     const config = loadConfig();
+    const sessionStateEnabled = config.hooks?.['session-state'] !== false;
 
     const detections = {
       type: detectProjectType(config.project?.type),
@@ -164,19 +169,20 @@ async function main() {
     // Resolve plan - now returns { path, resolvedBy }
     const resolved = resolvePlanPath(null, config);
 
-    // CRITICAL FIX: Only persist explicitly-set plans to session state
-    // Branch-matched plans are "suggested" - stored separately, not as activePlan
-    // This prevents stale plan pollution on fresh sessions
     if (sessionId) {
-      writeSessionState(sessionId, {
+      updateSessionState(sessionId, prev => ({
+        ...prev,
         sessionOrigin: process.cwd(),
-        // Only session-resolved plans are truly "active"
         activePlan: resolved.resolvedBy === 'session' ? resolved.path : null,
-        // Track suggested plan separately (for UI hints, not for report paths)
         suggestedPlan: resolved.resolvedBy === 'branch' ? resolved.path : null,
         timestamp: Date.now(),
-        source
-      });
+        source,
+        statusline: prev.statusline || createEmptyActivitySnapshot()
+      }));
+    }
+
+    if (sessionStateEnabled && sessionId && shouldWarmStatuslineCache(source, existingSession?.statusline)) {
+      await refreshStatuslineSnapshot(data);
     }
 
     // Reports path only uses active plans, not suggested ones
@@ -185,12 +191,10 @@ async function main() {
     // Extract task list ID for Claude Code Tasks coordination (shared helper)
     const taskListId = extractTaskListId(resolved);
 
-    // Collect static environment info (computed once per session)
+    // Keep startup metadata cheap. Expensive enrichment is intentionally deferred.
     const staticEnv = {
       nodeVersion: process.version,
-      pythonVersion: getPythonVersion(),
       osPlatform: process.platform,
-      gitUrl: getGitRemoteUrl(),
       gitBranch: getGitBranch(),
       gitRoot: getGitRoot(),
       user: process.env.USERNAME || process.env.USER || process.env.LOGNAME || os.userInfo().username,
@@ -243,9 +247,7 @@ async function main() {
 
       // NEW: Static environment info (so other hooks don't need to recompute)
       writeEnv(envFile, 'CK_NODE_VERSION', staticEnv.nodeVersion);
-      writeEnv(envFile, 'CK_PYTHON_VERSION', staticEnv.pythonVersion || '');
       writeEnv(envFile, 'CK_OS_PLATFORM', staticEnv.osPlatform);
-      writeEnv(envFile, 'CK_GIT_URL', staticEnv.gitUrl || '');
       writeEnv(envFile, 'CK_GIT_BRANCH', staticEnv.gitBranch || '');
       writeEnv(envFile, 'CK_USER', staticEnv.user);
       writeEnv(envFile, 'CK_LOCALE', staticEnv.locale);
@@ -260,7 +262,7 @@ async function main() {
         writeEnv(envFile, 'CK_RESPONSE_LANGUAGE', config.locale.responseLanguage);
       }
 
-      // Plan validation config (for /plan validate, /plan --hard, /plan --parallel)
+      // Plan validation config (for /ck:plan validate, /ck:plan --hard, /ck:plan --parallel)
       const validation = config.plan?.validation || {};
       writeEnv(envFile, 'CK_VALIDATION_MODE', validation.mode || 'prompt');
       writeEnv(envFile, 'CK_VALIDATION_MIN_QUESTIONS', validation.minQuestions || 3);
@@ -283,8 +285,10 @@ async function main() {
 
     console.log(`Session ${source}. ${buildContextOutput(config, detections, resolved, staticEnv.gitRoot)}`);
 
-    // Issue #422: Notify user if orphaned skills were recovered from .shadowed/
-    const hasCleanup = shadowedCleanup.restored.length > 0 || shadowedCleanup.skipped.length > 0 || shadowedCleanup.kept.length > 0;
+    const hasCleanup =
+      shadowedCleanup.restored.length > 0 ||
+      shadowedCleanup.skipped.length > 0 ||
+      shadowedCleanup.kept.length > 0;
     if (hasCleanup) {
       console.log(`\n[!] SKILL-DEDUP CLEANUP (Issue #422):`);
       console.log(`Recovered orphaned .shadowed/ directory from disabled skill-dedup hook.`);
@@ -300,11 +304,29 @@ async function main() {
       }
     }
 
+    if (sessionStateEnabled && (source === 'startup' || source === 'compact')) {
+      const previousState = loadState(process.cwd());
+      if (previousState) {
+        if (source === 'compact') {
+          console.log('\n--- Session State (Post-Compaction Recovery) ---');
+          console.log(previousState);
+          console.log('--- End Session State ---\n');
+          console.log('Context was compacted. Above is your last saved progress. Resume from where you left off.');
+          console.log('IMPORTANT: Re-read active plan files and todo list. Do NOT re-do completed work.');
+        } else {
+          console.log('\n--- Previous Session State ---');
+          console.log(previousState);
+          console.log('--- End Session State ---\n');
+          console.log('Review above state from your last session. Continue where you left off or start fresh.');
+        }
+      }
+    }
+
     // Agent Teams: Show team context if running inside a team (uses cached result)
     if (teamInfo) {
       console.log(`[i] Agent Team detected: "${teamInfo.teamName}" (${teamInfo.memberCount} members)`);
       console.log(`    Team config: ~/.claude/teams/${teamInfo.teamName}/config.json`);
-      console.log(`    Use /team skill for orchestration templates.`);
+      console.log(`    Use /ck:team skill for orchestration templates.`);
     }
 
     // Info: Show git root when running from subdirectory (Issue #327: now supported)
@@ -338,23 +360,20 @@ async function main() {
       });
     }
 
+    timer.end({ status: 'ok', exit: 0, note: source || 'session-start' });
     process.exit(0);
   } catch (error) {
     console.error(`SessionStart hook error: ${error.message}`);
+    logHookCrash('session-init', error, { event: 'SessionStart' });
     process.exit(0);
   }
   }
 
   main();
 } catch (e) {
-  // Minimal crash logging (zero deps — only Node builtins)
   try {
-    const fs = require('fs');
-    const p = require('path');
-    const logDir = p.join(__dirname, '.logs');
-    if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-    fs.appendFileSync(p.join(logDir, 'hook-log.jsonl'),
-      JSON.stringify({ ts: new Date().toISOString(), hook: p.basename(__filename, '.cjs'), status: 'crash', error: e.message }) + '\n');
+    const { logHookCrash } = require('./lib/hook-logger.cjs');
+    logHookCrash('session-init', e, { event: 'SessionStart' });
   } catch (_) {}
   process.exit(0); // fail-open
 }

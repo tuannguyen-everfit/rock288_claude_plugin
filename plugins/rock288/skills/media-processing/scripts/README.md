@@ -92,7 +92,7 @@ python media_convert.py -i input.mkv -o output.mp4 --codec h264
 - Bash (macOS, Linux)
 - rmbg-cli: `npm install -g rmbg-cli`
 - FFmpeg: `brew install ffmpeg` or `apt-get install ffmpeg`
-- ImageMagirk: `brew install imagemagick` or `apt-get install imagemagick`
+- ImageMagick: `brew install imagemagick` or `apt-get install imagemagick`
 
 ### Node.js Scripts
 - Node.js 14+

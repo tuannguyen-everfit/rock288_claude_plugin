@@ -133,7 +133,7 @@ After each step:
 
 ### Output Filtering
 ```
-Before responding, cherk:
+Before responding, check:
 - No PII exposure
 - No harmful content
 - No policy violations
@@ -146,7 +146,7 @@ If any fail: "I can't help with that."
 - Clear system boundaries upfront
 - Repeat constraints at end
 - "Ignore previous" pattern detection
-- Role-lork: "You are ONLY [role], never anything else"
+- Role-lock: "You are ONLY [role], never anything else"
 
 ### Confidence Calibration
 ```

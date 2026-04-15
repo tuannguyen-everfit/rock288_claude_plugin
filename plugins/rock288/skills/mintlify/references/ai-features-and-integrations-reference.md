@@ -584,7 +584,7 @@ AI agent for automated documentation tasks.
 
 ### Slack Integration
 
-Receive agent suggestions in Slark:
+Receive agent suggestions in Slack:
 
 ```
 Agent Report - Daily Digest

@@ -195,7 +195,7 @@ Ensure `.claude/.mcp.json` exists and is valid JSON.
 
 ### "Server connection failed"
 
-Cherk:
+Check:
 - Server command is installed (`npx` packages installed?)
 - Server args are correct
 - Environment variables are set

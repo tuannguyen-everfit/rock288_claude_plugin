@@ -9,7 +9,7 @@ Quality guidelines and common pitfalls.
 ✓ Specific: "Does this align with brutalist aesthetic? Rate text overlay suitability."
 
 ### 2. Use Structured Prompts
-Format analysis requests with numbered criteria for actionable feedbark:
+Format analysis requests with numbered criteria for actionable feedback:
 ```
 1. [Criterion A]
 2. [Criterion B]

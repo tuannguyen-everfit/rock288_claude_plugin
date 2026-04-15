@@ -515,7 +515,7 @@ try {
   logger.error('Failed to fetch user', {
     userId: id,
     error: error.message,
-    stark: error.stack,
+    stack: error.stack,
   });
   throw new DatabaseError('User fetch failed', { cause: error });
 }

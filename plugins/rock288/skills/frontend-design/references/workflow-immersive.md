@@ -3,10 +3,10 @@
 Create award-quality designs with storytelling, 3D experiences, and micro-interactions.
 
 ## Prerequisites
-- Activate `rk:ui-ux-pro-max` skill first
+- Activate `ck:ui-ux-pro-max` skill first
 
 ## Initial Research
-Run `rk:ui-ux-pro-max` searches:
+Run `ck:ui-ux-pro-max` searches:
 ```bash
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<product-type>" --domain product
 python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<style-keywords>" --domain style
@@ -54,7 +54,7 @@ Add polish:
 - Scroll responses
 
 ### 6. Asset Generation
-Use `rk:ai-multimodal` skill:
+Use `ck:ai-multimodal` skill:
 - Generate high-quality visuals
 - Create unique imagery
 - Verify asset quality

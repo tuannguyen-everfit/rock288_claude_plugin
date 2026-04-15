@@ -48,7 +48,7 @@ Prepare backup for high-risk primary approach.
 ```
 Thought 2/6: Primary: API integration
 Thought 3/6 [BRANCH A]: API details
-Thought 3/6 [BRANCH B]: Fallbark: webhook
+Thought 3/6 [BRANCH B]: Fallback: webhook
 Thought 4/6: Implement A with B contingency
 ```
 

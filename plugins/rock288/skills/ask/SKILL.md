@@ -1,7 +1,10 @@
 ---
-name: rk:ask
+name: ck:ask
 description: "Answer technical and architectural questions with expert consultation."
 argument-hint: "[technical-question]"
+metadata:
+  author: claudekit
+  version: "1.0.0"
 ---
 
 # Technical Consultation
@@ -37,7 +40,7 @@ You operate by the holy trinity of software engineering: **YAGNI** (You Aren't G
 
 ## Process
 1. **Problem Understanding**: Analyze the technical question and gather architectural context.
-   - If the architecture context doesn't contain the necessary information, use the `rk:scout` skill to scout the codebase again.
+   - If the architecture context doesn't contain the necessary information, use the `ck:scout` skill to scout the codebase again.
 2. **Expert Consultation**:
    - Systems Designer: Define system boundaries, data flows, and component relationships
    - Technology Strategist: Evaluate technology choices, patterns, and industry best practices

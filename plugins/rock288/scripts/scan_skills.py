@@ -15,32 +15,66 @@ except ModuleNotFoundError:
 
 # Exact mappings for high-signal CK skills to avoid falling into "other".
 EXACT_CATEGORY_MAP = {
+    # Utilities & Helpers
     "ask": "utilities",
+    "bootstrap": "utilities",
+    "brainstorm": "utilities",
+    "ck-autoresearch": "utilities",
+    "ck-debug": "utilities",
+    "ck-loop": "utilities",
+    "ck-predict": "utilities",
+    "ck-scenario": "utilities",
     "code-review": "utilities",
     "coding-level": "utilities",
+    "context-engineering": "utilities",
+    "cook": "utilities",
+    "copywriting": "utilities",
     "debug": "utilities",
     "docs": "utilities",
+    "fix": "utilities",
     "journal": "utilities",
+    "markdown-novel-viewer": "utilities",
+    "mermaidjs-v11": "utilities",
     "plan": "utilities",
+    "ck-plan": "utilities",
+    "preview": "utilities",
+    "problem-solving": "utilities",
+    "project-management": "utilities",
+    "project-organization": "utilities",
     "research": "utilities",
+    "retro": "utilities",
     "sequential-thinking": "utilities",
     "test": "utilities",
     "watzup": "utilities",
-    "ck-help": "dev-tools",
+    # Development Tools
     "find-skills": "dev-tools",
     "git": "dev-tools",
+    "gkg": "dev-tools",
     "kanban": "dev-tools",
+    "llms": "dev-tools",
+    "mintlify": "dev-tools",
     "plans-kanban": "dev-tools",
     "scout": "dev-tools",
+    "ship": "dev-tools",
+    "team": "dev-tools",
     "use-mcp": "dev-tools",
     "worktree": "dev-tools",
-    "preview": "utilities",
-    "project-management": "utilities",
-    "bootstrap": "utilities",
-    "brainstorm": "utilities",
-    "cook": "utilities",
-    "fix": "utilities",
-    "team": "dev-tools",
+    # Frontend & Design
+    "react-best-practices": "frontend",
+    "remotion": "frontend",
+    "shader": "frontend",
+    "stitch": "frontend",
+    "web-design-guidelines": "frontend",
+    # Frameworks & Platforms
+    "tanstack": "frameworks",
+    # Infrastructure & DevOps
+    "deploy": "infrastructure",
+    # Multimedia & Processing
+    "agent-browser": "multimedia",
+    "web-testing": "multimedia",
+    # Security (mapped to utilities)
+    "ck-security": "utilities",
+    "security-scan": "utilities",
 }
 
 def extract_frontmatter(content: str) -> Dict:
@@ -219,19 +253,11 @@ def main():
             refs = '📚' if skill['has_references'] else '  '
             print(f"  {scripts}{refs} {skill['name']:30} {skill['description'][:80]}")
 
-    # Output YAML to ck-help scripts directory
-    output_path = Path('.claude/skills/ck-help/scripts/skills_data.yaml')
+    # Output YAML to scripts directory
+    output_path = Path('.claude/scripts/skills_data.yaml')
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(yaml.dump(skills, allow_unicode=True, default_flow_style=False))
     print(f"\n✓ Saved metadata to {output_path}")
-
-    # Legacy location now points to canonical source to avoid data drift.
-    legacy_path = Path('.claude/scripts/skills_data.yaml')
-    legacy_path.write_text(
-        "# Skills catalog moved to .claude/skills/ck-help/scripts/skills_data.yaml\n"
-        "# Regenerate via: python3 .claude/scripts/scan_skills.py\n",
-        encoding='utf-8',
-    )
 
 if __name__ == '__main__':
     main()

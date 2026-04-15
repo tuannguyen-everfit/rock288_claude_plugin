@@ -9,7 +9,7 @@ description: "Activate when user requests: Database/table design for transaction
 
 ### Step 1: Analyze Context (MANDATORY)
 
-Before ANY design work, AI MUST cherk:
+Before ANY design work, AI MUST check:
 
 - [ ] Database stack identified? (MySQL / PostgreSQL / BigQuery / SQLite / D1)
 - [ ] Existing schema explored via tools/MCP?

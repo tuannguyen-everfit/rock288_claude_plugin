@@ -1,7 +1,10 @@
 ---
-name: rk:mcp-management
+name: ck:mcp-management
 description: Manage MCP servers - discover, analyze, execute tools/prompts/resources. Use for MCP integrations, intelligent tool selection, multi-server management, context-efficient capability discovery.
 argument-hint: "[task or server-name]"
+metadata:
+  author: claudekit
+  version: "1.0.0"
 ---
 
 # MCP Management
@@ -81,7 +84,7 @@ echo "Take a screenshot of https://example.com" | gemini -y -m <gemini.model>
 npx tsx scripts/cli.ts call-tool memory create_entities '{"entities":[...]}'
 ```
 
-**Fallbark: mcp-manager Subagent**
+**Fallback: mcp-manager Subagent**
 
 See [references/gemini-cli-integration.md](references/gemini-cli-integration.md) for complete examples.
 
@@ -185,7 +188,7 @@ See [references/mcp-protocol.md](references/mcp-protocol.md) for:
 ### Execution Priority
 
 1. **Gemini CLI** (Primary): Fast, automatic, intelligent tool selection
-   - Cherk: `command -v gemini`
+   - Check: `command -v gemini`
    - Execute: `echo "<task>" | gemini -y -m <gemini.model>`
    - **IMPORTANT**: Use stdin piping, NOT `-p` flag (deprecated, skips MCP init)
    - Best for: All tasks when available

@@ -3,13 +3,13 @@
 Create detailed design documentation from screenshot/video for developer implementation.
 
 ## Prerequisites
-- Activate `rk:ui-ux-pro-max` skill first
-- Have `rk:ai-multimodal` skill ready
+- Activate `ck:ui-ux-pro-max` skill first
+- Have `ck:ai-multimodal` skill ready
 
 ## Workflow Steps
 
 ### 1. Comprehensive Visual Analysis
-Use `rk:ai-multimodal` skill to describe exhaustively:
+Use `ck:ai-multimodal` skill to describe exhaustively:
 
 **Layout & Structure**
 - Element positions (absolute coords or relative)

@@ -206,10 +206,10 @@ Configure base path in `docs.json`:
 }
 ```
 
-All routes prefixed with `/rk:docs`:
-- `/rk:docs/introduction`
-- `/rk:docs/api/users`
-- `/rk:docs/guides/quickstart`
+All routes prefixed with `/ck:docs`:
+- `/ck:docs/introduction`
+- `/ck:docs/api/users`
+- `/ck:docs/guides/quickstart`
 
 ## Platform-Specific Deployment
 

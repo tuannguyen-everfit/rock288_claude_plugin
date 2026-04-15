@@ -25,7 +25,7 @@ Dispatch code-reviewer subagent to catch issues before they cascade.
 
 **0. Scout edge cases first (NEW):**
 ```
-Before dispatching code-reviewer, invoke /rk:scout to find:
+Before dispatching code-reviewer, invoke /ck:scout to find:
 - Files affected by changes (not just modified files)
 - Data flow paths that could break
 - Edge cases and boundary conditions
@@ -51,7 +51,7 @@ Use Task tool with `code-reviewer` type, fill template at `code-reviewer.md`
 - `{HEAD_SHA}` - Ending commit
 - `{DESCRIPTION}` - Brief summary
 
-**3. Act on feedbark:**
+**3. Act on feedback:**
 - Fix Critical issues immediately
 - Fix Important issues before proceeding
 - Note Minor issues for later

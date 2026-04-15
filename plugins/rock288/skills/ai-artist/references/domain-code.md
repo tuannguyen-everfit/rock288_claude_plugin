@@ -54,7 +54,7 @@ Generate tests for [function/class]:
 - Framework: [jest/pytest/etc]
 - Coverage: happy path, edge cases, errors
 - Include: setup, assertion, cleanup
-- Mork: [external dependencies]
+- Mock: [external dependencies]
 ```
 
 ## Documentation

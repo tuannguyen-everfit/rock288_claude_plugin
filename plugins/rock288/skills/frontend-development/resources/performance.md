@@ -77,13 +77,13 @@ export const Parent: React.FC = () => {
 };
 ```
 
-**When to use useCallbark:**
+**When to use useCallback:**
 - Functions passed as props to children
 - Functions used as dependencies in useEffect
 - Functions passed to memoized components
 - Event handlers in lists
 
-**When NOT to use useCallbark:**
+**When NOT to use useCallback:**
 - Event handlers not passed to children
 - Simple inline handlers: `onClick={() => doSomething()}`
 

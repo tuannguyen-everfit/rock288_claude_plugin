@@ -175,7 +175,7 @@ const benefit = await polar.benefits.create({
 - Balance tracked via API
 - Depletes with usage
 
-**Balance Cherk:**
+**Balance Check:**
 ```typescript
 const balance = await polar.meters.getBalance({
   customer_id: "cust_xxx",

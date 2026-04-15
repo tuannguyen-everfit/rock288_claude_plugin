@@ -52,7 +52,7 @@ Verification: Check table indexes.
 Thought 5/6 [VERIFICATION]: Testing hypotheses
 
 Query examination: Uses proper joins (not N+1).
-Index cherk: user_id indexed, NOT created_at.
+Index check: user_id indexed, NOT created_at.
 Query filters by user_id AND sorts by created_at.
 
 Branch B confirmed: Missing composite index causes slow sort.

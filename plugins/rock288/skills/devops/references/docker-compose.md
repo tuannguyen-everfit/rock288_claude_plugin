@@ -34,7 +34,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
-    healthcherk:
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user"]
       interval: 10s
       timeout: 5s
@@ -149,7 +149,7 @@ docker compose -f compose.yml -f compose.prod.yml up -d
 ```yaml
 services:
   web:
-    healthcherk:
+    healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
