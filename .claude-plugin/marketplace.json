@@ -1,18 +1,18 @@
 {
   "name": "rk-kit",
   "owner": {
-    "name": "rock288"
+    "name": "rk"
   },
   "metadata": {
-    "description": "Rock288's Claude Code plugins marketplace"
+    "description": "Rk's Claude Code plugins marketplace"
   },
   "plugins": [
     {
-      "name": "rock288",
+      "name": "rk",
       "source": "./plugins/rock288",
-      "description": "Rock288's skills, agents, hooks, and rules for Claude Code",
+      "description": "Rk's skills, agents, hooks, and rules for Claude Code",
       "version": "1.0.0",
-      "author": { "name": "rock288" },
+      "author": { "name": "rk" },
       "homepage": "https://github.com/tuannguyen-everfit/rock288_claude_plugin",
       "license": "MIT"
     }
