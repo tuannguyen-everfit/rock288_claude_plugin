@@ -78,3 +78,17 @@ There is no top-level `package.json`, no lint config, no global build step. Per-
 - **No README.md inside individual skill folders** (per Anthropic's skill spec) — repo-level README is fine, but per-skill docs go in `references/`.
 - **Don't reformat** existing skill markdown when editing — preserve original style/quoting; many skills are quoted from external sources.
 - **Hooks must be fast and silent** — they run on every session/turn boundary. Long work belongs in skills, not hooks.
+
+## Version bumps (REQUIRED on every content change)
+
+Every commit that touches plugin content (skills, agents, hooks, output-styles, statusline, scripts) **must bump `version` in BOTH** manifests, and the two numbers must match:
+
+- [`plugins/rock288/.claude-plugin/plugin.json`](plugins/rock288/.claude-plugin/plugin.json) → `version`
+- [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) → `plugins[0].version`
+
+SemVer:
+- patch (`x.y.Z`) — edit existing skill/hook content, bug fix
+- minor (`x.Y.0`) — new skill/agent/hook added, new behavior
+- major (`X.0.0`) — breaking change (skill renamed, config schema changed)
+
+**Why:** Claude Code keys the installed plugin cache by version (`~/.claude/plugins/cache/rk-kit/rk/<version>/`). If `version` doesn't change, `/plugin update` won't re-sync files — users keep running the stale snapshot even after `marketplace update` pulls new commits. Bump in the same commit as the content change, not a separate one.

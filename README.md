@@ -51,6 +51,25 @@ Sau đó restart session.
 - Gõ `/plugin` → mục `rk` hiển thị commit hash mới nhất khớp với `git log -1 --oneline` ở repo này.
 - Skill mới phải xuất hiện trong danh sách `Available skills` ở session mới.
 
+## Quy tắc bump version (BẮT BUỘC)
+
+Mỗi commit có thay đổi nội dung plugin (thêm/sửa skill, agent, hook, output-style, statusline) **phải bump version** ở **cả 2 file**:
+
+- [`plugins/rock288/.claude-plugin/plugin.json`](plugins/rock288/.claude-plugin/plugin.json) → field `version`
+- [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) → field `plugins[0].version`
+
+Hai số phải khớp nhau. SemVer:
+
+| Loại thay đổi | Bump |
+|---|---|
+| Thêm/sửa nội dung skill, sửa hook, fix nhỏ | patch (`1.0.0` → `1.0.1`) |
+| Thêm skill/agent/hook mới, đổi behavior đáng kể | minor (`1.0.1` → `1.1.0`) |
+| Breaking change (đổi tên skill, đổi schema config) | major (`1.1.0` → `2.0.0`) |
+
+**Vì sao:** Claude Code dùng `version` làm khoá cache (`~/.claude/plugins/cache/rk-kit/rk/<version>/`). Nếu version không đổi, `/plugin update` sẽ skip không sync file mới — user vẫn chạy snapshot cũ dù marketplace cache đã pull về bản mới.
+
+Commit version bump cùng commit nội dung (cùng PR, không tách).
+
 ## Phát triển local
 
 Khi đang sửa skill/hook và muốn thử trước khi commit:
