@@ -68,6 +68,17 @@ If a file exports a barrel (`module.exports = { a, b, c }`) and only `a` is need
   - Target function + origin file
   - Every copied file with the symbols kept and symbols dropped
   - External `node_modules` packages the user must install (with versions from source `package.json`)
+  - New env vars introduced by the copied code (see step 5a)
+
+### 5a. Sync new env vars into `default.env`
+
+While building the dependency graph, collect every `process.env.<NAME>` reference reached by the copied code. For each one:
+
+- Look up its default/example value in the **source** repo's `default.env`, `.env.example`, or equivalent (in that order).
+- Check whether `<NAME>` already exists in the **destination** project's `default.env` (search from `--dest` upward to the project root). If absent, append it with the source value (or an empty placeholder if no source value was found).
+- Preserve existing entries — never overwrite a value already set in destination `default.env`.
+- If the destination project has no `default.env`, list the env vars in the manifest under "Env Vars" and skip the write (do not create the file unless the user asks).
+- Record every added/skipped env var in `COPY_MANIFEST.md` under an "Env Vars" section.
 
 ### 6. Validate
 
@@ -100,6 +111,11 @@ If a file exports a barrel (`module.exports = { a, b, c }`) and only `a` is need
 ## NPM Dependencies
 - lodash@4.17.21
 - mongoose@7.x
+
+## Env Vars
+- Added to default.env: FOO_API_KEY (from source default.env), BAR_TIMEOUT=5000
+- Skipped (already present): DATABASE_URL
+- Listed only (no default.env in destination): BAZ_SECRET
 
 ## Unresolved
 - (none) | <broken reference list>
