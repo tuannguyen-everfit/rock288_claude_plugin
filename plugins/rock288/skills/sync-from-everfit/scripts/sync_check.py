@@ -13,20 +13,27 @@ import hashlib
 import os
 import subprocess
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
 def sha256_file(path: Path) -> Optional[str]:
     try:
-        h = hashlib.sha256()
-        with path.open("rb") as f:
-            for chunk in iter(lambda: f.read(65536), b""):
-                h.update(chunk)
-        return h.hexdigest()
+        return sha256_bytes(path.read_bytes())
     except OSError:
         return None
+
+
+def read_at_ref(repo: Path, ref: str, relpath: str) -> Optional[bytes]:
+    """Return file bytes at <ref>:<relpath>, or None if absent."""
+    code, out, _ = git(["show", f"{ref}:{relpath}"], repo)
+    return out if code == 0 else None
 
 
 def git(
@@ -50,7 +57,8 @@ def git(
     return proc.returncode, proc.stdout, proc.stderr
 
 
-def list_tracked_files(repo: Path, scope: Optional[List[str]]) -> Set[str]:
+def list_target_files(repo: Path, scope: Optional[List[str]]) -> Set[str]:
+    """Files tracked in the target work tree (whatever branch is checked out)."""
     args = ["ls-files"]
     if scope:
         args.append("--")
@@ -61,21 +69,46 @@ def list_tracked_files(repo: Path, scope: Optional[List[str]]) -> Set[str]:
     return {line for line in out.decode(errors="replace").splitlines() if line}
 
 
-def changed_source_lines(everfit: Path, target: Path, relpath: str) -> List[int]:
-    """Line numbers (in everfit version) that exist in everfit but are missing/changed in target."""
-    code, out, _ = git(
-        [
-            "diff",
-            "--no-index",
-            "--unified=0",
-            "--no-color",
-            "--",
-            str(target / relpath),
-            str(everfit / relpath),
-        ],
-        cwd=everfit,
-    )
-    # `git diff` returns 1 when there are differences, 0 when none.
+def list_files_at_ref(repo: Path, scope: Optional[List[str]], ref: str) -> Set[str]:
+    """Files committed at the given ref. Used for everfit-api so caller can pin
+    a branch (master / staging / develop) without touching its work tree."""
+    args = ["ls-tree", "-r", "--name-only", ref]
+    if scope:
+        args.append("--")
+        args.extend(scope)
+    code, out, _ = git(args, repo)
+    if code != 0:
+        return set()
+    return {line for line in out.decode(errors="replace").splitlines() if line}
+
+
+def changed_source_lines(everfit_content: bytes, target_path: Path) -> List[int]:
+    """Line numbers in the everfit version that are missing/different in target.
+
+    Writes everfit content to a temp file then runs `git diff --no-index` against
+    the target's on-disk file. `--no-index` doesn't require a repo, so cwd is irrelevant.
+    """
+    with tempfile.NamedTemporaryFile(suffix=target_path.suffix, delete=False) as tmp:
+        tmp.write(everfit_content)
+        tmp_path = Path(tmp.name)
+    try:
+        code, out, _ = git(
+            [
+                "diff",
+                "--no-index",
+                "--unified=0",
+                "--no-color",
+                "--",
+                str(target_path),
+                str(tmp_path),
+            ],
+            cwd=target_path.parent,
+        )
+    finally:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
     if code not in (0, 1) or code == 0:
         return []
     lines: List[int] = []
@@ -100,13 +133,14 @@ def changed_source_lines(everfit: Path, target: Path, relpath: str) -> List[int]
     return lines
 
 
-def blame_commits(repo: Path, relpath: str, line_numbers: List[int]) -> Set[str]:
-    """Set of commit SHAs that introduced the given line numbers in repo:relpath."""
+def blame_commits(repo: Path, relpath: str, line_numbers: List[int], ref: str = "HEAD") -> Set[str]:
+    """Set of commit SHAs that introduced the given line numbers in repo:relpath at ref."""
     if not line_numbers:
         return set()
     args = ["blame", "--porcelain"]
     for ln in line_numbers:
         args.extend(["-L", f"{ln},{ln}"])
+    args.append(ref)
     args.extend(["--", relpath])
     code, out, _ = git(args, repo)
     if code != 0:
@@ -208,14 +242,15 @@ def render_report(
     shared_count: int,
     diff_count: int,
     results: List[Dict],
+    everfit_ref: str = "HEAD",
 ) -> str:
     clean_count = sum(1 for r in results if r["clean"])
     manual_count = len(results) - clean_count
     lines: List[str] = []
     lines.append(f"# Sync Check Report — everfit-api → {target.name}")
     lines.append("")
-    lines.append(f"- Source: `{everfit}`")
-    lines.append(f"- Target: `{target}`")
+    lines.append(f"- Source: `{everfit}` @ `{everfit_ref}`")
+    lines.append(f"- Target: `{target}` @ work-tree")
     lines.append(f"- Scope: {scope or 'all'}")
     lines.append(f"- Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     lines.append("")
@@ -255,6 +290,9 @@ def main(argv: List[str]) -> int:
     ap = argparse.ArgumentParser(description="Find everfit-api commits to cherry-pick into a fork.")
     ap.add_argument("--everfit", default="/Users/tuannguyen/Source/everfit-api")
     ap.add_argument("--target", default="/Users/tuannguyen/Source/metric-service")
+    ap.add_argument("--everfit-ref", default="HEAD",
+                    help="Branch/tag/commit of everfit-api to compare against (e.g. master, staging, develop). "
+                         "Default: HEAD. Target side always uses the checked-out work tree.")
     ap.add_argument("--scope", action="append", default=[],
                     help="Limit comparison to a subdir (repeatable).")
     ap.add_argument("--report", default=None,
@@ -271,31 +309,40 @@ def main(argv: List[str]) -> int:
         return 2
 
     scope = args.scope or None
-    sys.stderr.write(f"Scanning shared files between {everfit} and {target}...\n")
-    everfit_files = list_tracked_files(everfit, scope)
-    target_files = list_tracked_files(target, scope)
+    everfit_ref = args.everfit_ref
+    sys.stderr.write(
+        f"Scanning shared files between {everfit}@{everfit_ref} and {target}@work-tree...\n"
+    )
+    everfit_files = list_files_at_ref(everfit, scope, everfit_ref)
+    target_files = list_target_files(target, scope)
     shared = sorted(everfit_files & target_files)
     sys.stderr.write(
-        f"  everfit: {len(everfit_files)} files | target: {len(target_files)} files | shared: {len(shared)}\n"
+        f"  everfit@{everfit_ref}: {len(everfit_files)} files | "
+        f"target: {len(target_files)} files | shared: {len(shared)}\n"
     )
 
-    differs: List[str] = []
+    # Diff each shared file. Keep everfit content in memory keyed by relpath so
+    # we can reuse it for both the SHA comparison and the line-number extraction.
+    differs: List[Tuple[str, bytes]] = []
     for rel in shared:
-        e_path = everfit / rel
         t_path = target / rel
-        if e_path.is_file() and t_path.is_file():
-            if sha256_file(e_path) != sha256_file(t_path):
-                differs.append(rel)
+        if not t_path.is_file():
+            continue
+        e_content = read_at_ref(everfit, everfit_ref, rel)
+        if e_content is None:
+            continue
+        if sha256_bytes(e_content) != sha256_file(t_path):
+            differs.append((rel, e_content))
     sys.stderr.write(f"  differing: {len(differs)} files\n")
 
     candidate_commits: Dict[str, Set[str]] = {}
-    for i, rel in enumerate(differs, 1):
+    for i, (rel, e_content) in enumerate(differs, 1):
         if i % 25 == 0 or i == len(differs):
             sys.stderr.write(f"  blame {i}/{len(differs)}: {rel}\n")
-        line_nums = changed_source_lines(everfit, target, rel)
+        line_nums = changed_source_lines(e_content, target / rel)
         if not line_nums:
             continue
-        for sha in blame_commits(everfit, rel, line_nums):
+        for sha in blame_commits(everfit, rel, line_nums, everfit_ref):
             candidate_commits.setdefault(sha, set()).add(rel)
 
     sys.stderr.write(f"  blame candidates: {len(candidate_commits)} commits\n")
@@ -343,7 +390,9 @@ def main(argv: List[str]) -> int:
 
     results.sort(key=lambda r: r["date"], reverse=True)
 
-    report = render_report(everfit, target, args.scope, len(shared), len(differs), results)
+    report = render_report(
+        everfit, target, args.scope, len(shared), len(differs), results, everfit_ref
+    )
 
     if args.report:
         report_path = Path(args.report)

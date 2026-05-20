@@ -1,10 +1,10 @@
 ---
 name: rk:sync-from-everfit
 description: "Compare files between a fork repo (e.g. metric-service, file-service) and the parent everfit-api repo, then list everfit-api commits that should be cherry-picked. Triggers on 'sync from everfit-api', 'compare metric-service vs everfit-api', 'tìm commit cần cherry-pick', 'check missing commits', 'find cherry-picks', 'so sánh code everfit-api metric-service'. Skips identical files; uses git blame on differing lines + git patch-id dedup; drops merge commits and commits already in target; runs git apply --check to label each candidate 'clean' or 'manual check'."
-argument-hint: "[--target=<path>] [--everfit=<path>] [--scope=<dir>] [--report=<path>]"
+argument-hint: "[--target=<path>] [--everfit=<path>] [--everfit-ref=<branch>] [--scope=<dir>] [--report=<path>]"
 metadata:
   author: rk
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Sync From Everfit
@@ -21,8 +21,11 @@ Find everfit-api commits a fork repo (default: metric-service) hasn't picked up 
 
 - `--everfit=<path>` — source repo. Default: `/Users/tuannguyen/Source/everfit-api`.
 - `--target=<path>` — fork repo. Default: `/Users/tuannguyen/Source/metric-service`.
+- `--everfit-ref=<branch|tag|sha>` — which ref of the source repo to compare against. Default: `HEAD`. Use this to pick the env-matching branch (e.g. `master` for prod, `staging` for staging, `develop` for dev). The source repo's work tree is NOT touched — files are read via `git show <ref>:<path>` and `git ls-tree <ref>`.
 - `--scope=<relpath>` — limit comparison to a subdir. Repeatable. Default: whole repo.
 - `--report=<path>` — write Markdown report to this path. Default: `plans/reports/sync-from-everfit-<date>.md` if `plans/reports/` exists in cwd, else stdout.
+
+The target side always uses the **checked-out work tree** (so `git apply --check` can run against it). To sync target against a different branch, check it out first.
 
 ## Algorithm
 
@@ -68,11 +71,22 @@ python3 plugins/rock288/skills/sync-from-everfit/scripts/sync_check.py \
 python3 plugins/rock288/skills/sync-from-everfit/scripts/sync_check.py \
   --target /Users/tuannguyen/Source/file-service \
   --report plans/reports/sync-file-service-260519.md
+
+# Per-env: pick the everfit-api branch that matches your target env
+# Prod sync (target on its production branch, everfit-api on master)
+git -C /Users/tuannguyen/Source/metric-service checkout master
+python3 plugins/rock288/skills/sync-from-everfit/scripts/sync_check.py \
+  --everfit-ref master --scope modules/heart-rate
+
+# Staging sync
+git -C /Users/tuannguyen/Source/metric-service checkout staging
+python3 plugins/rock288/skills/sync-from-everfit/scripts/sync_check.py \
+  --everfit-ref staging --scope modules/heart-rate
 ```
 
 ## Workflow Claude should follow
 
-1. Confirm `--everfit` and `--target`. If user didn't pass them, use the defaults and tell the user which paths you're using.
+1. Confirm `--everfit`, `--target`, and `--everfit-ref`. If user mentions an env (prod/staging/dev) but no ref, ask which branch they want on the everfit-api side and remind them to check out the matching branch on target first.
 2. If the comparison would be large (no `--scope`), ask the user whether to scope it (suggest a domain dir, e.g. `modules/heart-rate`).
 3. Run the script. Stream stderr progress to the user so they see "scanning X/Y files".
 4. Save the report under `plans/reports/` when the directory exists. Otherwise print to stdout.

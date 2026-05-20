@@ -1,6 +1,6 @@
 {
   "name": "rk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Rk's Claude Code kit — skills, agents, hooks, rules for all repos",
   "author": {
     "name": "rk"
