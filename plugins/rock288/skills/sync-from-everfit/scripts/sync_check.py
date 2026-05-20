@@ -1,0 +1,363 @@
+#!/usr/bin/env python3
+"""Find everfit-api commits that a fork repo (e.g. metric-service) hasn't picked up yet.
+
+Algorithm in one paragraph: walk shared paths, skip files with identical SHA-256, diff
+the rest, blame the lines that appear in everfit-api but not in the fork, dedupe the
+resulting commits by patch-id, drop merge commits and commits already in the fork's
+history, then run `git apply --check` per remaining commit to label it `clean` or
+`manual check`. Output is a Markdown table sorted newest-first.
+"""
+
+import argparse
+import hashlib
+import os
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
+
+
+def sha256_file(path: Path) -> Optional[str]:
+    try:
+        h = hashlib.sha256()
+        with path.open("rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                h.update(chunk)
+        return h.hexdigest()
+    except OSError:
+        return None
+
+
+def git(
+    args: List[str],
+    cwd: Path,
+    check: bool = False,
+    input_: Optional[bytes] = None,
+) -> Tuple[int, bytes, bytes]:
+    proc = subprocess.run(
+        ["git", *args],
+        cwd=str(cwd),
+        input=input_,
+        capture_output=True,
+        check=False,
+    )
+    if check and proc.returncode != 0:
+        sys.stderr.write(
+            f"git {' '.join(args)} (cwd={cwd}) failed: "
+            f"{proc.stderr.decode(errors='replace')}\n"
+        )
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def list_tracked_files(repo: Path, scope: Optional[List[str]]) -> Set[str]:
+    args = ["ls-files"]
+    if scope:
+        args.append("--")
+        args.extend(scope)
+    code, out, _ = git(args, repo)
+    if code != 0:
+        return set()
+    return {line for line in out.decode(errors="replace").splitlines() if line}
+
+
+def changed_source_lines(everfit: Path, target: Path, relpath: str) -> List[int]:
+    """Line numbers (in everfit version) that exist in everfit but are missing/changed in target."""
+    code, out, _ = git(
+        [
+            "diff",
+            "--no-index",
+            "--unified=0",
+            "--no-color",
+            "--",
+            str(target / relpath),
+            str(everfit / relpath),
+        ],
+        cwd=everfit,
+    )
+    # `git diff` returns 1 when there are differences, 0 when none.
+    if code not in (0, 1) or code == 0:
+        return []
+    lines: List[int] = []
+    cur_new = 0
+    for line in out.decode(errors="replace").splitlines():
+        if line.startswith("@@"):
+            try:
+                new_part = line.split("+", 1)[1].split(" ", 1)[0]
+                cur_new = int(new_part.split(",", 1)[0]) if "," in new_part else int(new_part)
+            except (IndexError, ValueError):
+                cur_new = 0
+            continue
+        if line.startswith("+++") or line.startswith("---"):
+            continue
+        if line.startswith("+"):
+            lines.append(cur_new)
+            cur_new += 1
+        elif line.startswith("-"):
+            pass
+        else:
+            cur_new += 1
+    return lines
+
+
+def blame_commits(repo: Path, relpath: str, line_numbers: List[int]) -> Set[str]:
+    """Set of commit SHAs that introduced the given line numbers in repo:relpath."""
+    if not line_numbers:
+        return set()
+    args = ["blame", "--porcelain"]
+    for ln in line_numbers:
+        args.extend(["-L", f"{ln},{ln}"])
+    args.extend(["--", relpath])
+    code, out, _ = git(args, repo)
+    if code != 0:
+        return set()
+    shas: Set[str] = set()
+    for line in out.decode(errors="replace").splitlines():
+        if not line or line.startswith("\t") or line.startswith(" "):
+            continue
+        parts = line.split(" ", 1)
+        sha = parts[0]
+        if len(sha) == 40 and all(c in "0123456789abcdef" for c in sha):
+            shas.add(sha)
+    return shas
+
+
+def is_merge_commit(repo: Path, sha: str) -> bool:
+    code, out, _ = git(["log", "-1", "--format=%P", sha], repo)
+    if code != 0:
+        return False
+    return len(out.decode().strip().split()) > 1
+
+
+def commit_in_target_history(repo: Path, sha: str) -> bool:
+    """True iff `sha` is an ancestor of HEAD in `repo`.
+
+    `cat-file -e` is too loose for forks: a forked repo still has the parent's
+    objects in its DB even when the commit was never applied to a branch.
+    `merge-base --is-ancestor` is the real test for "this commit is in the
+    target's history".
+    """
+    code, _, _ = git(["merge-base", "--is-ancestor", sha, "HEAD"], repo)
+    return code == 0
+
+
+def commit_info(repo: Path, sha: str) -> Dict[str, str]:
+    code, out, _ = git(
+        ["log", "-1", "--format=%H%x1f%an%x1f%ad%x1f%s", "--date=short", sha],
+        repo,
+    )
+    if code != 0:
+        return {"sha": sha, "author": "?", "date": "?", "subject": "?"}
+    parts = out.decode(errors="replace").rstrip("\n").split("\x1f")
+    if len(parts) < 4:
+        return {"sha": sha, "author": "?", "date": "?", "subject": "?"}
+    return {"sha": parts[0], "author": parts[1], "date": parts[2], "subject": parts[3]}
+
+
+def commit_files(repo: Path, sha: str) -> Set[str]:
+    code, out, _ = git(["show", "--name-only", "--format=", sha], repo)
+    if code != 0:
+        return set()
+    return {l for l in out.decode(errors="replace").splitlines() if l}
+
+
+def patch_id(repo: Path, sha: str) -> Optional[str]:
+    code, show_out, _ = git(["show", sha], repo)
+    if code != 0:
+        return None
+    proc = subprocess.run(
+        ["git", "patch-id"],
+        cwd=str(repo),
+        input=show_out,
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        return None
+    parts = proc.stdout.decode().strip().split()
+    return parts[0] if parts else None
+
+
+def filtered_patch(repo: Path, sha: str, allowed_files: Set[str]) -> bytes:
+    args = ["show", "--format=", sha, "--", *sorted(allowed_files)]
+    code, out, _ = git(args, repo)
+    return out if code == 0 else b""
+
+
+def applies_clean(target: Path, patch: bytes) -> Tuple[bool, str]:
+    if not patch.strip():
+        return False, "empty patch after filtering to shared files"
+    code, _, err = git(["apply", "--check"], target, input_=patch)
+    if code == 0:
+        return True, ""
+    first_line = err.decode(errors="replace").strip().splitlines()[0:1]
+    return False, first_line[0] if first_line else "apply check failed"
+
+
+def default_report_path(cwd: Path, target_name: str) -> Optional[Path]:
+    reports_dir = cwd / "plans" / "reports"
+    if not reports_dir.is_dir():
+        return None
+    stamp = datetime.now().strftime("%y%m%d-%H%M")
+    return reports_dir / f"sync-from-everfit-{target_name}-{stamp}.md"
+
+
+def render_report(
+    everfit: Path,
+    target: Path,
+    scope: List[str],
+    shared_count: int,
+    diff_count: int,
+    results: List[Dict],
+) -> str:
+    clean_count = sum(1 for r in results if r["clean"])
+    manual_count = len(results) - clean_count
+    lines: List[str] = []
+    lines.append(f"# Sync Check Report — everfit-api → {target.name}")
+    lines.append("")
+    lines.append(f"- Source: `{everfit}`")
+    lines.append(f"- Target: `{target}`")
+    lines.append(f"- Scope: {scope or 'all'}")
+    lines.append(f"- Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append("")
+    lines.append(
+        f"**Shared files:** {shared_count}  |  **Differing:** {diff_count}  |  "
+        f"**Candidate commits:** {len(results)} (after dropping merges, already-applied, patch-id duplicates)"
+    )
+    lines.append("")
+    lines.append(f"- Clean (should cherry-pick without conflict): **{clean_count}**")
+    lines.append(f"- Manual check (needs adaptation): **{manual_count}**")
+    lines.append("")
+    lines.append("## Commits to consider (newest first)")
+    lines.append("")
+    lines.append("| Commit | Date | Author | Message | Note |")
+    lines.append("|---|---|---|---|---|")
+    for r in results:
+        short = r["sha"][:10]
+        msg = r["subject"].replace("|", "\\|")
+        note = r["note"].replace("|", "\\|")
+        lines.append(f"| `{short}` | {r['date']} | {r['author']} | {msg} | {note} |")
+    lines.append("")
+    lines.append("## Per-commit detail")
+    lines.append("")
+    for r in results:
+        lines.append(f"### `{r['sha'][:10]}` — {r['subject']}")
+        lines.append(f"- Author: {r['author']}, Date: {r['date']}")
+        lines.append(f"- Note: {r['note']}")
+        lines.append("- Files in target also touched by this commit:")
+        for f in r["files_touched_in_target"]:
+            lines.append(f"  - `{f}`")
+        lines.append(f"- Cherry-pick: `cd {target} && git cherry-pick {r['sha']}`")
+        lines.append("")
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: List[str]) -> int:
+    ap = argparse.ArgumentParser(description="Find everfit-api commits to cherry-pick into a fork.")
+    ap.add_argument("--everfit", default="/Users/tuannguyen/Source/everfit-api")
+    ap.add_argument("--target", default="/Users/tuannguyen/Source/metric-service")
+    ap.add_argument("--scope", action="append", default=[],
+                    help="Limit comparison to a subdir (repeatable).")
+    ap.add_argument("--report", default=None,
+                    help="Write Markdown report to this path. Default: plans/reports/... if exists, else stdout.")
+    args = ap.parse_args(argv)
+
+    everfit = Path(args.everfit).resolve()
+    target = Path(args.target).resolve()
+    if not (everfit / ".git").exists():
+        sys.stderr.write(f"Not a git repo: {everfit}\n")
+        return 2
+    if not (target / ".git").exists():
+        sys.stderr.write(f"Not a git repo: {target}\n")
+        return 2
+
+    scope = args.scope or None
+    sys.stderr.write(f"Scanning shared files between {everfit} and {target}...\n")
+    everfit_files = list_tracked_files(everfit, scope)
+    target_files = list_tracked_files(target, scope)
+    shared = sorted(everfit_files & target_files)
+    sys.stderr.write(
+        f"  everfit: {len(everfit_files)} files | target: {len(target_files)} files | shared: {len(shared)}\n"
+    )
+
+    differs: List[str] = []
+    for rel in shared:
+        e_path = everfit / rel
+        t_path = target / rel
+        if e_path.is_file() and t_path.is_file():
+            if sha256_file(e_path) != sha256_file(t_path):
+                differs.append(rel)
+    sys.stderr.write(f"  differing: {len(differs)} files\n")
+
+    candidate_commits: Dict[str, Set[str]] = {}
+    for i, rel in enumerate(differs, 1):
+        if i % 25 == 0 or i == len(differs):
+            sys.stderr.write(f"  blame {i}/{len(differs)}: {rel}\n")
+        line_nums = changed_source_lines(everfit, target, rel)
+        if not line_nums:
+            continue
+        for sha in blame_commits(everfit, rel, line_nums):
+            candidate_commits.setdefault(sha, set()).add(rel)
+
+    sys.stderr.write(f"  blame candidates: {len(candidate_commits)} commits\n")
+
+    seen_pids: Dict[str, str] = {}
+    results: List[Dict] = []
+    skipped_merge = 0
+    skipped_already = 0
+    skipped_dup = 0
+
+    for sha, touched_files in candidate_commits.items():
+        if is_merge_commit(everfit, sha):
+            skipped_merge += 1
+            continue
+        if commit_in_target_history(target, sha):
+            skipped_already += 1
+            continue
+        pid = patch_id(everfit, sha)
+        if pid and pid in seen_pids:
+            skipped_dup += 1
+            continue
+        if pid:
+            seen_pids[pid] = sha
+
+        info = commit_info(everfit, sha)
+        cfiles = commit_files(everfit, sha)
+        allowed = cfiles & set(target_files)
+        if not allowed:
+            note, clean = "manual check — commit touches no files present in target", False
+        else:
+            patch = filtered_patch(everfit, sha, allowed)
+            clean, err = applies_clean(target, patch)
+            note = "clean" if clean else f"manual check — {err}"
+        results.append({
+            **info,
+            "files_touched_in_target": sorted(touched_files),
+            "clean": clean,
+            "note": note,
+        })
+
+    sys.stderr.write(
+        f"  filtered: -{skipped_merge} merge, -{skipped_already} already in target, "
+        f"-{skipped_dup} patch-id duplicate → {len(results)} candidates\n"
+    )
+
+    results.sort(key=lambda r: r["date"], reverse=True)
+
+    report = render_report(everfit, target, args.scope, len(shared), len(differs), results)
+
+    if args.report:
+        report_path = Path(args.report)
+    else:
+        report_path = default_report_path(Path.cwd(), target.name)
+    if report_path:
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(report)
+        sys.stderr.write(f"Report written to {report_path}\n")
+    else:
+        sys.stdout.write(report)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
