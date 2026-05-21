@@ -4,7 +4,7 @@ description: "Compare files between a fork repo (e.g. metric-service, file-servi
 argument-hint: "[--target=<path>] [--everfit=<path>] [--everfit-ref=<branch>] [--scope=<dir>] [--since=<date>] [--no-dir-scan] [--report=<path>]"
 metadata:
   author: rk
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Sync From Everfit

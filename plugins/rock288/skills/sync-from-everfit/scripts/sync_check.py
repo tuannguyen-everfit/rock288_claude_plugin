@@ -231,15 +231,22 @@ def commit_in_target_history(repo: Path, sha: str) -> bool:
 
 def commit_info(repo: Path, sha: str) -> Dict[str, str]:
     code, out, _ = git(
-        ["log", "-1", "--format=%H%x1f%an%x1f%ad%x1f%s", "--date=short", sha],
+        ["log", "-1", "--format=%H%x1f%an%x1f%ad%x1f%s%x1f%b", "--date=short", sha],
         repo,
     )
     if code != 0:
-        return {"sha": sha, "author": "?", "date": "?", "subject": "?"}
-    parts = out.decode(errors="replace").rstrip("\n").split("\x1f")
+        return {"sha": sha, "author": "?", "date": "?", "subject": "?", "body": ""}
+    parts = out.decode(errors="replace").rstrip("\n").split("\x1f", 4)
     if len(parts) < 4:
-        return {"sha": sha, "author": "?", "date": "?", "subject": "?"}
-    return {"sha": parts[0], "author": parts[1], "date": parts[2], "subject": parts[3]}
+        return {"sha": sha, "author": "?", "date": "?", "subject": "?", "body": ""}
+    body = parts[4].strip() if len(parts) > 4 else ""
+    return {
+        "sha": parts[0],
+        "author": parts[1],
+        "date": parts[2],
+        "subject": parts[3],
+        "body": body,
+    }
 
 
 def commit_files(repo: Path, sha: str) -> Set[str]:
@@ -335,6 +342,13 @@ def render_report(
         lines.append(f"### `{r['sha'][:10]}` — {r['subject']}")
         lines.append(f"- Author: {r['author']}, Date: {r['date']}, Source: {r.get('source', 'blame')}")
         lines.append(f"- Note: {r['note']}")
+        body = r.get("body", "").strip()
+        if body:
+            lines.append("- Message body:")
+            lines.append("  ```")
+            for body_line in body.splitlines():
+                lines.append(f"  {body_line}")
+            lines.append("  ```")
         lines.append("- Files in target also touched by this commit:")
         for f in r["files_touched_in_target"]:
             lines.append(f"  - `{f}`")
