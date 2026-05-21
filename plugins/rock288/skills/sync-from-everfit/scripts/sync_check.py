@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 """Find everfit-api commits that a fork repo (e.g. metric-service) hasn't picked up yet.
 
-Algorithm in one paragraph: walk shared paths, skip files with identical SHA-256, diff
-the rest, blame the lines that appear in everfit-api but not in the fork, dedupe the
-resulting commits by patch-id, drop merge commits and commits already in the fork's
-history, then run `git apply --check` per remaining commit to label it `clean` or
-`manual check`. Output is a Markdown table sorted newest-first.
+Two-channel discovery:
+
+  A. Blame channel — diff shared files, blame lines that appear in everfit-api but
+     not in the fork. Precise but blind to commits that only add new files, and
+     hides older commits when a newer commit re-touched the same line.
+
+  B. Dir-scan channel — enumerate non-merge commits in everfit-api within --since
+     that touched any directory present in the target work-tree. Catches new-file
+     features and blame-shadowed commits.
+
+Candidates from both channels feed the same filter pipeline: drop merges, drop
+commits already in target HEAD, dedupe by `git patch-id`, then run `git apply
+--check` per remaining commit to label it `clean` or `manual check`. Output is a
+Markdown table sorted newest-first.
 """
 
 import argparse
@@ -156,6 +165,51 @@ def blame_commits(repo: Path, relpath: str, line_numbers: List[int], ref: str = 
     return shas
 
 
+def discover_commits_touching_dirs(
+    repo: Path,
+    ref: str,
+    dirs: List[str],
+    since: str,
+) -> Set[str]:
+    """Non-merge commits in `repo@ref` since `since` that touched any of `dirs`.
+
+    Channel B: catches feature commits whose changes live mostly in NEW files
+    under a shared module (invisible to blame on shared files) and old commits
+    hidden by blame's last-touch-only behavior.
+
+    Args are batched to keep the command line under ARG_MAX on large repos.
+    """
+    if not dirs:
+        return set()
+    shas: Set[str] = set()
+    batch_size = 400
+    for start in range(0, len(dirs), batch_size):
+        batch = dirs[start:start + batch_size]
+        args = [
+            "log", "--no-merges", f"--since={since}",
+            "--pretty=%H", ref, "--", *batch,
+        ]
+        code, out, _ = git(args, repo)
+        if code != 0:
+            continue
+        for line in out.decode(errors="replace").splitlines():
+            sha = line.strip()
+            if len(sha) == 40 and all(c in "0123456789abcdef" for c in sha):
+                shas.add(sha)
+    return shas
+
+
+def shared_dirs_from_files(shared_files: List[str]) -> List[str]:
+    """Every directory (and every ancestor directory) that contains a shared file."""
+    dirs: Set[str] = set()
+    for rel in shared_files:
+        d = os.path.dirname(rel)
+        while d:
+            dirs.add(d)
+            d = os.path.dirname(d)
+    return sorted(dirs)
+
+
 def is_merge_commit(repo: Path, sha: str) -> bool:
     code, out, _ = git(["log", "-1", "--format=%P", sha], repo)
     if code != 0:
@@ -264,19 +318,22 @@ def render_report(
     lines.append("")
     lines.append("## Commits to consider (newest first)")
     lines.append("")
-    lines.append("| Commit | Date | Author | Message | Note |")
-    lines.append("|---|---|---|---|---|")
+    lines.append("Source legend: `blame` = found via line-blame; `dir` = found via directory scan (new files / blame-shadowed); `blame+dir` = both.")
+    lines.append("")
+    lines.append("| Commit | Date | Author | Source | Message | Note |")
+    lines.append("|---|---|---|---|---|---|")
     for r in results:
         short = r["sha"][:10]
         msg = r["subject"].replace("|", "\\|")
         note = r["note"].replace("|", "\\|")
-        lines.append(f"| `{short}` | {r['date']} | {r['author']} | {msg} | {note} |")
+        src = r.get("source", "blame")
+        lines.append(f"| `{short}` | {r['date']} | {r['author']} | {src} | {msg} | {note} |")
     lines.append("")
     lines.append("## Per-commit detail")
     lines.append("")
     for r in results:
         lines.append(f"### `{r['sha'][:10]}` — {r['subject']}")
-        lines.append(f"- Author: {r['author']}, Date: {r['date']}")
+        lines.append(f"- Author: {r['author']}, Date: {r['date']}, Source: {r.get('source', 'blame')}")
         lines.append(f"- Note: {r['note']}")
         lines.append("- Files in target also touched by this commit:")
         for f in r["files_touched_in_target"]:
@@ -295,6 +352,11 @@ def main(argv: List[str]) -> int:
                          "Default: HEAD. Target side always uses the checked-out work tree.")
     ap.add_argument("--scope", action="append", default=[],
                     help="Limit comparison to a subdir (repeatable).")
+    ap.add_argument("--since", default="1 year ago",
+                    help="Time bound for the directory-scan channel (passed to git log --since). "
+                         "Default: '1 year ago'. Set to '10 years ago' for a full sweep.")
+    ap.add_argument("--no-dir-scan", action="store_true",
+                    help="Disable directory-scan channel. Falls back to blame-only (v1.1 behavior).")
     ap.add_argument("--report", default=None,
                     help="Write Markdown report to this path. Default: plans/reports/... if exists, else stdout.")
     args = ap.parse_args(argv)
@@ -335,7 +397,9 @@ def main(argv: List[str]) -> int:
             differs.append((rel, e_content))
     sys.stderr.write(f"  differing: {len(differs)} files\n")
 
+    # Channel A — blame on shared files.
     candidate_commits: Dict[str, Set[str]] = {}
+    blame_sources: Set[str] = set()
     for i, (rel, e_content) in enumerate(differs, 1):
         if i % 25 == 0 or i == len(differs):
             sys.stderr.write(f"  blame {i}/{len(differs)}: {rel}\n")
@@ -344,8 +408,24 @@ def main(argv: List[str]) -> int:
             continue
         for sha in blame_commits(everfit, rel, line_nums, everfit_ref):
             candidate_commits.setdefault(sha, set()).add(rel)
-
+            blame_sources.add(sha)
     sys.stderr.write(f"  blame candidates: {len(candidate_commits)} commits\n")
+
+    # Channel B — directory scan. Catches new-file commits and blame-shadowed commits.
+    shared_dirs: List[str] = shared_dirs_from_files(shared) if not args.no_dir_scan else []
+    dir_sources: Set[str] = set()
+    if not args.no_dir_scan:
+        sys.stderr.write(
+            f"  dir-scan: {len(shared_dirs)} shared dirs, since='{args.since}'...\n"
+        )
+        extra = discover_commits_touching_dirs(everfit, everfit_ref, shared_dirs, args.since)
+        new_from_dir = extra - set(candidate_commits)
+        for sha in extra:
+            candidate_commits.setdefault(sha, set())
+            dir_sources.add(sha)
+        sys.stderr.write(
+            f"  dir-scan candidates: {len(extra)} (new: {len(new_from_dir)})\n"
+        )
 
     seen_pids: Dict[str, str] = {}
     results: List[Dict] = []
@@ -371,16 +451,36 @@ def main(argv: List[str]) -> int:
         cfiles = commit_files(everfit, sha)
         allowed = cfiles & set(target_files)
         if not allowed:
-            note, clean = "manual check — commit touches no files present in target", False
+            # Commit only touches files that don't exist in target — likely all-new
+            # files under a shared directory (channel B catches these). Surface as
+            # manual check so the user can decide whether to port the new files.
+            new_under_shared = sorted(
+                f for f in cfiles
+                if any(f.startswith(d + "/") for d in shared_dirs)
+            )
+            if new_under_shared:
+                note = f"manual check — introduces new files under shared dirs ({len(new_under_shared)})"
+            else:
+                note = "manual check — commit touches no files present in target"
+            clean = False
         else:
             patch = filtered_patch(everfit, sha, allowed)
             clean, err = applies_clean(target, patch)
             note = "clean" if clean else f"manual check — {err}"
+
+        if sha in blame_sources and sha in dir_sources:
+            source = "blame+dir"
+        elif sha in blame_sources:
+            source = "blame"
+        else:
+            source = "dir"
+
         results.append({
             **info,
-            "files_touched_in_target": sorted(touched_files),
+            "files_touched_in_target": sorted(touched_files or allowed),
             "clean": clean,
             "note": note,
+            "source": source,
         })
 
     sys.stderr.write(
