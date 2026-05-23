@@ -92,3 +92,17 @@ SemVer:
 - major (`X.0.0`) — breaking change (skill renamed, config schema changed)
 
 **Why:** Claude Code keys the installed plugin cache by version (`~/.claude/plugins/cache/rk-kit/rk/<version>/`). If `version` doesn't change, `/plugin update` won't re-sync files — users keep running the stale snapshot even after `marketplace update` pulls new commits. Bump in the same commit as the content change, not a separate one.
+
+### Refresh installed plugin after pushing
+
+Run these AFTER `git push origin main` lands the bumped version. One-liner — restart Claude Code afterward to load the new content:
+
+```bash
+claude plugin marketplace update rk-kit 2>&1 | tail -20 \
+  && echo "---then update plugin---" \
+  && claude plugin update rk@rk-kit 2>&1 | tail -20
+```
+
+Expected output: `✔ Successfully updated marketplace: rk-kit` then `✔ Plugin "rk" updated from <old> to <new> for scope user. Restart to apply changes.`
+
+If the second step says "already up to date" but the source bumped, the version field in `plugin.json` and/or `marketplace.json` wasn't actually changed in the pushed commit — fix and force the cycle again.

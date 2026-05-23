@@ -1,6 +1,6 @@
 ---
-name: ck:pr-comment
-description: "Post selected findings from /ck:code-review as inline PR review comments anchored to exact file:line locations. Use AFTER a code review when the user wants the Important (or chosen) items pushed to GitHub as inline comments. Triggers on: comment to pr, post review inline, push findings to pr, drop comments on pr."
+name: rk:pr-comment
+description: "Post selected findings from /rk:code-review as inline PR review comments anchored to exact file:line locations. Use AFTER a code review when the user wants the Important (or chosen) items pushed to GitHub as inline comments. Triggers on: comment to pr, post review inline, push findings to pr, drop comments on pr."
 argument-hint: "[#PR | PR-URL] [--severity=important,critical,niceto]"
 metadata:
   author: claudekit
@@ -13,7 +13,7 @@ Convert review findings into GitHub inline PR review comments anchored to the ex
 
 ## When to use
 
-- Right after `/ck:code-review` finished and findings are in the conversation context.
+- Right after `/rk:code-review` finished and findings are in the conversation context.
 - User says: *"comment the Important items into the PR"*, *"post the review inline"*, *"drop comments on PR #N"*, Vietnamese variants (*"comment code cho pr"*, *"đẩy review vào PR"*).
 - **NOT for:** top-level PR summary comments (use `gh pr comment`), code edits, or creating GitHub issues.
 
@@ -27,7 +27,7 @@ Convert review findings into GitHub inline PR review comments anchored to the ex
 
 ## Findings shape
 
-Each finding from `/ck:code-review` must surface, before this skill runs:
+Each finding from `/rk:code-review` must surface, before this skill runs:
 
 ```
 ID:         I1
@@ -38,7 +38,7 @@ Title:      Duplicated godoc on Status type
 Body:       <markdown comment body, including code blocks>
 ```
 
-If findings are NOT yet in context, STOP and ask the user to run `/ck:code-review` first, or to paste findings in the format above.
+If findings are NOT yet in context, STOP and ask the user to run `/rk:code-review` first, or to paste findings in the format above.
 
 ## Workflow
 
@@ -122,7 +122,7 @@ Delete the temp payload (`rm /tmp/pr-$PR_NUMBER-review.json`) unless the request
 
 The body that lands on the PR must look like a real human teammate wrote it. Reviewers reading the PR shouldn't be able to tell it came from a tool. **Hard rules:**
 
-- ❌ **Never mention skill, agent, command, or tool names.** No `/ck:code-review`, `/rk:`, `claude`, `code-reviewer`, `subagent`, etc.
+- ❌ **Never mention skill, agent, command, or tool names.** No `/rk:code-review`, `/rk:`, `claude`, `code-reviewer`, `subagent`, etc.
 - ❌ **No internal finding IDs.** No `I1`, `C2`, `N3`, `Finding 4`, "from the review", "per the audit", etc.
 - ❌ **No severity prefixes.** Don't lead with `**Important**`, `**Critical** —`, etc. The reviewer's tone conveys severity.
 - ❌ **No "the review surfaced…", "I noticed during review…", "automated check found…"** framing.
@@ -144,7 +144,7 @@ The body that lands on the PR must look like a real human teammate wrote it. Rev
 **Bad (skill-leak + ID + severity prefix):**
 > **I1 — Duplicated godoc on Status** (Important)
 >
-> Per `/ck:code-review`: this 3-line block is duplicated. Fix.
+> Per `/rk:code-review`: this 3-line block is duplicated. Fix.
 
 **Good:**
 > This doc comment is duplicated — the same three lines appear at 43–45 and 46–48. Drop one block.
@@ -152,7 +152,7 @@ The body that lands on the PR must look like a real human teammate wrote it. Rev
 **Bad:**
 > **I3 — Violates `.claude/rules/mongo.md` §6 STOP rule.** (Important — from automated review)
 >
-> The /ck:code-review skill flagged this delete() workaround.
+> The /rk:code-review skill flagged this delete() workaround.
 
 **Good:**
 > `omitempty` is already on `_id` and `created_at` (`service.go:87, :109`) — the `delete()` calls are only needed because `buildSeeds()` assigns a non-zero `ID: seedID` and `CreatedAt: now`. Cleaner: keep `seedID` as a local for the filter, leave `ch.ID` zero, drop `CreatedAt` from the struct literal. `$setOnInsert` already owns it. `.claude/rules/mongo.md` §6 has the rationale.
@@ -207,7 +207,7 @@ If any line of the planned post matches an existing comment's `path:line` AND th
 ## Example end-to-end
 
 ```
-User:  /ck:code-review #12
+User:  /rk:code-review #12
        ... review surfaces C1/C2/C3 (Critical), I1–I6 (Important), N1–N7 (Nice).
 User:  comment the Important ones to the PR
 Claude:
@@ -221,7 +221,7 @@ Claude:
 
 ## STOP rules
 
-- ✗ No findings in context AND user didn't paste any → don't invent — tell them to run `/ck:code-review` first.
+- ✗ No findings in context AND user didn't paste any → don't invent — tell them to run `/rk:code-review` first.
 - ✗ Don't post Critical-tier findings inline unless the user explicitly opts in (see policy table).
 - ✗ Don't loop `POST /comments` — always batch via `POST /reviews`.
 - ✗ Don't use `gh pr review --comment` for inline anchoring — its `--body` is a single PR-level comment, no `path/line`. Use `gh api` with the JSON payload.
