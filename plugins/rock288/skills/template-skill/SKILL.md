@@ -2,7 +2,7 @@
 name: ck:template-skill
 description: Replace with description of the skill and when Claude should use it.
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

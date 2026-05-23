@@ -3,7 +3,7 @@ name: ck:fix
 description: "ALWAYS activate this skill before fixing ANY bug, error, test failure, CI/CD issue, type error, lint, log error, UI issue, code problem."
 argument-hint: "[issue] --auto|--review|--quick|--parallel"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.0.0"
 ---
 

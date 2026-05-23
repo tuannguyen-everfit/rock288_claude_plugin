@@ -5,7 +5,7 @@ description: >-
   Use when asking about context percentage, rate limits, usage warnings, context optimization, agent architectures, memory systems.
 argument-hint: "[topic or question]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

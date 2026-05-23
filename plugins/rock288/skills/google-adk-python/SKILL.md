@@ -4,7 +4,7 @@ description: "Build AI agents with Google ADK Python. Multi-agent systems, A2A p
 license: Apache-2.0
 argument-hint: "[agent or feature]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.0.0"
 ---
 

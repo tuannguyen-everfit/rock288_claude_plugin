@@ -4,7 +4,7 @@ description: Build and deploy documentation sites with Mintlify. Use when creati
 license: MIT
 argument-hint: "[task] [path]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.0.0"
 ---
 

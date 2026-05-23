@@ -4,7 +4,7 @@ description: Build MCP servers for LLM-external service integration. Use for Fas
 license: Complete terms in LICENSE.txt
 argument-hint: "[service or API to integrate]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

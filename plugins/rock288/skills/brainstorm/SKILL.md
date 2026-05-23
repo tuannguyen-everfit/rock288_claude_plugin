@@ -4,7 +4,7 @@ description: "Brainstorm solutions with trade-off analysis and brutal honesty. U
 license: MIT
 argument-hint: "[topic or problem]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.0.0"
 ---
 

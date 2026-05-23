@@ -4,7 +4,7 @@ description: Deploy projects to any platform with auto-detection. Use when user 
 license: MIT
 argument-hint: "[platform] [environment]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

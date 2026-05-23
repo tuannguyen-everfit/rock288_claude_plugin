@@ -4,7 +4,7 @@ description: "Debug systematically with root cause analysis before fixes. Use fo
 languages: all
 argument-hint: "[error or issue description]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "4.0.0"
 ---
 

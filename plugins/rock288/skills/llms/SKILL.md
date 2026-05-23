@@ -3,7 +3,7 @@ name: ck:llms
 description: "Generate llms.txt files from docs or codebase scanning. Follows llmstxt.org spec. Use for LLM-friendly site indexes, documentation summaries, AI context optimization."
 argument-hint: "[path|url] [--full] [--output path]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

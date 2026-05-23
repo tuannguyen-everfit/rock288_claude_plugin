@@ -4,7 +4,7 @@ description: Create or update Claude skills with eval-driven iteration. Use for 
 license: Complete terms in LICENSE.txt
 argument-hint: "[skill-name or description]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "4.0.0"
 ---
 

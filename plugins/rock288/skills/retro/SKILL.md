@@ -4,7 +4,7 @@ description: "Data-driven sprint retrospective. Gathers git metrics (commits, LO
 license: MIT
 argument-hint: "[timeframe] [--compare] [--team] [--format html|md]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

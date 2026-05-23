@@ -4,7 +4,7 @@ description: Build mobile apps with React Native, Flutter, Swift/SwiftUI, Kotlin
 license: MIT
 argument-hint: "[platform] [feature]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

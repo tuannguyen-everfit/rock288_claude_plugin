@@ -4,7 +4,7 @@ description: "Build 3D web apps with Three.js (WebGL/WebGPU). 556 searchable exa
 license: MIT
 argument-hint: "[3D scene or feature]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "3.0.0"
 ---
 

@@ -4,7 +4,7 @@ description: "Research technical solutions, analyze architectures, gather requir
 license: MIT
 argument-hint: "[topic]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

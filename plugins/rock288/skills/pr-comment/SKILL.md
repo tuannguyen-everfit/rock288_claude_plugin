@@ -3,7 +3,7 @@ name: rk:pr-comment
 description: "Post selected findings from /rk:code-review as inline PR review comments anchored to exact file:line locations. Use AFTER a code review when the user wants the Important (or chosen) items pushed to GitHub as inline comments. Triggers on: comment to pr, post review inline, push findings to pr, drop comments on pr."
 argument-hint: "[#PR | PR-URL] [--severity=important,critical,niceto]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

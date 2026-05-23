@@ -9,7 +9,7 @@ allowed-tools:
   - Edit
 argument-hint: "[design prompt or action]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

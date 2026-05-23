@@ -3,7 +3,7 @@ name: ck:preview
 description: "View files/directories OR generate visual explanations, slides, diagrams (Markdown or self-contained HTML)."
 argument-hint: "[path] OR [--html] --explain|--slides|--diagram|--ascii [topic] OR --html --diff|--plan-review|--recap"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.1.0"
 ---
 

@@ -4,7 +4,7 @@ description: "Plan implementations, design architectures, create technical roadm
 argument-hint: "[task] OR [archive|red-team|validate]"
 license: MIT
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

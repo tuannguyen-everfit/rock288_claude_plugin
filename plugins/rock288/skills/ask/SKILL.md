@@ -3,7 +3,7 @@ name: ck:ask
 description: "Answer technical and architectural questions with expert consultation."
 argument-hint: "[technical-question]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

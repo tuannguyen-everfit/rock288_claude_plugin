@@ -4,7 +4,7 @@ description: Add authentication with Better Auth (TypeScript). Use for email/pas
 license: MIT
 argument-hint: "[auth-method or feature]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.0.0"
 ---
 

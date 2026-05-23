@@ -4,7 +4,7 @@ description: Apply step-by-step analysis for complex problems with revision capa
 license: MIT
 argument-hint: "[problem to analyze step-by-step]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

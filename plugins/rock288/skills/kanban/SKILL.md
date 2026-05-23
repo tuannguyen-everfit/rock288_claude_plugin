@@ -3,7 +3,7 @@ name: ck:kanban
 description: "AI agent orchestration board for task visualization and team coordination."
 argument-hint: "[dir]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

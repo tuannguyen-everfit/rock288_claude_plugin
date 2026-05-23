@@ -3,7 +3,7 @@ name: ck:team
 description: "Orchestrate Agent Teams for parallel multi-session collaboration. Use for research, implementation, review, and debug workflows requiring independent teammates."
 argument-hint: "<template> <context> [--devs|--researchers|--reviewers N] [--delegate]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "3.0.0"
 ---
 

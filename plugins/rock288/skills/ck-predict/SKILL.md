@@ -3,7 +3,7 @@ name: ck:predict
 description: "5 expert personas debate proposed changes before implementation. Catches architectural, security, performance, and UX issues early. Use before major features or risky changes."
 argument-hint: "<feature description or change proposal> [--files <glob>]"
 metadata:
-  author: claudekit
+  author: rock288
   attribution: "Multi-persona prediction pattern adapted from autoresearch by Udit Goenka (MIT)"
   license: MIT
   version: "1.0.0"

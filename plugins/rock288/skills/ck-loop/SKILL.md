@@ -3,7 +3,7 @@ name: ck:loop
 description: "Autonomous iterative optimization loop — run N iterations against a mechanical metric, learn from git history, auto-keep/discard changes. Use for improving measurable metrics (coverage, performance, bundle size, etc.) through repeated experimentation."
 argument-hint: "[Goal/Metric description] or inline config block"
 metadata:
-  author: claudekit
+  author: rock288
   attribution: "Core patterns adapted from autoresearch by Udit Goenka (MIT)"
   license: MIT
   version: "1.0.0"

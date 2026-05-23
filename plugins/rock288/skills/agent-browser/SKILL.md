@@ -4,7 +4,7 @@ description: AI-optimized browser automation CLI with context-efficient snapshot
 license: Apache-2.0
 argument-hint: "[url or task]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

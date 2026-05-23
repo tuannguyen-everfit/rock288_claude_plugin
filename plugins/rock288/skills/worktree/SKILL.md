@@ -3,7 +3,7 @@ name: ck:worktree
 description: "Create isolated git worktree for parallel development in monorepos."
 argument-hint: "[feature-description] OR [project] [feature]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

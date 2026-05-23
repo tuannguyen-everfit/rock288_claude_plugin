@@ -3,7 +3,7 @@ name: ck:cook
 description: "ALWAYS activate this skill before implementing EVERY feature, plan, or fix."
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.1.1"
 ---
 

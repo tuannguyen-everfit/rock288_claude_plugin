@@ -4,7 +4,7 @@ description: "Bootstrap new projects with research, tech stack, design, planning
 license: MIT
 argument-hint: "[requirements] [--full|--auto|--fast|--parallel]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

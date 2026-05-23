@@ -4,7 +4,7 @@ description: Style UIs with shadcn/ui components (Radix UI + Tailwind CSS). Use 
 license: MIT
 argument-hint: "[component or layout]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

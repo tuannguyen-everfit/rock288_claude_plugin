@@ -3,7 +3,7 @@ name: ck:frontend-design
 description: Create polished frontend interfaces from designs/screenshots/videos. Use for web components, 3D experiences, replicating UI designs, quick prototypes, immersive interfaces, avoiding AI slop.
 license: Complete terms in LICENSE.txt
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

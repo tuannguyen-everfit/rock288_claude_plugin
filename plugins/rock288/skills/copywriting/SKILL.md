@@ -4,7 +4,7 @@ description: Conversion copywriting formulas, headline templates, email copy pat
 license: MIT
 argument-hint: "[copy-type] [context]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

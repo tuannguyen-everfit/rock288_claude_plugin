@@ -4,7 +4,7 @@ description: Build backends with Node.js, Python, Go (NestJS, FastAPI, Django). 
 license: MIT
 argument-hint: "[framework] [task]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

@@ -4,7 +4,7 @@ description: Build with Next.js (App Router, RSC, SSR, ISR), Turborepo monorepos
 license: MIT
 argument-hint: "[framework] [feature]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

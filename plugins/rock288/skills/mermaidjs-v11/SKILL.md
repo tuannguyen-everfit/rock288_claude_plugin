@@ -3,7 +3,7 @@ name: ck:mermaidjs-v11
 description: Create diagrams with Mermaid.js v11 syntax. Use for flowcharts, sequence diagrams, class diagrams, ER diagrams, Gantt charts, state diagrams, architecture diagrams, timelines, user journeys.
 argument-hint: "[diagram-type or description]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

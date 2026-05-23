@@ -3,7 +3,7 @@ name: ck:security-scan
 description: "Scan codebase for security vulnerabilities, hardcoded secrets, dependency issues, and OWASP patterns. Use when asked to 'security scan', 'check for secrets', 'audit security', or before major releases."
 argument-hint: "[scope] [--secrets-only] [--deps-only] [--full]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

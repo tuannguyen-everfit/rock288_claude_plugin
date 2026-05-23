@@ -4,7 +4,7 @@ description: Deploy to Cloudflare (Workers, R2, D1), Docker, GCP (Cloud Run, GKE
 license: MIT
 argument-hint: "[platform] [task]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.0.0"
 ---
 

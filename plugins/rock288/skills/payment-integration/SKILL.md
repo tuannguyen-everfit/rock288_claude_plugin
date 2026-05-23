@@ -4,7 +4,7 @@ description: Integrate payments with SePay (VietQR), Polar, Stripe, Paddle (MoR 
 license: MIT
 argument-hint: "[provider] [task]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.2.0"
 ---
 

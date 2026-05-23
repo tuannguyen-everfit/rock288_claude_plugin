@@ -4,7 +4,7 @@ description: Web testing with Playwright, Vitest, k6. E2E/unit/integration/load/
 license: Apache-2.0
 argument-hint: "[test-type] [target]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "3.0.0"
 ---
 

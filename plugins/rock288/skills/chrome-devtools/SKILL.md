@@ -4,7 +4,7 @@ description: Automate browsers with Puppeteer CLI scripts and persistent session
 license: Apache-2.0
 argument-hint: "[url or task]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.1.0"
 ---
 

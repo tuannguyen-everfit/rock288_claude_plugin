@@ -3,7 +3,7 @@ name: ck:docs
 description: "Analyze codebase and manage project documentation — init, update, summarize."
 argument-hint: "init|update|summarize"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

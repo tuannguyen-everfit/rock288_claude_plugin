@@ -4,7 +4,7 @@ description: "Ship pipeline: merge main, test, review, commit, push, PR. Single 
 argument-hint: "[official|beta] [--skip-tests] [--skip-review] [--skip-journal] [--skip-docs] [--dry-run]"
 license: MIT
 metadata:
-  author: claudekit
+  author: rock288
   version: "2.0.0"
 ---
 

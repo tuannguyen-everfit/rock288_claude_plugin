@@ -4,7 +4,7 @@ description: Design schemas, write queries for MongoDB and PostgreSQL. Use for d
 license: MIT
 argument-hint: "[query or schema task]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

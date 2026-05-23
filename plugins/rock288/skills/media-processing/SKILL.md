@@ -4,7 +4,7 @@ description: Process media with FFmpeg (video/audio), ImageMagick (images), RMBG
 license: MIT
 argument-hint: "[input-file] [operation]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

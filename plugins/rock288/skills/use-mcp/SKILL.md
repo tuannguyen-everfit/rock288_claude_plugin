@@ -3,7 +3,7 @@ name: ck:use-mcp
 description: "Utilize MCP server tools with intelligent discovery and execution."
 argument-hint: "[task]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 

@@ -3,7 +3,7 @@ name: ck:repomix
 description: Pack repositories into AI-friendly files with Repomix (XML, Markdown, plain text). Use for codebase snapshots, LLM context preparation, security audits, third-party library analysis.
 argument-hint: "[path] [--style xml|markdown|plain|json]"
 metadata:
-  author: claudekit
+  author: rock288
   version: "1.0.0"
 ---
 
