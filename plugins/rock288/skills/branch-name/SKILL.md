@@ -1,15 +1,15 @@
 ---
 name: rk:branch-name
-description: "Generate Everfit-style branch names from a Jira card link. Format: dev_<sprint>.<type>/<CARD-ID>-<slug>. Example: dev_s9_26.feat/UP-70961-auth. Triggers on: 'branch name', 'tạo branch', 'new branch from jira', 'generate branch'."
-argument-hint: "<jira-link-or-card-id> [--sprint=<sprint>] [--type=<feat|fix|...>] [--checkout]"
+description: "Generate Everfit-style branch from a Jira card link AND create it locally off the latest base branch (default: develop). Format: dev_<sprint>.<type>/<CARD-ID>-<slug>. Example: dev_s9_26.feat/UP-70961-auth. Triggers on: 'branch name', 'tạo branch', 'new branch from jira', 'generate branch'."
+argument-hint: "<jira-link-or-card-id> [--sprint=<sprint>] [--type=<feat|fix|...>] [--base=<branch>] [--no-checkout] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Branch Name Generator
 
-Produce a branch name in the team's house format from a Jira card link.
+Produce a branch name in the team's house format from a Jira card link, then **create and check it out** off the latest base branch. The default flow always touches the working tree — use `--dry-run` for name-only output.
 
 ## Output format
 
@@ -30,7 +30,9 @@ Examples:
 | `--sprint=<sprint>` | no | inferred / asked | Free-form sprint label (`s9_26`, `10-26`, `s11_26`). Preserve user's exact casing. |
 | `--type=<...>` | no | inferred from Jira issue type | `feat` \| `fix` \| `refactor` \| `perf` \| `chore` \| `docs` \| `test` |
 | `--slug=<short>` | no | derived from card title | 1–3 kebab-case words. Strip stopwords. |
-| `--checkout` | no | off | When set, also run `git checkout -b <branch>` after confirming. |
+| `--base=<branch>` | no | `develop` | Branch to fetch + branch off. Falls back to `main`/`master` if `develop` does not exist on the remote. |
+| `--no-checkout` | no | off | Skip the working-tree mutation; still prints the resolved name + planned commands. |
+| `--dry-run` | no | off | Alias for `--no-checkout`. Useful when piping the name into another tool. |
 
 ## Workflow
 
@@ -116,7 +118,31 @@ Validation rules:
 
 If validation fails, fix the slug (truncate or simplify) and warn.
 
-### 7. Output
+### 7. Pre-flight working-tree check
+
+Before mutating anything, inspect the repo state with `git status --porcelain` and `git rev-parse --abbrev-ref HEAD`:
+
+- **Dirty tree** (any output from `--porcelain`): print the dirty files and ask via `AskUserQuestion` whether to (a) `stash + checkout + pop`, (b) `commit first` (abort), or (c) `proceed anyway`. Default to **commit first** — don't silently stash someone's work.
+- **Detached HEAD**: refuse and report. The user must check out a real branch first.
+- **Not a git repo**: fall back to `--dry-run` behavior (print the name) and warn.
+
+### 8. Resolve base branch + fetch latest
+
+1. Base = `--base=<branch>` if given, else `develop`. If neither `origin/develop` nor a local `develop` exists, try `main`, then `master`. Warn when the fallback kicks in.
+2. `git fetch origin <base> --prune` — pull the latest tip without touching the working tree.
+3. Confirm `origin/<base>` exists after fetch. If not, abort with a clear error.
+
+### 9. Create + check out the branch
+
+Default behavior — always runs unless `--no-checkout` / `--dry-run` is set.
+
+1. **Pre-existence check.**
+   - `git rev-parse --verify <branch>` succeeds → local branch already exists. Ask the user: `switch to existing` (a) or `abort` (b). Never auto-delete.
+   - `git ls-remote --exit-code --heads origin <branch>` succeeds → remote branch exists. Surface this; default to switching to a local tracking branch (`git checkout -b <branch> origin/<branch>`).
+2. **Create.** `git checkout -b <branch> origin/<base>` — branches off the freshly fetched tip, leaving local `develop` untouched.
+3. **Verify.** `git rev-parse --abbrev-ref HEAD` must equal `<branch>`. Print success or surface the actual HEAD.
+
+### 10. Output
 
 Print the final branch name on its own line, then a summary block:
 
@@ -128,16 +154,14 @@ Source:
   - Sprint: s9_26 (from memory)
   - Type: feat (mapped from Story)
   - Slug: auth (truncated from "auth-refresh")
+
+Branch:
+  - Base: origin/develop @ a1b2c3d (fetched just now)
+  - Checked out: yes
+  - HEAD: dev_s9_26.feat/UP-70961-auth
 ```
 
-### 8. Optional: checkout
-
-If `--checkout` is set:
-
-1. Confirm with user (one-line yes/no via `AskUserQuestion` — `Create and switch to <branch>?`).
-2. Run `git fetch origin && git checkout -b <branch> origin/<base-branch>`.
-   - Default base branch: `develop` (matches PR 16944's base). User can override with `--base=<branch>`.
-3. If branch already exists locally, abort with a clear error message.
+With `--no-checkout` / `--dry-run`, omit the `Branch:` block and instead print the planned commands so the user can run them manually.
 
 ## Style rules
 
@@ -151,6 +175,13 @@ If `--checkout` is set:
 - **Card title is in Vietnamese** (e.g. `"Sửa lỗi đăng nhập"`): translate-by-skill to a 1-token English slug (`login-fix`) or ask the user for a slug if unsure. Don't transliterate diacritics.
 - **No Jira access + user can't recall title**: accept the card ID alone and use it as the slug (`dev_s9_26.feat/UP-70961`). The trailing `-<slug>` is optional per the format.
 - **Slug already contains the type word** (e.g. card title is `"Fix auth bug"` mapped to `fix`): drop the redundant `fix` from the slug.
+
+## Safety rules
+
+- **Never run `git reset --hard`, `git checkout -- .`, or `git clean -fd`.** If the tree is dirty, ask — don't delete.
+- **Never overwrite an existing branch.** No `git branch -f`, no `-B`.
+- **Never push.** This skill stops at local checkout. Pushing is `/rk:git`'s job.
+- **Never modify `develop` / `main` / `master`.** Fetch updates remote-tracking refs only; the local base branch is left alone.
 
 ## When NOT to use this skill
 
