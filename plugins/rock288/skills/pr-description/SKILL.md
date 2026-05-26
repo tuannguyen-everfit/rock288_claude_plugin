@@ -1,10 +1,10 @@
 ---
 name: rk:pr-description
-description: "Generate full PR descriptions from code changes + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed, Test plan, Rollout). Triggers on: 'pr description', 'tạo description PR', 'write PR body', 'generate PR description', 'commit description from jira'."
-argument-hint: "<jira-link-or-card-id> [--scope=<scope>] [--draft]"
+description: "Generate full PR descriptions in English (default) from code changes + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed, Test plan, Rollout). Pass --lang=vi for Vietnamese. Triggers on: 'pr description', 'tạo description PR', 'write PR body', 'generate PR description', 'commit description from jira'."
+argument-hint: "<jira-link-or-card-id> [--scope=<scope>] [--lang=en|vi] [--draft]"
 metadata:
   author: rock288
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # PR Description Generator
@@ -20,6 +20,7 @@ Produce a full PR description in the team's house style (see [`references/templa
 |---|---|---|---|
 | `<jira-link-or-card-id>` | yes | — | Full URL (`https://everfit.atlassian.net/browse/UP-71331`) or just the ID (`UP-71331`) |
 | `--scope=<scope>` | no | inferred from changed paths | Conventional-commit scope, e.g. `video-workout`, `assignment`, `payment` |
+| `--lang=<en\|vi>` | no | `en` | Output language for the PR body. `en` matches the team default (see §Language); `vi` for VN-only reviewer audiences. |
 | `--draft` | no | off | Skip the "you must run tests" gate — produce a draft body even if no test results are available |
 
 ## Workflow
@@ -92,6 +93,18 @@ If the Jira type is anything else, fall back to `chore` and warn.
 Write the rendered description to **stdout** (the conversation) — do **not** write it to a file unless the user passes `--save=<path>`.
 
 End the response with a one-line summary: which sections were filled vs deferred, and whether any field had to be guessed (mark with `⚠️`).
+
+## Language
+
+**Default: English.** PR titles and bodies are written in English regardless of the chat language. Matches PR 16944 and the recent commit history (`feat(challenge): UP-71209 Update response structure ...`).
+
+Override with `--lang=vi` when the PR audience is VN-only (e.g. internal QA / Ops-only changes). Even then:
+
+- Card ID, file paths, symbol names, error codes, commit-type prefix (`feat` / `fix` / …), and CLI commands stay in English / verbatim.
+- Section headings (`## Summary`, `## What changed`, `## Test plan`, `## Rollout`) stay in English so search / tooling that greps them keeps working.
+- Only the prose inside each section flips to Vietnamese.
+
+If the user passes the trigger in Vietnamese (`tạo description PR`) without `--lang`, the output is still English — the trigger language is not the body language. Mention this in the trailing summary if unsure.
 
 ## Style rules
 
