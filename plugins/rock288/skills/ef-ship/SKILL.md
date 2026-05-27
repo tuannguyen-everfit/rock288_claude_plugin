@@ -1,7 +1,7 @@
 ---
 name: rk:ef-ship
 description: "Commit + push the current Everfit feature branch and open a PR targeting develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>) to build the commit subject `<type>(<feature>): <CARD-ID> <slug>`, asks for the feature scope, pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description to fill the body. Triggers on: 'ship', 'commit and push', 'create PR', 'tạo PR', 'commit + PR', 'push and PR'."
-argument-hint: "[--feature=<scope>] [--draft] [--no-desc] [--yes] [--dry-run]"
+argument-hint: "[--feature=<scope>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--yes] [--dry-run]"
 metadata:
   author: rock288
   version: "1.0.0"
@@ -31,6 +31,8 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | `--feature=<scope>` | no | asked | One-word feature/module name (kebab-case). Inserted as `<feature>` in commit subject. |
 | `--draft` | no | off | Create the PR as draft. |
 | `--no-desc` | no | off | Skip the auto-chain to `rk:ef-pr-description`. PR body left empty. |
+| `--assignee=<user>` | no | `@me` | GitHub username to assign on the PR. Default assigns the current authenticated user. Pass a username to assign someone else. |
+| `--no-assign` | no | off | Skip assignment entirely. Wins over `--assignee`. |
 | `--yes` | no | off | Skip the final confirmation gate before commit + push. |
 | `--dry-run` | no | off | Print the planned commands without executing. |
 
@@ -91,7 +93,7 @@ About to:
   1. git add -A   (N files changed, see below)
   2. git commit -m "<subject>"
   3. git push -u origin <branch>
-  4. gh pr create --base develop --title "<subject>" [--draft]
+  4. gh pr create --base develop --title "<subject>" [--draft] [--assignee @me]
   5. invoke rk:ef-pr-description on the new PR
 
 Files staged:
@@ -141,9 +143,16 @@ gh pr view --json number,url,title,isDraft 2>/dev/null
     --base develop \
     --title "<commit-subject>" \
     --body "" \
-    [--draft]
+    [--draft] \
+    [--assignee <user>]
   ```
-  Capture the returned PR URL.
+  Default `<user>` is `@me` (the authenticated `gh` user). Pass `--no-assign` to omit the flag entirely. Capture the returned PR URL.
+
+If PR already existed and was found in step 8, still apply the assignee:
+```bash
+gh pr edit <pr-number> --add-assignee <user>
+```
+(Skip when `--no-assign`.)
 
 ### 9. Chain `rk:ef-pr-description` (default ON)
 
@@ -161,6 +170,7 @@ Commit:   feat(auth): UP-70961 auth-refresh
           (a1b2c3d)
 Pushed:   origin/dev_s9_26.feat/UP-70961-auth (upstream set)
 PR:       https://github.com/<org>/<repo>/pull/<n> [READY|DRAFT]
+Assignee: @me (tuannguyen-everfit)
 Body:     filled by rk:ef-pr-description ✓
 ```
 
