@@ -34,7 +34,7 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | `--assignee=<user>` | no | `@me` | GitHub username to assign on the PR. Default assigns the current authenticated user. Pass a username to assign someone else. |
 | `--no-assign` | no | off | Skip assignment entirely. Wins over `--assignee`. |
 | `--slack` | no | off | After PR is created, post `<group> <mentor1> [<mentor2> <mentor3>] <PR-URL>` to a Slack channel. Default is OFF to avoid accidental notifications. |
-| `--slack-channel=<name>` | no | from memory (default `#backend-review-code`) | Channel name or channel ID. For Everfit, default posting channel is `#backend-review-code`. |
+| `--slack-channel=<name>` | no | `C05F65TBB9P` (`#backend-review-code`) | Channel name or ID. Everfit default is the `#backend-review-code` channel (`C05F65TBB9P`) — hard-coded so no first-run lookup is needed. |
 | `--slack-group=<group>` | no | from memory (default `backend`) | Single group mention in Slack syntax (e.g. `<!subteam^S0123ABC>`). For Everfit, this is always the `@backend` user group. |
 | `--slack-mentors=<list>` | no | asked each ship | Comma-separated mentor mentions in Slack syntax (e.g. `<@U01>,<@U02>`). 1–3 mentions accepted. Variable per ship — skill always asks unless this flag is passed. |
 | `--yes` | no | off | Skip the final confirmation gate before commit + push. |
@@ -169,23 +169,23 @@ The downstream skill handles fetching Jira context, generating the body, and upd
 
 ### 10. Slack notification (opt-in via `--slack`)
 
-Only runs when `--slack` is passed. Context: Everfit Slack workspace; channel is `#backend-review-code`; group is always `@backend`; mentors vary 1–3 people per ship.
+Only runs when `--slack` is passed. Context: Everfit Slack workspace; channel is `#backend-review-code` (ID `C05F65TBB9P`); group is always `@backend`; mentors vary 1–3 people per ship.
 
-1. **Load config** from `memory/ef_ship_slack.md` (per-repo). Expected fields:
-   - `channel` — defaults to `#backend-review-code` (resolved to channel ID on first run)
+1. **Channel is hard-coded** to `C05F65TBB9P` (`#backend-review-code`). No memory lookup, no search — just use this ID directly. `--slack-channel=<other>` overrides for a single run.
+
+2. **Load other config** from `memory/ef_ship_slack.md` (per-repo). Expected fields:
    - `group` — single mention string for the backend user group, e.g. `<!subteam^S0123ABC|@backend>` (saved on first run)
    - `mentor_roster` — optional list of `name → <@U…>` pairs the team commonly tags. Used as quick-pick suggestions when asking each ship. Skill appends new picks to the roster automatically.
 
-   Flags `--slack-channel`/`--slack-group`/`--slack-mentors` override individual fields for this run only (don't overwrite memory).
+   Flags `--slack-group`/`--slack-mentors` override individual fields for this run only (don't overwrite memory).
 
-2. **First-run setup** for channel + group (only if memory file missing or those fields missing):
-   - Resolve channel: call `mcp__claude_ai_Slack__slack_search_channels` with query `backend-review-code`; pick the matching channel and store its ID. Ask user to confirm.
-   - Resolve the backend user group: call `mcp__claude_ai_Slack__slack_search_users` with query `backend` to surface the user group's ID; ask user to confirm. Store as `<!subteam^S…|@backend>` syntax so the rendered mention shows `@backend`.
-   - Save both to `memory/ef_ship_slack.md`.
+3. **First-run setup** for the backend group (only if missing from memory):
+   - Call `mcp__claude_ai_Slack__slack_search_users` with query `backend` to surface the user group's ID; ask user to confirm.
+   - Save as `<!subteam^S…|@backend>` syntax (rendered mention shows `@backend`) to `memory/ef_ship_slack.md`.
 
    **Important**: store mention strings verbatim — Slack only notifies on proper `<@U…>` / `<!subteam^S…>` syntax. Plain `@name` text won't ping anyone.
 
-3. **Resolve mentors (every ship)** — 1–3 mentions, never auto-prefilled to last-used.
+4. **Resolve mentors (every ship)** — 1–3 mentions, never auto-prefilled to last-used.
    - If `--slack-mentors=<list>` passed, parse the comma-separated list directly.
    - Otherwise ask the user via `AskUserQuestion`:
      - Show quick-pick options from `mentor_roster` (multi-select, max 3).
@@ -193,15 +193,15 @@ Only runs when `--slack` is passed. Context: Everfit Slack workspace; channel is
    - Validate: 1 ≤ count ≤ 3. Reject 0 (ship without a mentor doesn't make sense for this flow) and >3.
    - Append any newly-typed mentions to `mentor_roster` in memory for future quick-pick.
 
-4. **Build message** (minimal format):
+5. **Build message** (minimal format):
    ```
    <group> <mentor1> [<mentor2> <mentor3>] <PR-URL>
    ```
    Space-separated, single line. Slack unfurls the PR URL into a preview card showing the title.
 
-5. **Post** via `mcp__claude_ai_Slack__slack_send_message` with the resolved channel + message.
+6. **Post** via `mcp__claude_ai_Slack__slack_send_message` with the resolved channel + message.
 
-6. **Verify**: capture the returned timestamp (`ts`) and channel ID. If the send fails (channel not found, no permission), surface the error but **don't fail the whole ship** — the commit/push/PR already landed; Slack is a side-effect notification.
+7. **Verify**: capture the returned timestamp (`ts`) and channel ID. If the send fails (channel not found, no permission), surface the error but **don't fail the whole ship** — the commit/push/PR already landed; Slack is a side-effect notification.
 
 ### 11. Output
 
