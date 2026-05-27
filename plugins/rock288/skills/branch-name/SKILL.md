@@ -1,5 +1,5 @@
 ---
-name: rk:branch-name
+name: rk:ef-branch-name
 description: "Generate Everfit-style branch from a Jira card link AND create it locally off the latest base branch (default: develop). Format: dev_<sprint>.<type>/<CARD-ID>-<slug>. Example: dev_s9_26.feat/UP-70961-auth. Triggers on: 'branch name', 'tạo branch', 'new branch from jira', 'generate branch'."
 argument-hint: "<jira-link-or-card-id> [--sprint=<sprint>] [--type=<feat|fix|...>] [--base=<branch>] [--no-checkout] [--dry-run]"
 metadata:
@@ -139,8 +139,9 @@ Default behavior — always runs unless `--no-checkout` / `--dry-run` is set.
 1. **Pre-existence check.**
    - `git rev-parse --verify <branch>` succeeds → local branch already exists. Ask the user: `switch to existing` (a) or `abort` (b). Never auto-delete.
    - `git ls-remote --exit-code --heads origin <branch>` succeeds → remote branch exists. Surface this; default to switching to a local tracking branch (`git checkout -b <branch> origin/<branch>`).
-2. **Create.** `git checkout -b <branch> origin/<base>` — branches off the freshly fetched tip, leaving local `develop` untouched.
+2. **Create.** `git checkout -b <branch> --no-track origin/<base>` — branches off the freshly fetched tip, leaving local `develop` untouched. **`--no-track` is required**: without it the new branch tracks `origin/<base>` (e.g. `origin/develop`), which causes `git pull` to merge develop into the feature branch and `git push` to either fail or push into develop depending on `push.default`. With `--no-track`, the new branch has no upstream until the first `git push -u origin <branch>`, which sets tracking to `origin/<branch>` correctly.
 3. **Verify.** `git rev-parse --abbrev-ref HEAD` must equal `<branch>`. Print success or surface the actual HEAD.
+4. **First-push hint.** Print a one-liner reminder: `First push: git push -u origin <branch>` — so the user (or `rk:git`) sets tracking on the initial push.
 
 ### 10. Output
 
@@ -157,8 +158,9 @@ Source:
 
 Branch:
   - Base: origin/develop @ a1b2c3d (fetched just now)
-  - Checked out: yes
+  - Checked out: yes (--no-track, no upstream set)
   - HEAD: dev_s9_26.feat/UP-70961-auth
+  - First push: git push -u origin dev_s9_26.feat/UP-70961-auth
 ```
 
 With `--no-checkout` / `--dry-run`, omit the `Branch:` block and instead print the planned commands so the user can run them manually.
@@ -191,5 +193,5 @@ With `--no-checkout` / `--dry-run`, omit the `Branch:` block and instead print t
 
 ## Related
 
-- [[rk:pr-description]] — generates the PR body for this branch
+- [[rk:ef-pr-description]] — generates the PR body for this branch
 - [[rk:git]] — handles commit/push/PR flow after branching

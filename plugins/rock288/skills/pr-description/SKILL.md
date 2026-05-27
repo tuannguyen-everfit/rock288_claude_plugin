@@ -1,5 +1,5 @@
 ---
-name: rk:pr-description
+name: rk:ef-pr-description
 description: "Generate full PR descriptions in English (default) from code changes + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed, Test plan, Rollout). Pass --lang=vi for Vietnamese. Triggers on: 'pr description', 'tạo description PR', 'write PR body', 'generate PR description', 'commit description from jira'."
 argument-hint: "<jira-link-or-card-id> [--scope=<scope>] [--lang=en|vi] [--draft]"
 metadata:
@@ -35,7 +35,7 @@ Try, in order:
    - `issuetype` (Story / Task / Bug / Tech Debt / Spike)
    - `parent epic key` (optional)
 
-Save the resolved fields into local memory for the session so later skills (e.g. `rk:branch-name`) can reuse without re-fetching.
+Save the resolved fields into local memory for the session so later skills (e.g. `rk:ef-branch-name`) can reuse without re-fetching.
 
 ### 2. Gather code change context
 
@@ -122,5 +122,5 @@ If the user passes the trigger in Vietnamese (`tạo description PR`) without `-
 
 ## Related
 
-- [[rk:branch-name]] — generates the matching branch name from the same Jira card
+- [[rk:ef-branch-name]] — generates the matching branch name from the same Jira card
 - [[rk:git]] — handles the actual commit/push/PR creation flow
