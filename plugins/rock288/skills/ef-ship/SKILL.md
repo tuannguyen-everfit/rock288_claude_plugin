@@ -33,10 +33,10 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | `--no-desc` | no | off | Skip the auto-chain to `rk:ef-pr-description`. PR body left empty. |
 | `--assignee=<user>` | no | `@me` | GitHub username to assign on the PR. Default assigns the current authenticated user. Pass a username to assign someone else. |
 | `--no-assign` | no | off | Skip assignment entirely. Wins over `--assignee`. |
-| `--slack` | no | off | After PR is created, post `<group> <mentor1> [<mentor2> <mentor3>] <PR-URL>` to a Slack channel. Default is OFF to avoid accidental notifications. |
-| `--slack-channel=<name>` | no | `C05F65TBB9P` (`#backend-review-code`) | Channel name or ID. Everfit default is the `#backend-review-code` channel (`C05F65TBB9P`) — hard-coded so no first-run lookup is needed. |
-| `--slack-group=<group>` | no | from memory (default `backend`) | Single group mention in Slack syntax (e.g. `<!subteam^S0123ABC>`). For Everfit, this is always the `@backend` user group. |
-| `--slack-mentors=<list>` | no | asked each ship | Comma-separated mentor mentions in Slack syntax (e.g. `<@U01>,<@U02>`). 1–3 mentions accepted. Variable per ship — skill always asks unless this flag is passed. |
+| `--slack` | no | off | After PR is created, post `<group> <mentor1> [<mentor2> <mentor3>] <PR-URL>` to a Slack channel. Default is OFF to avoid accidental notifications. **Auto-enabled** if any of `--slack-mentors`/`--slack-channel`/`--slack-group` is passed — those flags imply the user wants to post. |
+| `--slack-channel=<name>` | no | `C05F65TBB9P` (`#backend-review-code`) | Channel name or ID. Everfit default is the `#backend-review-code` channel (`C05F65TBB9P`) — hard-coded so no first-run lookup is needed. Passing this implies `--slack`. |
+| `--slack-group=<group>` | no | from memory (default `backend`) | Single group mention in Slack syntax (e.g. `<!subteam^S0123ABC>`). For Everfit, this is always the `@backend` user group. Passing this implies `--slack`. |
+| `--slack-mentors=<list>` | no | asked each ship | Comma-separated mentor mentions in Slack syntax (e.g. `<@U01>,<@U02>`). 1–3 mentions accepted. Variable per ship — skill always asks unless this flag is passed. **Passing this implies `--slack`** — no need for the explicit `--slack` flag. |
 | `--yes` | no | off | Skip the final confirmation gate before commit + push. |
 | `--dry-run` | no | off | Print the planned commands without executing. |
 
@@ -167,9 +167,9 @@ Unless `--no-desc` is set, invoke [[rk:ef-pr-description]] with:
 
 The downstream skill handles fetching Jira context, generating the body, and updating the PR description. If the PR already has a non-empty body, the downstream skill is responsible for the update-vs-replace decision — this skill does not gate it.
 
-### 10. Slack notification (opt-in via `--slack`)
+### 10. Slack notification (opt-in via `--slack` or any `--slack-*` flag)
 
-Only runs when `--slack` is passed. Context: Everfit Slack workspace; channel is `#backend-review-code` (ID `C05F65TBB9P`); group is always `@backend`; mentors vary 1–3 people per ship.
+Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` / `--slack-mentors` is passed (the presence of any Slack-related flag implies the user wants to post). Context: Everfit Slack workspace; channel is `#backend-review-code` (ID `C05F65TBB9P`); group is always `@backend`; mentors vary 1–3 people per ship.
 
 1. **Channel is hard-coded** to `C05F65TBB9P` (`#backend-review-code`). No memory lookup, no search — just use this ID directly. `--slack-channel=<other>` overrides for a single run.
 
