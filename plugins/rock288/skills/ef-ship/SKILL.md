@@ -220,18 +220,21 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
    <PR-URL>
    ```
    - Mentions on line 1 (space-separated).
-   - PR URL alone on line 2 — this is the trigger Slack uses to **unfurl** the link into a preview card (title, author, body excerpt). Wrapping the URL in markdown `[label](url)` or putting other text on the same line **disables** unfurl.
+   - PR URL alone on line 2 — bare URL (no markdown `[text](url)` wrapping).
 
-   **Implementation**: pass the literal newline `\n` between the mentions and the URL in the `message` argument to `mcp__claude_ai_Slack__slack_send_message`. Do not use markdown link syntax for the URL.
+   **Implementation**: pass the literal newline `\n` between the mentions and the URL in the `message` argument to `mcp__claude_ai_Slack__slack_send_message`.
 
-   **Unfurl prerequisites** (one-time workspace setup, not the skill's responsibility):
-   - Slack workspace must have the GitHub app installed and connected.
-   - For private repos: the channel/user needs `/github subscribe <org>/<repo>` set up at least once, otherwise GitHub Slack will not unfurl the URL.
-   - If unfurl fails to render despite the format being correct, run `/github signin` in the workspace.
+   **⚠️ Link unfurl caveat — does NOT auto-render via this skill.**
+   Slack's `chat.postMessage` API defaults `unfurl_links: false` for **bot/app** messages. The MCP `slack_send_message` tool posts as an app, so the URL does **not** trigger Slack's `link_shared` event → the GitHub Slack app cannot generate a preview card. Manual paste in Slack (a user-message) defaults `unfurl_links: true`, which is why pasting "by hand" works.
+
+   Consequences:
+   - The PR link in the bot message is still clickable but renders as plain text (no card).
+   - To get the rich preview, the user must paste the URL manually as a thread reply or follow-up message.
+   - Don't promise unfurl in the docs/output; instead surface the URL prominently so it's easy to copy.
 
 6. **Post** via `mcp__claude_ai_Slack__slack_send_message` with the resolved channel + message.
 
-7. **Verify**: capture the returned timestamp (`ts`) and channel ID. If the send fails (channel not found, no permission), surface the error but **don't fail the whole ship** — the commit/push/PR already landed; Slack is a side-effect notification.
+7. **Verify + print paste hint**: capture the returned timestamp (`ts`) and channel ID. Print the PR URL on its own line in the terminal output (see step 11) with a brief hint so the user can paste it manually in Slack if they want the unfurl card. If the send fails (channel not found, no permission), surface the error but **don't fail the whole ship** — the commit/push/PR already landed; Slack is a side-effect notification.
 
 ### 11. Output
 
@@ -243,7 +246,9 @@ Pushed:   origin/dev_s9_26.feat/UP-70961-auth (upstream set)
 PR:       https://github.com/<org>/<repo>/pull/<n> [READY|DRAFT]
 Assignee: @me (tuannguyen-everfit)
 Body:     filled by rk:ef-pr-description ✓
-Slack:    posted to #backend-review-code (ts 1716800000.001234) — group @backend + 2 mentors; skipped if --slack not passed
+Slack:    posted to #backend-review-code (ts 1716800000.001234) — group @backend + 2 mentors
+          ⚠️ Bot message — URL won't unfurl. Paste manually in the channel for the preview card:
+          https://github.com/<org>/<repo>/pull/<n>
 ```
 
 With `--dry-run`, the block shows each step as `(planned)`.
