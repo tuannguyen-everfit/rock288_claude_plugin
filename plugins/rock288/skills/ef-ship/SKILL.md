@@ -173,7 +173,9 @@ The downstream skill handles fetching Jira context, generating the body, and upd
 
 Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` / `--slack-mentors` is passed (the presence of any Slack-related flag implies the user wants to post). Context: Everfit Slack workspace; channel is `#backend-review-code` (ID `C05F65TBB9P`); group is always `@backend`; mentors vary 1–3 people per ship.
 
-> **Prerequisite — MCP setup**: this step requires the [korotovsky/slack-mcp-server](https://github.com/korotovsky/slack-mcp-server) registered as `slack-mcp` in `~/.claude.json` with `SLACK_MCP_ADD_MESSAGE_UNFURLING=github.com`. Without it, the bundled `claude.ai_Slack` MCP works but **URLs won't render as preview cards** (bot messages default `unfurl_links: false`). See [references/slack-mcp-setup.md](references/slack-mcp-setup.md) for token extraction + install steps. If the `mcp__slack-mcp__conversations_add_message` tool is not available, fall back to the bundled `mcp__claude_ai_Slack__slack_send_message` and warn the user that unfurl will not work.
+> **MCP backend**: by default the skill uses the bundled `mcp__claude_ai_Slack__slack_send_message`. URLs in bot messages **do not auto-unfurl** (Slack API default for `chat.postMessage` from bot/app is `unfurl_links: false`) — the skill prints the URL prominently in the terminal output so the user can paste it manually for a preview card if needed.
+>
+> **Optional upgrade — link unfurl support**: if you want URLs to render as preview cards automatically, install [korotovsky/slack-mcp-server](https://github.com/korotovsky/slack-mcp-server) and register it as `slack-mcp` in `~/.claude.json` with `SLACK_MCP_ADD_MESSAGE_UNFURLING=github.com`. The skill will prefer `mcp__slack-mcp__conversations_add_message` when available. See [references/slack-mcp-setup.md](references/slack-mcp-setup.md) for token extraction + install steps.
 
 1. **Channel is hard-coded** to `C05F65TBB9P` (`#backend-review-code`). No memory lookup, no search — just use this ID directly. `--slack-channel=<other>` overrides for a single run.
 
@@ -190,7 +192,7 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
    - These flags can be combined with a normal ship — the update happens before the message is posted, so the new defaults take effect on this same run if `--slack-mentors` is not passed.
 
 3. **First-run setup** for the backend group (only if missing from memory):
-   - Call `mcp__slack-mcp__users_search` with query `backend` to surface the user group's ID; ask user to confirm.
+   - Call `mcp__claude_ai_Slack__slack_search_users` with query `backend` to surface the user group's ID; ask user to confirm.
    - Save as `<!subteam^S…|@backend>` syntax (rendered mention shows `@backend`) to `memory/ef_ship_slack.md`.
 
    **Important**: store mention strings verbatim — Slack only notifies on proper `<@U…>` / `<!subteam^S…>` syntax. Plain `@name` text won't ping anyone.
@@ -208,7 +210,7 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
 
    **Resolve each display name → `<@U…>`**:
    - **Cache hit**: display name is in `mentor_roster` (case-insensitive match on key) → use cached `id`. No Slack call.
-   - **Cache miss**: call `mcp__slack-mcp__users_search` with the display name as the query.
+   - **Cache miss**: call `mcp__claude_ai_Slack__slack_search_users` with the display name as the query.
      - Filter results to those whose `display_name` matches the input **exactly** (case-insensitive). This is the key disambiguation step — search may return multiple loose matches (e.g. "Long Nguyen Hoang" returns "Hoang Long (Design)" + "Long (BE)"); only the one where Slack's `display_name` field equals the input is the intended mentor.
      - If exactly 1 candidate after filter → use it. Cache `display_name → { id, email }` in `mentor_roster`.
      - If multiple candidates remain (rare — Slack allows duplicate display names) → ask user via `AskUserQuestion` to pick from {display_name + email + role}. Cache the choice.
@@ -224,14 +226,11 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
    - Mentions on line 1 (space-separated).
    - PR URL alone on line 2 — bare URL (no markdown `[text](url)` wrapping). The bare URL is what Slack uses for `link_shared` → GitHub Slack app renders the preview card.
 
-6. **Post** via `mcp__slack-mcp__conversations_add_message` with:
-   - `channel_id` = resolved channel (default `C05F65TBB9P`)
-   - `payload` = the 2-line message (literal `\n` between line 1 and 2)
-   - `content_type` = `text/markdown` (default)
+6. **Post** — pick the available MCP backend:
+   - **Preferred (if `mcp__slack-mcp__conversations_add_message` exists)**: call it with `channel_id`, `payload` = 2-line message, `content_type` = `text/markdown`. URL unfurls via `SLACK_MCP_ADD_MESSAGE_UNFURLING=github.com`.
+   - **Fallback (default)**: call `mcp__claude_ai_Slack__slack_send_message` with `channel_id` + `message` = 2-line text. URL won't unfurl (bundled MCP can't pass `unfurl_links: true`). Print the URL again in the terminal output so the user can paste manually if they want a preview card.
 
-   The MCP server adds `unfurl_links: true` (or domain-whitelisted) when `SLACK_MCP_ADD_MESSAGE_UNFURLING` is configured, so the URL renders as a preview card. **Fallback**: if only the bundled `mcp__claude_ai_Slack__slack_send_message` tool is available, call that instead and warn the user: `Bundled Slack MCP doesn't support unfurl — URL will render as plain text. See references/slack-mcp-setup.md to enable unfurl.`
-
-7. **Verify**: capture the returned timestamp (`ts`) and channel ID. If the send fails (channel not in `SLACK_MCP_ADD_MESSAGE_TOOL` whitelist, no permission, expired token), surface the error but **don't fail the whole ship** — the commit/push/PR already landed; Slack is a side-effect notification.
+7. **Verify**: capture the returned timestamp (`ts`) and channel ID. If the send fails (channel not found, no permission, restricted by `SLACK_MCP_ADD_MESSAGE_TOOL` whitelist, expired token), surface the error but **don't fail the whole ship** — the commit/push/PR already landed; Slack is a side-effect notification.
 
 ### 11. Output
 
@@ -243,7 +242,9 @@ Pushed:   origin/dev_s9_26.feat/UP-70961-auth (upstream set)
 PR:       https://github.com/<org>/<repo>/pull/<n> [READY|DRAFT]
 Assignee: @me (tuannguyen-everfit)
 Body:     filled by rk:ef-pr-description ✓
-Slack:    posted to #backend-review-code (ts 1716800000.001234) — group @backend + 2 mentors, URL unfurled ✓
+Slack:    posted to #backend-review-code (ts 1716800000.001234) — group @backend + 2 mentors
+          (bundled MCP — URL won't auto-unfurl; paste manually for preview card)
+          https://github.com/<org>/<repo>/pull/<n>
 ```
 
 With `--dry-run`, the block shows each step as `(planned)`.
