@@ -11,6 +11,8 @@ metadata:
 
 Finalize a feature branch in one command: stage all working-tree changes, commit with the team's commit subject format, push to `origin` (sets upstream on first push), open a PR targeting `develop`, then chain [[rk:ef-pr-description]] to fill the PR body.
 
+> **👋 New to this skill?** Read [references/quickstart.md](references/quickstart.md) for the team-oriented walkthrough (prerequisites, first-time setup, common scenarios, troubleshooting). The rest of this file is the spec the skill executes — denser, less narrative.
+
 ## Commit subject format
 
 ```
