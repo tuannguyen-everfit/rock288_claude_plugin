@@ -11,7 +11,7 @@
       "name": "rk",
       "source": "./plugins/rock288",
       "description": "Rk's skills, agents, hooks, and rules for Claude Code",
-      "version": "2.6.2",
+      "version": "2.7.0",
       "author": { "name": "rk" },
       "homepage": "https://github.com/tuannguyen-everfit/rock288_claude_plugin",
       "license": "MIT"
