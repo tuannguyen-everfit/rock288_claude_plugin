@@ -33,7 +33,7 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | `--no-desc` | no | off | Skip the auto-chain to `rk:ef-pr-description`. PR body left empty. |
 | `--assignee=<user>` | no | `@me` | GitHub username to assign on the PR. Default assigns the current authenticated user. Pass a username to assign someone else. |
 | `--no-assign` | no | off | Skip assignment entirely. Wins over `--assignee`. |
-| `--slack` | no | off | After PR is created, post `<group> <mentor1> [<mentor2> <mentor3>] <PR-URL>` to a Slack channel. Default is OFF to avoid accidental notifications. **Auto-enabled** if any of `--slack-mentors`/`--slack-channel`/`--slack-group` is passed — those flags imply the user wants to post. |
+| `--slack` | no | off | After PR is created, post `<group> <mentor1> [<mentor2> <mentor3>]\n<PR-URL>` (URL on its own line so Slack unfurls it into a PR preview card) to a Slack channel. Default is OFF to avoid accidental notifications. **Auto-enabled** if any of `--slack-mentors`/`--slack-channel`/`--slack-group` is passed — those flags imply the user wants to post. |
 | `--slack-channel=<name>` | no | `C05F65TBB9P` (`#backend-review-code`) | Channel name or ID. Everfit default is the `#backend-review-code` channel (`C05F65TBB9P`) — hard-coded so no first-run lookup is needed. Passing this implies `--slack`. |
 | `--slack-group=<group>` | no | from memory (default `backend`) | Single group mention in Slack syntax (e.g. `<!subteam^S0123ABC>`). For Everfit, this is always the `@backend` user group. Passing this implies `--slack`. |
 | `--slack-mentors=<list>` | no | `default_mentors` from memory, else asked | Comma-separated Slack **display names** (the name shown in chat, e.g. `Long (BE)`). Use quotes if any name contains spaces or commas: `--slack-mentors="Long (BE),Duy Le (BE)"`. 1–3 names accepted. Skill resolves each display name to `<@U…>` via `slack_search_users` + exact display-name match, and caches the lookup in `mentor_roster`. Resolution order: this flag → `default_mentors` in memory → interactive prompt. **Passing this implies `--slack`** — no need for the explicit `--slack` flag. |
@@ -101,7 +101,7 @@ About to:
   3. git push -u origin <branch>
   4. gh pr create --base develop --title "<subject>" [--draft] [--assignee @me]
   5. invoke rk:ef-pr-description on the new PR
-  6. [--slack only] post "<group> <mentors...> <PR-URL>" to #<channel>
+  6. [--slack only] post "<group> <mentors...>\n<PR-URL>" to #<channel> (URL on own line → Slack unfurls)
 
 Files staged:
   M  src/auth/refresh.ts
@@ -214,11 +214,20 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
 
    **Output**: list of `<@U…>` mentions in the same order as input names.
 
-5. **Build message** (minimal format):
+5. **Build message** (2 lines, URL alone on line 2):
    ```
-   <group> <mentor1> [<mentor2> <mentor3>] <PR-URL>
+   <group> <mentor1> [<mentor2> <mentor3>]
+   <PR-URL>
    ```
-   Space-separated, single line. Slack unfurls the PR URL into a preview card showing the title.
+   - Mentions on line 1 (space-separated).
+   - PR URL alone on line 2 — this is the trigger Slack uses to **unfurl** the link into a preview card (title, author, body excerpt). Wrapping the URL in markdown `[label](url)` or putting other text on the same line **disables** unfurl.
+
+   **Implementation**: pass the literal newline `\n` between the mentions and the URL in the `message` argument to `mcp__claude_ai_Slack__slack_send_message`. Do not use markdown link syntax for the URL.
+
+   **Unfurl prerequisites** (one-time workspace setup, not the skill's responsibility):
+   - Slack workspace must have the GitHub app installed and connected.
+   - For private repos: the channel/user needs `/github subscribe <org>/<repo>` set up at least once, otherwise GitHub Slack will not unfurl the URL.
+   - If unfurl fails to render despite the format being correct, run `/github signin` in the workspace.
 
 6. **Post** via `mcp__claude_ai_Slack__slack_send_message` with the resolved channel + message.
 
