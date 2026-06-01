@@ -87,6 +87,8 @@ for `name` + `platform`, write the file, continue. Subsequent runs load silently
 
 ### 2. Derive from Jira
 Follow [`references/derivation.md`](references/derivation.md) exactly:
+- **Only cards assigned to me** — both queries require `assignee = currentUser()`. A card I
+  logged work on (or created) but that is assigned to someone else is excluded.
 - **`--date` is a Vietnam (Asia/Saigon) calendar day.** JQL `worklogDate` runs in the Jira
   account tz (LA, ~14h behind), so query a **widened** window (`worklogDate >= date-1 AND <
   date+2`) as a coarse pre-filter, then **bucket each worklog `started` converted to VN** and

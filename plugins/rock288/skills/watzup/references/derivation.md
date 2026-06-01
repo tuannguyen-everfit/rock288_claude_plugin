@@ -22,9 +22,11 @@ account timezone. `--date=<YYYY-MM-DD>` overrides (default = yesterday VN); the 
 ## JQL queries
 
 **DONE + PROGRESS CHANGED** — coarse pre-filter, widened ±1 day to cover the tz skew, then
-bucket precisely (below):
+bucket precisely (below). **Must also be assigned to me** — a card I logged work on (or
+created) but that is assigned to someone else is excluded:
 ```
-worklogAuthor = currentUser() AND worklogDate >= "<date-1>" AND worklogDate < "<date+2>"
+worklogAuthor = currentUser() AND assignee = currentUser()
+  AND worklogDate >= "<date-1>" AND worklogDate < "<date+2>"
 ```
 
 **PLAN FOR TODAY** (my open sprint work):
