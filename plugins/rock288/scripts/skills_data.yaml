@@ -672,9 +672,16 @@
   has_scripts: false
   name: use-mcp
   path: use-mcp/SKILL.md
-- category: utilities
-  description: Review recent changes and wrap up the current work session.
-  has_references: false
+- argument_hint: '[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack]
+    [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]'
+  category: utilities
+  description: 'Generate an Everfit daily standup report from Jira worklogs and post
+    it as a reply into a Slack thread you provide. Pulls cards you logged work on the
+    target date (DONE / PROGRESS CHANGED) plus your open-sprint cards (PLAN FOR TODAY),
+    derives progress % from time tracking, then drafts the report for your review before
+    replying into the thread. Triggers on: ''daily report'', ''standup'', ''daily'',
+    ''EOD report'', ''báo cáo ngày'', ''wrap up''.'
+  has_references: true
   has_scripts: false
   name: watzup
   path: watzup/SKILL.md
