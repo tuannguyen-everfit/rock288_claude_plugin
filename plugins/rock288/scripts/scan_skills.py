@@ -44,8 +44,9 @@ EXACT_CATEGORY_MAP = {
     "research": "utilities",
     "retro": "utilities",
     "sequential-thinking": "utilities",
+    "slack-pr-review": "utilities",
     "test": "utilities",
-    "watzup": "utilities",
+    "ef-daily-report": "utilities",
     # Development Tools
     "find-skills": "dev-tools",
     "git": "dev-tools",

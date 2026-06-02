@@ -70,6 +70,17 @@
   has_scripts: false
   name: brainstorm
   path: brainstorm/SKILL.md
+- argument_hint: <jira-link-or-card-id> [--sprint=<sprint>] [--type=<feat|fix|...>]
+    [--base=<branch>] [--no-checkout] [--dry-run]
+  category: other
+  description: 'Generate Everfit-style branch from a Jira card link AND create it
+    locally off the latest base branch (default: develop). Format: dev_<sprint>.<type>/<CARD-ID>-<slug>.
+    Example: dev_s9_26.feat/UP-70961-auth. Triggers on: ''branch name'', ''tạo branch'',
+    ''new branch from jira'', ''generate branch''.'
+  has_references: false
+  has_scripts: false
+  name: branch-name
+  path: branch-name/SKILL.md
 - argument_hint: '[url or task]'
   category: multimedia
   description: Automate browsers with Puppeteer CLI scripts and persistent sessions.
@@ -179,6 +190,17 @@
   has_scripts: false
   name: cook
   path: cook/SKILL.md
+- argument_hint: <function-name> [--source=<repo-path>] [--dest=<dir>]
+  category: other
+  description: Copy a function from the everfit-api repo into the current project
+    with the minimum code required to run. Triggers on 'copy function', 'copy <name>
+    from everfit-api', 'port function', 'extract function with dependencies'. Recursively
+    traces imports/requires and copies only the symbols actually used — no dead code,
+    no unused exports.
+  has_references: true
+  has_scripts: false
+  name: copy-function
+  path: copy-function/SKILL.md
 - argument_hint: '[copy-type] [context]'
   category: utilities
   description: Conversion copywriting formulas, headline templates, email copy patterns,
@@ -248,37 +270,35 @@
   has_scripts: true
   name: docs-seeker
   path: docs-seeker/SKILL.md
-- category: multimedia
-  description: Create, edit, analyze .docx Word documents. Use for document creation,
-    tracked changes, comments, formatting preservation, text extraction, template
-    modification.
-  has_references: false
-  has_scripts: true
-  name: document-skills/docx
-  path: document-skills/docx/SKILL.md
-- category: multimedia
-  description: Extract text/tables, create, merge, split PDFs. Fill PDF forms programmatically.
-    Use for PDF processing, generation, form filling, document analysis, batch operations.
-  has_references: false
-  has_scripts: true
-  name: document-skills/pdf
-  path: document-skills/pdf/SKILL.md
-- category: multimedia
-  description: Create, edit, analyze .pptx PowerPoint files. Use for presentations,
-    slides, layouts, speaker notes, template modification, content extraction, slide
-    generation.
-  has_references: false
-  has_scripts: true
-  name: document-skills/pptx
-  path: document-skills/pptx/SKILL.md
-- category: multimedia
-  description: Create, edit, analyze spreadsheets (.xlsx, .csv, .tsv). Use for Excel
-    formulas, data analysis, visualization, formatting, pivot tables, charts, formula
-    recalculation.
-  has_references: false
+- argument_hint: '[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack]
+    [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...]
+    [--dry-run]'
+  category: utilities
+  description: 'Generate an Everfit daily standup report from Jira worklogs and post
+    it as a reply into a Slack thread you provide. Pulls cards you logged work on
+    the target date (DONE / PROGRESS CHANGED) plus your open-sprint cards (PLAN FOR
+    TODAY), derives progress % from time tracking, then drafts the report for your
+    review before replying into the thread. Triggers on: ''daily report'', ''standup'',
+    ''daily'', ''EOD report'', ''báo cáo ngày'', ''wrap up''.'
+  has_references: true
   has_scripts: false
-  name: document-skills/xlsx
-  path: document-skills/xlsx/SKILL.md
+  name: ef-daily-report
+  path: ef-daily-report/SKILL.md
+- argument_hint: '[--feature=<scope>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign]
+    [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>]
+    [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes]
+    [--dry-run]'
+  category: other
+  description: 'Commit + push the current Everfit feature branch and open a PR targeting
+    develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>)
+    to build the commit subject `<type>(<feature>): <CARD-ID> <slug>`, asks for the
+    feature scope, pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description
+    to fill the body. Triggers on: ''ship'', ''commit and push'', ''create PR'', ''tạo
+    PR'', ''commit + PR'', ''push and PR''.'
+  has_references: true
+  has_scripts: false
+  name: ef-ship
+  path: ef-ship/SKILL.md
 - argument_hint: '[capability or task description]'
   category: dev-tools
   description: Helps users discover and install agent skills when they ask questions
@@ -447,6 +467,27 @@
   has_scripts: true
   name: plans-kanban
   path: plans-kanban/SKILL.md
+- argument_hint: '[#PR | PR-URL] [--severity=important,critical,niceto]'
+  category: other
+  description: 'Post selected findings from /rk:code-review as inline PR review comments
+    anchored to exact file:line locations. Use AFTER a code review when the user wants
+    the Important (or chosen) items pushed to GitHub as inline comments. Triggers
+    on: comment to pr, post review inline, push findings to pr, drop comments on pr.'
+  has_references: false
+  has_scripts: false
+  name: pr-comment
+  path: pr-comment/SKILL.md
+- argument_hint: <jira-link-or-card-id> [--scope=<scope>] [--lang=en|vi] [--draft]
+  category: other
+  description: 'Generate full PR descriptions in English (default) from code changes
+    + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed,
+    Test plan, Rollout). Pass --lang=vi for Vietnamese. Triggers on: ''pr description'',
+    ''tạo description PR'', ''write PR body'', ''generate PR description'', ''commit
+    description from jira''.'
+  has_references: true
+  has_scripts: false
+  name: pr-description
+  path: pr-description/SKILL.md
 - argument_hint: '[path] OR [--html] --explain|--slides|--diagram|--ascii [topic]
     OR --html --diff|--plan-review|--recap'
   category: utilities
@@ -593,6 +634,20 @@
   has_scripts: true
   name: skill-creator
   path: skill-creator/SKILL.md
+- argument_hint: '[<slack-message-url>] [--pr=<#N|url>] [--dry-run]'
+  category: utilities
+  description: 'Review a PR linked inside a Slack message, then act on the result
+    end-to-end. Given a Slack message URL (whose text contains a GitHub PR link),
+    run rk:code-review on that PR; if it surfaces Critical/Important findings, post
+    them inline via rk:pr-comment and reply in the Slack thread ''<@author> Please
+    check my comments''; otherwise comment ''LGTM!'' on the PR and reply ''<@author>
+    approved''. Fully automatic — no confirmation gate. Triggers on: ''review pr from
+    slack'', ''review slack pr link'', ''check pr in this slack message'', ''review
+    code từ link slack''.'
+  has_references: false
+  has_scripts: false
+  name: slack-pr-review
+  path: slack-pr-review/SKILL.md
 - argument_hint: '[design prompt or action]'
   category: frontend
   description: AI design generation with Google Stitch. Generate UI designs from text
@@ -602,6 +657,22 @@
   has_scripts: true
   name: stitch
   path: stitch/SKILL.md
+- argument_hint: '[--target=<path>] [--everfit=<path>] [--everfit-ref=<branch>] [--scope=<dir>]
+    [--since=<date>] [--no-dir-scan] [--report=<path>]'
+  category: other
+  description: 'Compare files between a fork repo (e.g. metric-service, file-service)
+    and the parent everfit-api repo, then list everfit-api commits that should be
+    cherry-picked. Triggers on ''sync from everfit-api'', ''compare metric-service
+    vs everfit-api'', ''tìm commit cần cherry-pick'', ''check missing commits'', ''find
+    cherry-picks'', ''so sánh code everfit-api metric-service''. Dual-channel discovery:
+    blame on shared file lines + directory scan for new-file commits and blame-shadowed
+    commits. Skips identical files; dedupes by git patch-id; drops merge commits and
+    commits already in target; runs git apply --check to label each candidate ''clean''
+    or ''manual check''.'
+  has_references: false
+  has_scripts: true
+  name: sync-from-everfit
+  path: sync-from-everfit/SKILL.md
 - argument_hint: '[framework] [feature]'
   category: frameworks
   description: Build with TanStack Start (full-stack React framework), TanStack Form
@@ -665,6 +736,18 @@
   has_scripts: true
   name: ui-ux-pro-max
   path: ui-ux-pro-max/SKILL.md
+- argument_hint: '[--source=<repo-path>] [--env-file=<path>] [--write] [--report=<path>]'
+  category: other
+  description: Sync the default.env file of an everfit-style Node.js repo (everfit-api,
+    metric-service, file-service, etc.) with env vars actually used in the code. Triggers
+    on 'update env', 'update default.env', 'sync env', 'cập nhật default.env', 'thiếu
+    env', 'check missing env'. Scans common/config/*.js Joi schemas + greps process.env.*
+    across the codebase, then adds missing keys (with Joi defaults if available) and
+    reports orphans without deleting.
+  has_references: false
+  has_scripts: true
+  name: update-env
+  path: update-env/SKILL.md
 - argument_hint: '[task]'
   category: dev-tools
   description: Utilize MCP server tools with intelligent discovery and execution.
@@ -672,19 +755,6 @@
   has_scripts: false
   name: use-mcp
   path: use-mcp/SKILL.md
-- argument_hint: '[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack]
-    [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]'
-  category: utilities
-  description: 'Generate an Everfit daily standup report from Jira worklogs and post
-    it as a reply into a Slack thread you provide. Pulls cards you logged work on the
-    target date (DONE / PROGRESS CHANGED) plus your open-sprint cards (PLAN FOR TODAY),
-    derives progress % from time tracking, then drafts the report for your review before
-    replying into the thread. Triggers on: ''daily report'', ''standup'', ''daily'',
-    ''EOD report'', ''báo cáo ngày'', ''wrap up''.'
-  has_references: true
-  has_scripts: false
-  name: watzup
-  path: watzup/SKILL.md
 - argument_hint: '[file-or-pattern]'
   category: frontend
   description: Review UI code for Web Interface Guidelines compliance. Use when asked
