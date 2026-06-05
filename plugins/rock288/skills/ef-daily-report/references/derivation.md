@@ -105,16 +105,19 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
   - `now% > before%` → `Progress: X% → Y%` + `Reason: logged <time>, <status>` (no comment needed).
   - `now% == before%` (logged time but % flat, e.g. remaining grew) → `Progress: Still X%` +
     `Reason: logged <time>, remaining unchanged` (+ comment if present).
-- **PLAN FOR TODAY** — cards from the open-sprint query. Put **each `◦` field on its own
-  line** (same as DONE YESTERDAY — never inline them):
+- **PLAN FOR TODAY** — cards from the open-sprint query. Put **each sub-field on its own
+  line** (same as DONE YESTERDAY — never inline them). Emit markdown bullets, NOT `•`/`◦`
+  glyphs (see SKILL.md "Report format"):
   ```
-   • <task> ([CARD](url))
-   ◦ Progress: X% by EOD | Full task done: [date/EOD]
-   ◦ AI: None
+  <Product Item Name>
+  - <task> ([CARD](url))
+    - Progress: X% by EOD | Full task done: [date/EOD]
+    - AI: None
   ```
   (`Progress` target inferred from remaining estimate; `AI` is `None` unless Claude is used — user edits in draft.)
 - Any empty section → print `None`.
-- **Every `◦` sub-field (Progress / Remaining / Reason / AI) is its own line** across all sections — never write two `◦` fields on one line.
+- **Every sub-field (Progress / Remaining / Reason / AI) is its own 2-space-indented `-` line**
+  across all sections — never write two sub-fields on one line, and never use the `•`/`◦` glyphs.
 
 ## Edge cases
 

@@ -4,7 +4,7 @@ description: "Generate an Everfit daily standup report from Jira worklogs and po
 argument-hint: "[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack] [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]"
 metadata:
   author: rock288
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # Daily Report
@@ -32,41 +32,54 @@ report, and posts to Slack.
 
 ## Report format (authoritative)
 
+Emit **GitHub-flavored markdown** — `-` for the task bullet, a **2-space-indented** `-` for
+each sub-field, `**bold**` for headers, and a **blank line between product-item groups**. This
+is the exact shape (the template below is what the model OUTPUTS, not a code block to paste):
+
 ```
-DAILY REPORT — [DD Mon YYYY]   ← TODAY's date (posting day, Asia/Saigon), NOT --date
-Name: [name]
-Platform: [Backend / Web / Android / iOS / QA / BA]
+**DAILY REPORT — [DD Mon YYYY]**   ← TODAY (posting day, Asia/Saigon), NOT --date
+**Name:** [name]
+**Platform:** [Backend / Web / Android / iOS / QA / BA]
 ——————————————————
-DONE YESTERDAY
-[Product Item Name]
- • [Task name]
- ◦ Progress: 100%
- • [Task name — not yet done]
- ◦ Progress: X%
- ◦ Remaining: [what is left]
+**DONE YESTERDAY**
 
-PROGRESS CHANGED
 [Product Item Name]
- • [Task name]
- ◦ Progress: X% → Y%
- ◦ Reason: [cause]
+- [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
+  - Progress: 100%
+- [Task name — not yet done] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
+  - Progress: X%
+  - Remaining: [what is left]
 
-PLAN FOR TODAY
+**PROGRESS CHANGED**
+
 [Product Item Name]
- • [Task name]
- ◦ Progress: X% by EOD | Full task done: [date / EOD / DD Mon]
- ◦ AI: None OR [how Claude will be used]
+- [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
+  - Progress: X% → Y%
+  - Reason: [cause]
 
-Blocker: None OR [...]
-At-risk: None OR [...]
-Question: None OR [...]
+**PLAN FOR TODAY**
+
+[Product Item Name]
+- [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
+  - Progress: X% by EOD | Full task done: [date / EOD / DD Mon]
+  - AI: None OR [how Claude will be used]
+
+**Blocker:** None OR [...]
+**At-risk:** None OR [...]
+**Question:** None OR [...]
 ```
+
+> ⚠️ **Bullets MUST be markdown, never the glyphs `•` / `◦`.** Slack renders markdown lists
+> (`-` + indent) into real bullets; the literal `•`/`◦` characters do NOT produce list
+> formatting and collapse into one paragraph when pasted. This applies to BOTH the chat draft
+> (step 4) and the Slack post (step 5). The `**bold**` headers convert to Slack `*bold*` via the
+> `content_type: text/markdown` backend, and degrade gracefully on manual paste.
 
 **Header date = today** (posting day, Asia/Saigon). `--date` only selects which day's worklogs
 feed DONE / PROGRESS CHANGED — it does NOT change the header.
 
 Empty section → print `None`. If a PROGRESS CHANGED card logged time but the % didn't move,
-use `◦ Progress: Still X%` with a **mandatory** `◦ Reason:` (blocker/slowdown).
+use a 2-space-indented `- Progress: Still X%` with a **mandatory** `- Reason:` (blocker/slowdown).
 
 **Card links:** append each task's card ID as a Jira link —
 `[Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))`. Use standard
