@@ -4,7 +4,7 @@ description: "Generate an Everfit daily standup report from Jira worklogs and po
 argument-hint: "[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack] [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]"
 metadata:
   author: rock288
-  version: "2.1.0"
+  version: "2.1.1"
 ---
 
 # Daily Report
@@ -118,8 +118,13 @@ fields (Blocker / At-risk / Question) default to `None` — **never prompt** for
 from `--blocker`/`--at-risk`/`--question` if passed. `--platform` overrides the config platform.
 
 ### 4. Draft → confirm (Variant B)
-**Print the full report in chat.** Invite the user to edit (they reply with corrections; apply
-them). Do not proceed to Slack until the user confirms. `--dry-run` / `--no-slack` stop here.
+**Print the full report in chat as RENDERED markdown — never wrapped in a fenced code block
+(no ``` ```).** The user copies the report straight from the rendered chat preview and pastes
+it into Slack; a code block pastes raw `-`/`**` source that Slack does NOT convert to bullets,
+and the literal `•`/`◦` glyphs collapse into one paragraph. Rendered markdown (`-` bullets +
+`[text](url)` links) is the ONLY form whose copy keeps the bullet list + clickable links in
+Slack. Invite the user to edit (they reply with corrections; apply them). Do not proceed to
+Slack until the user confirms. `--dry-run` / `--no-slack` stop here.
 
 ### 5. Reply into the Slack thread
 
