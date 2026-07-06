@@ -29,10 +29,15 @@ worklogAuthor = currentUser() AND assignee = currentUser()
   AND worklogDate >= "<date-1>" AND worklogDate < "<date+2>"
 ```
 
-**PLAN FOR TODAY** (my open sprint work):
+**PLAN FOR TODAY** (my To Do queue — the report shows **max 5**, see assembly rules):
 ```
-assignee = currentUser() AND sprint in openSprints() AND status != Done
+assignee = currentUser() AND status = "To Do" ORDER BY updated DESC
 ```
+
+> Do NOT filter by `sprint in openSprints()` — cards often sit outside an open sprint and the
+> query silently returns nothing. Request only the fields the report needs (`summary`,
+> `status`, `parent`, `timetracking`); the default field set can blow past MCP response limits
+> on large backlogs.
 
 Use `currentUser()` by default. Only pass an explicit `accountId` (from config
 `jira_account`) when reporting on behalf of someone else.
@@ -101,11 +106,18 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 
 - **DONE YESTERDAY** — group cards by Product Item. Each card: bullet with task name +
   `Progress: X%`. If not 100%, add `Remaining:` derived from `remaining_now` (+ comment if any).
-- **PROGRESS CHANGED** — only cards where `loggedTarget > 0`.
+- **PROGRESS CHANGED** — **every** card where `loggedTarget > 0`, with its `before% → now%`
+  delta. This **includes cards that reached 100%**: they appear in BOTH sections (DONE shows
+  the final %, PROGRESS CHANGED shows the delta + reason). Never print `None` here while any
+  card logged time on the target day.
   - `now% > before%` → `Progress: X% → Y%` + `Reason: logged <time>, <status>` (no comment needed).
   - `now% == before%` (logged time but % flat, e.g. remaining grew) → `Progress: Still X%` +
     `Reason: logged <time>, remaining unchanged` (+ comment if present).
-- **PLAN FOR TODAY** — cards from the open-sprint query. Put **each sub-field on its own
+- **PLAN FOR TODAY** — cards from the To Do query, **max 5 in the report**. Selection
+  priority when more than 5: (1) cards whose Epic/parent matches a DONE/PROGRESS card of the
+  target day (current work context), (2) then most recently updated. Skip epic-level /
+  placeholder rows (no real task summary). Tell the user in the chat draft how many To Do
+  cards were left out so they can swap picks while editing. Put **each sub-field on its own
   line** (same as DONE YESTERDAY — never inline them). Emit markdown bullets, NOT `•`/`◦`
   glyphs (see SKILL.md "Report format"):
   ```
@@ -124,5 +136,5 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 - No worklogs in window → DONE YESTERDAY and PROGRESS CHANGED both `None`.
 - Card with no Epic/parent → group under its own summary (or "Unassigned item").
 - `--date` crossing a weekend → still a single-day window; user can widen via repeated runs.
-- A card appearing in both DONE-yesterday and open-sprint → list it in DONE/PROGRESS for
-  yesterday and again under PLAN if still `status != Done`.
+- A card appearing in both DONE-yesterday and the To Do query → list it in DONE/PROGRESS for
+  yesterday and again under PLAN if still `status = To Do`.

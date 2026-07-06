@@ -1,10 +1,10 @@
 ---
 name: rk:ef-daily-report
-description: "Generate an Everfit daily standup report from Jira worklogs and post it as a reply into a Slack thread you provide. Pulls cards you logged work on the target date (DONE / PROGRESS CHANGED) plus your open-sprint cards (PLAN FOR TODAY), derives progress % from time tracking, then drafts the report for your review before replying into the thread. Triggers on: 'daily report', 'standup', 'daily', 'EOD report', 'báo cáo ngày', 'wrap up'."
+description: "Generate an Everfit daily standup report from Jira worklogs and post it as a reply into a Slack thread you provide. Pulls cards you logged work on the target date (DONE / PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY, max 5), derives progress % from time tracking, then drafts the report for your review before replying into the thread. Triggers on: 'daily report', 'standup', 'daily', 'EOD report', 'báo cáo ngày', 'wrap up'."
 argument-hint: "[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack] [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]"
 metadata:
   author: rock288
-  version: "2.1.1"
+  version: "2.2.0"
 ---
 
 # Daily Report
@@ -108,6 +108,10 @@ Follow [`references/derivation.md`](references/derivation.md) exactly:
   keep only entries whose VN date == `--date`. `loggedTarget` = Σ of those.
 - `getJiraIssue` per card → progress % = `timeSpent / (timeSpent + remaining)`; reconstruct the
   `before% → now%` delta from `loggedTarget` (no state file).
+- **PROGRESS CHANGED = every card that logged time on the target day**, delta included — even
+  cards that hit 100% (they show in BOTH DONE and PROGRESS CHANGED).
+- **PLAN FOR TODAY = my `To Do` cards, max 5** (prioritize the epics of today's work, then
+  most recently updated; mention in the draft how many were left out).
 - **Worklog comments are optional** — the delta comes from logged time alone. `Reason` =
   `logged <time>, <status>`; only append a comment if one exists.
 - Map Epic/parent → Product Item, summary → Task name.
