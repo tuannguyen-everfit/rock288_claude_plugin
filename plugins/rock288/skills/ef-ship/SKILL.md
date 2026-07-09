@@ -1,10 +1,10 @@
 ---
 name: rk:ef-ship
 description: "Commit + push the current Everfit feature branch and open a PR targeting develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>) to build the commit subject `<type>(<feature>): <CARD-ID> <slug>`, asks for the feature scope, pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description to fill the body. Triggers on: 'ship', 'commit and push', 'create PR', 'tạo PR', 'commit + PR', 'push and PR'."
-argument-hint: "[--feature=<scope>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
+argument-hint: "[--feature=<scope>] [--pr-summary=<text>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Ship: commit + push + open PR (Everfit flow)
@@ -31,6 +31,7 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | Arg | Required | Default | Notes |
 |---|---|---|---|
 | `--feature=<scope>` | no | asked | One-word feature/module name (kebab-case). Inserted as `<feature>` in commit subject. |
+| `--pr-summary=<text>` | no | auto-derived | One-line human-readable description of the PR, used as the initial PR body so the PR is never opened empty. If omitted, auto-derived from the branch (`<CARD-ID> — <humanized slug>`). See step 8a. |
 | `--draft` | no | off | Create the PR as draft. |
 | `--no-desc` | no | off | Skip the auto-chain to `rk:ef-pr-description`. PR body left empty. |
 | `--assignee=<user>` | no | `@me` | GitHub username to assign on the PR. Default assigns the current authenticated user. Pass a username to assign someone else. |
@@ -101,7 +102,8 @@ About to:
   1. git add -A   (N files changed, see below)
   2. git commit -m "<subject>"
   3. git push -u origin <branch>
-  4. gh pr create --base develop --title "<subject>" [--draft] [--assignee @me]
+  4. gh pr create --base develop --title "<subject>" --body "<pr-summary>" [--draft] [--assignee @me]
+     PR summary: <pr-summary>
   5. invoke rk:ef-pr-description on the new PR
   6. [--slack only] post "<group> <mentors...>\n<PR-URL>" to #<channel> (URL on own line → Slack unfurls)
 
@@ -138,6 +140,24 @@ First push sets tracking to `origin/<branch>` (this completes the pairing with t
 
 If push is rejected (non-fast-forward): surface the error, **never auto-force-push**. Suggest the user run `git pull --rebase origin <branch>` and re-ship.
 
+### 8a. Build the short PR summary line
+
+Every PR must open with a one-line description in its body — **never create the PR with an empty body**. Resolve `<pr-summary>` in this order:
+
+1. `--pr-summary=<text>` flag → use verbatim (trim, collapse to a single line, cap ≤ 100 chars).
+2. Auto-derive from the parsed branch (no prompt — keep the ship one-shot):
+   ```
+   <CARD-ID> — <humanized-slug>
+   ```
+   - `<humanized-slug>`: take the branch `<slug>`, replace `-` with spaces, capitalize the first letter (e.g. `auth-refresh` → `Auth refresh`).
+   - If `<slug>` is missing, fall back to `<CARD-ID> — <feature> changes` (e.g. `UP-70961 — auth changes`).
+
+Examples:
+- Branch `dev_s9_26.feat/UP-70961-auth-refresh` → `UP-70961 — Auth refresh`
+- Branch `dev_s9_26.fix/UP-72003` (no slug), feature `webhook` → `UP-72003 — webhook changes`
+
+This line is the initial PR body. Step 9 (`rk:ef-pr-description`) expands it into the full body; with `--no-desc` this short line remains as the PR body so the PR is still described.
+
 ### 8. Create PR
 
 Check if PR already exists for this branch:
@@ -145,13 +165,13 @@ Check if PR already exists for this branch:
 gh pr view --json number,url,title,isDraft 2>/dev/null
 ```
 
-- **Exists** → skip creation. Capture `<pr-url>`. Print `Existing PR: <url>`.
+- **Exists** → skip creation. Capture `<pr-url>`. Print `Existing PR: <url>`. Do **not** overwrite the existing body with the short summary (leave step 9 to update it).
 - **Not exists** → create:
   ```bash
   gh pr create \
     --base develop \
     --title "<commit-subject>" \
-    --body "" \
+    --body "<pr-summary>" \
     [--draft] \
     [--assignee <user>]
   ```
@@ -169,7 +189,9 @@ Unless `--no-desc` is set, invoke [[rk:ef-pr-description]] with:
 - the Jira card ID parsed in step 2
 - the PR URL captured in step 8
 
-The downstream skill handles fetching Jira context, generating the body, and updating the PR description. If the PR already has a non-empty body, the downstream skill is responsible for the update-vs-replace decision — this skill does not gate it.
+The downstream skill handles fetching Jira context, generating the body, and updating the PR description — it expands the short `<pr-summary>` line from step 8a into the full body. If the PR already has a non-empty body, the downstream skill is responsible for the update-vs-replace decision — this skill does not gate it.
+
+With `--no-desc`, the short `<pr-summary>` line stays as the PR body (this is why step 8a always populates it).
 
 ### 10. Slack notification (opt-in via `--slack` or any `--slack-*` flag)
 
@@ -242,8 +264,9 @@ Commit:   feat(auth): UP-70961 auth-refresh
           (a1b2c3d)
 Pushed:   origin/dev_s9_26.feat/UP-70961-auth (upstream set)
 PR:       https://github.com/<org>/<repo>/pull/<n> [READY|DRAFT]
+Summary:  UP-70961 — Auth refresh
 Assignee: @me (tuannguyen-everfit)
-Body:     filled by rk:ef-pr-description ✓
+Body:     filled by rk:ef-pr-description ✓  (short summary set at creation)
 Slack:    posted to #backend-review-code (ts 1716800000.001234) — group @backend + 2 mentors
           (bundled MCP — URL won't auto-unfurl; paste manually for preview card)
           https://github.com/<org>/<repo>/pull/<n>
@@ -257,6 +280,7 @@ With `--dry-run`, the block shows each step as `(planned)`.
 - **`<feature>` is lowercase kebab-case, 1–2 words max.**
 - **`<CARD-ID>` is uppercase** — `UP-70961`, not `up-70961`.
 - **`<slug>` is lowercase kebab-case** — same casing as the branch.
+- **`<pr-summary>` is a single line, ≤ 100 chars** — the PR body is never opened empty.
 
 ## Edge cases
 

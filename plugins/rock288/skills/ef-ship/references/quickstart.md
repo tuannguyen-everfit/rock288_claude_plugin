@@ -74,8 +74,8 @@ Skill sẽ:
 1. Parse branch → extract type/card/slug
 2. Hỏi `feature` (vd: `auth`)
 3. Show plan + files staged → confirm
-4. Commit + push + tạo PR (assign bạn)
-5. Chain `rk:ef-pr-description` fill body
+4. Commit + push + tạo PR (assign bạn) — body có sẵn 1 dòng summary ngắn (`<CARD-ID> — <slug>`)
+5. Chain `rk:ef-pr-description` expand dòng summary thành full body
 6. Post Slack `<@backend> <@Long (BE)> <PR-URL>` vào `#backend-review-code`
 7. Print summary block
 
@@ -134,8 +134,9 @@ In plan + planned commands, không chạy gì. An toàn để preview.
 | Flag | Tác dụng |
 |---|---|
 | `--feature=<scope>` | Skip prompt scope, set thẳng |
+| `--pr-summary=<text>` | 1 dòng mô tả PR (body lúc tạo). Bỏ qua → auto từ branch: `<CARD-ID> — <slug>` |
 | `--draft` | Tạo PR ở draft mode |
-| `--no-desc` | Không chain `rk:ef-pr-description` (body trống) |
+| `--no-desc` | Không chain `rk:ef-pr-description` (body chỉ còn 1 dòng summary ngắn) |
 | `--assignee=<user>` | Assign GitHub user khác (default `@me`) |
 | `--no-assign` | Không assign ai |
 | `--slack` | Bật Slack post |
