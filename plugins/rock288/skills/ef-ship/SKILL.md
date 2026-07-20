@@ -1,10 +1,10 @@
 ---
 name: rk:ef-ship
-description: "Commit + push the current Everfit feature branch and open a PR targeting develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>) to build the commit subject `<type>(<feature>): <CARD-ID> <slug>`, asks for the feature scope, pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description to fill the body. Triggers on: 'ship', 'commit and push', 'create PR', 'tạo PR', 'commit + PR', 'push and PR'."
-argument-hint: "[--feature=<scope>] [--pr-summary=<text>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
+description: "Commit + push the current Everfit feature branch and open a PR targeting develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>) to build the commit subject `<type>(<feature>): <CARD-ID> <subtitle>`, asks for the feature scope and a short subtitle (prompts for one when the branch has no slug so the commit + PR always carry a descriptor), pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description to fill the body. Triggers on: 'ship', 'commit and push', 'create PR', 'tạo PR', 'commit + PR', 'push and PR'."
+argument-hint: "[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Ship: commit + push + open PR (Everfit flow)
@@ -31,7 +31,8 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | Arg | Required | Default | Notes |
 |---|---|---|---|
 | `--feature=<scope>` | no | asked | One-word feature/module name (kebab-case). Inserted as `<feature>` in commit subject. |
-| `--pr-summary=<text>` | no | auto-derived | One-line human-readable description of the PR, used as the initial PR body so the PR is never opened empty. If omitted, auto-derived from the branch (`<CARD-ID> — <humanized slug>`). See step 8a. |
+| `--subtitle=<text>` | no | branch slug, else asked | Short human-readable descriptor appended after `<CARD-ID>` in the commit subject **and** reused for the PR title/summary. Resolution: this flag → branch `<slug>` → interactive prompt. The commit subject is **never** left without a descriptor — since `rk:ef-branch-name` emits `dev_<sprint>.<type>/<CARD-ID>` with no slug, the skill prompts for one. Keep it verb-led, ≤ 60 chars. |
+| `--pr-summary=<text>` | no | auto-derived | One-line human-readable description of the PR, used as the initial PR body so the PR is never opened empty. If omitted, auto-derived from the resolved `<subtitle>` (`<CARD-ID> — <humanized subtitle>`). See step 8a. |
 | `--draft` | no | off | Create the PR as draft. |
 | `--no-desc` | no | off | Skip the auto-chain to `rk:ef-pr-description`. PR body left empty. |
 | `--assignee=<user>` | no | `@me` | GitHub username to assign on the PR. Default assigns the current authenticated user. Pass a username to assign someone else. |
@@ -79,16 +80,18 @@ After resolving, save it to memory keyed by branch so re-ships in the same branc
 
 Normalize: lowercase, kebab-case, strip non-`[a-z0-9-]`.
 
-### 4. Build commit subject
+### 4. Resolve `<subtitle>` + build commit subject
 
-Subject (target ≤ 72 chars):
-```
-<type>(<feature>): <CARD-ID> <short-slug>
-```
+**Resolve `<subtitle>`** — the human-readable descriptor after `<CARD-ID>`. Order of precedence:
+1. `--subtitle=<text>` flag → use verbatim (trim, collapse to one line).
+2. Branch `<slug>` parsed in step 2, if present → use as-is (kebab-case is fine, e.g. `auth-refresh`).
+3. **Prompt** via `AskUserQuestion`: "Short subtitle for the commit + PR (verb-led, ≤ 60 chars, e.g. `align lite profile projection with cache`)?"
 
-If `<slug>` is missing from the branch, drop it:
+The subtitle is **required** — the commit subject and PR must always carry a descriptor. **Never silently drop it**: `rk:ef-branch-name` emits branches with no slug (`dev_<sprint>.<type>/<CARD-ID>`), so the common path falls through to the prompt. After resolving, save it to memory keyed by branch (`memory/last_subtitle_<branch>.md`) so re-ships prefill.
+
+**Build the subject** (target ≤ 72 chars):
 ```
-<type>(<feature>): <CARD-ID>
+<type>(<feature>): <CARD-ID> <subtitle>
 ```
 
 No commit body — context belongs in the PR description.
@@ -145,16 +148,15 @@ If push is rejected (non-fast-forward): surface the error, **never auto-force-pu
 Every PR must open with a one-line description in its body — **never create the PR with an empty body**. Resolve `<pr-summary>` in this order:
 
 1. `--pr-summary=<text>` flag → use verbatim (trim, collapse to a single line, cap ≤ 100 chars).
-2. Auto-derive from the parsed branch (no prompt — keep the ship one-shot):
+2. Auto-derive from the `<subtitle>` resolved in step 4 (no extra prompt — it was already resolved there):
    ```
-   <CARD-ID> — <humanized-slug>
+   <CARD-ID> — <humanized-subtitle>
    ```
-   - `<humanized-slug>`: take the branch `<slug>`, replace `-` with spaces, capitalize the first letter (e.g. `auth-refresh` → `Auth refresh`).
-   - If `<slug>` is missing, fall back to `<CARD-ID> — <feature> changes` (e.g. `UP-70961 — auth changes`).
+   - `<humanized-subtitle>`: take the resolved `<subtitle>`, replace `-` with spaces, capitalize the first letter (e.g. `auth-refresh` → `Auth refresh`). A free-text subtitle from the flag/prompt is used as-is.
 
 Examples:
-- Branch `dev_s9_26.feat/UP-70961-auth-refresh` → `UP-70961 — Auth refresh`
-- Branch `dev_s9_26.fix/UP-72003` (no slug), feature `webhook` → `UP-72003 — webhook changes`
+- Subtitle `auth-refresh` (from branch slug) → `UP-70961 — Auth refresh`
+- Subtitle `align lite profile projection with cache` (from prompt) → `UP-74976 — align lite profile projection with cache`
 
 This line is the initial PR body. Step 9 (`rk:ef-pr-description`) expands it into the full body; with `--no-desc` this short line remains as the PR body so the PR is still described.
 
@@ -279,7 +281,7 @@ With `--dry-run`, the block shows each step as `(planned)`.
 - **Subject is one line, ≤ 72 chars, no trailing period.**
 - **`<feature>` is lowercase kebab-case, 1–2 words max.**
 - **`<CARD-ID>` is uppercase** — `UP-70961`, not `up-70961`.
-- **`<slug>` is lowercase kebab-case** — same casing as the branch.
+- **`<subtitle>` is verb-led, ≤ 60 chars** — from the branch slug (kebab), the `--subtitle` flag, or the prompt. Always present; never dropped.
 - **`<pr-summary>` is a single line, ≤ 100 chars** — the PR body is never opened empty.
 
 ## Edge cases
@@ -288,7 +290,7 @@ With `--dry-run`, the block shows each step as `(planned)`.
 - **PR already exists**: skip `gh pr create`. Still chain `rk:ef-pr-description` unless `--no-desc` — let it decide whether to update.
 - **Repo has no `develop` branch on remote**: abort with a clear error. Don't silently re-target `main`. (Use `gh pr create --base <other>` manually if needed.)
 - **`<feature>` collides with `<type>` word** (e.g. `feat(feat): ...`): warn and re-prompt for a clearer scope.
-- **Commit subject exceeds 72 chars**: warn but proceed. Don't truncate silently — the user can shorten `<feature>` or `<slug>` and re-ship.
+- **Commit subject exceeds 72 chars**: warn but proceed. Don't truncate silently — the user can shorten `<feature>` or `<subtitle>` and re-ship.
 
 ## Safety rules
 
