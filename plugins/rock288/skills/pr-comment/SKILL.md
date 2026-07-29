@@ -195,14 +195,17 @@ Always use `POST /pulls/N/reviews` with a `comments` array — never loop over `
 
 ## Idempotency
 
-GitHub does NOT de-duplicate review comments. Re-running this skill against the same findings creates duplicates. Before posting, scan existing reviews:
+GitHub does NOT de-duplicate review comments. Re-running this skill against the same findings creates duplicates. Before posting, scan **your own** existing comments:
 
 ```bash
+ME=$(gh api user --jq .login)
 gh api "repos/$REPO/pulls/$PR_NUMBER/comments" --paginate \
-  | jq -r '.[] | .path + ":" + (.line // .original_line | tostring) + " — " + (.body | split("\n")[0])'
+  | jq -r --arg me "$ME" '.[] | select(.user.login == $me) | .path + ":" + (.line // .original_line | tostring) + " — " + (.body | split("\n")[0])'
 ```
 
-If any line of the planned post matches an existing comment's `path:line` AND the existing comment's first ~60 chars overlap significantly with the planned body (substring or high token-overlap), warn the user and skip. Don't rely on tool-marker prefixes — there aren't any (see "Comment voice").
+**Scope the scan to `$ME` — never to all authors.** A teammate (or another agent account) running the same review converges on the same `path:line` with near-identical wording; counting their comment as yours silently drops your finding, and a caller that then reports "check my comments" points at a comment you never wrote.
+
+If any line of the planned post matches one of YOUR existing comments' `path:line` AND that comment's first ~60 chars overlap significantly with the planned body (substring or high token-overlap), warn the user and skip. Don't rely on tool-marker prefixes — there aren't any (see "Comment voice").
 
 ## Example end-to-end
 

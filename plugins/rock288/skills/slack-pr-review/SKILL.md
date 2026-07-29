@@ -137,8 +137,8 @@ Report compactly:
 - **Not a channel member** → `conversations_replies`/post may fail. Try
   `mcp__slack-mcp__conversations_join` (preferred backend only) or fall back to the
   `claude_ai_Slack` backend; if still blocked, print the reply for manual paste.
-- **PR already reviewed** → `pr-comment` handles idempotency (scans existing comments, skips
-  near-duplicates). Don't re-post `LGTM!` if an identical recent comment by you already exists —
+- **PR already reviewed** → `pr-comment` handles idempotency (scans **your own** existing comments,
+  skips near-duplicates). Don't re-post `LGTM!` if an identical recent comment by you already exists —
   check with `gh pr view <N> --json comments`.
 - **Review is inconclusive / errors** → do NOT guess a branch. Surface the failure, post
   nothing, and let the user decide.
