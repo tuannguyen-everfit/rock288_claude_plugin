@@ -74,9 +74,11 @@
     [--base=<branch>] [--no-checkout] [--dry-run]
   category: other
   description: 'Generate Everfit-style branch from a Jira card link AND create it
-    locally off the latest base branch (default: develop). Format: dev_<sprint>.<type>/<CARD-ID>-<slug>.
-    Example: dev_s9_26.feat/UP-70961-auth. Triggers on: ''branch name'', ''tạo branch'',
-    ''new branch from jira'', ''generate branch''.'
+    locally off the latest tip of any base branch you pass (default: develop). Whatever
+    branch you pass as --base, it fetches that branch''s newest code from origin and
+    splits the new branch from it. Format: dev_<sprint>.<type>/<CARD-ID>. Example:
+    dev_s9_26.feat/UP-70961. Triggers on: ''branch name'', ''tạo branch'', ''new branch
+    from jira'', ''generate branch'', ''branch off <branch>'', ''tách branch từ <branch>''.'
   has_references: false
   has_scripts: false
   name: branch-name
@@ -276,25 +278,42 @@
   category: utilities
   description: 'Generate an Everfit daily standup report from Jira worklogs and post
     it as a reply into a Slack thread you provide. Pulls cards you logged work on
-    the target date (DONE / PROGRESS CHANGED) plus your open-sprint cards (PLAN FOR
-    TODAY), derives progress % from time tracking, then drafts the report for your
+    the target date (DONE / PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY,
+    max 5), derives progress % from time tracking, then drafts the report for your
     review before replying into the thread. Triggers on: ''daily report'', ''standup'',
     ''daily'', ''EOD report'', ''báo cáo ngày'', ''wrap up''.'
   has_references: true
   has_scripts: false
   name: ef-daily-report
   path: ef-daily-report/SKILL.md
-- argument_hint: '[--feature=<scope>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign]
-    [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>]
-    [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes]
-    [--dry-run]'
+- argument_hint: <mô tả | slack-thread-url | (trống = lấy ngữ cảnh chat)> [--epic=UP-XXXXX]
+    [--point=N] [--type=Task|Bug|Improvement] [--priority=Medium|High|Highest] [--assignee=me|<email>]
+    [--project=UP] [--fix-version=<name>|none] [--prefix=S] [--pr=<url>] [--dry-run]
+  category: other
+  description: 'Create Everfit Jira card(s) in the team''s house format from a chat
+    request, a Slack thread link, or the current conversation. Builds the summary
+    tags + the Epic/Point metadata line + Context/Goal|Symptom/Tasks|Investigate/Reference/AC
+    body, resolves epic/priority/assignee/fixVersion, then creates the card immediately
+    (no confirmation) and echoes what it wrote. Triggers on: ''tạo card'', ''tạo card
+    jira'', ''tạo ticket'', ''create jira card'', ''create card'', ''open a jira card'',
+    ''tách thành N card'', ''tạo card từ thread này''.'
+  has_references: false
+  has_scripts: false
+  name: ef-jira-card
+  path: ef-jira-card/SKILL.md
+- argument_hint: '[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft]
+    [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>]
+    [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>]
+    [--slack-clear-default-mentors] [--yes] [--dry-run]'
   category: other
   description: 'Commit + push the current Everfit feature branch and open a PR targeting
     develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>)
-    to build the commit subject `<type>(<feature>): <CARD-ID> <slug>`, asks for the
-    feature scope, pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description
-    to fill the body. Triggers on: ''ship'', ''commit and push'', ''create PR'', ''tạo
-    PR'', ''commit + PR'', ''push and PR''.'
+    to build the commit subject `<type>(<feature>): <CARD-ID> <subtitle>`, asks for
+    the feature scope and a short subtitle (prompts for one when the branch has no
+    slug so the commit + PR always carry a descriptor), pushes with upstream tracking,
+    opens the PR, then auto-chains rk:ef-pr-description to fill the body. Triggers
+    on: ''ship'', ''commit and push'', ''create PR'', ''tạo PR'', ''commit + PR'',
+    ''push and PR''.'
   has_references: true
   has_scripts: false
   name: ef-ship
@@ -636,14 +655,15 @@
   path: skill-creator/SKILL.md
 - argument_hint: '[<slack-message-url>] [--pr=<#N|url>] [--dry-run]'
   category: utilities
-  description: 'Review a PR linked inside a Slack message, then act on the result
-    end-to-end. Given a Slack message URL (whose text contains a GitHub PR link),
-    run rk:code-review on that PR; if it surfaces Critical/Important findings, post
-    them inline via rk:pr-comment and reply in the Slack thread ''<@author> Please
+  description: 'Review the PR(s) linked inside a Slack message, then act on the result
+    end-to-end. Given a Slack message URL (whose text contains one or more GitHub
+    PR links), run rk:code-review on each; if a PR has Critical/Important findings,
+    post them inline via rk:pr-comment and reply in the Slack thread ''<@author> Please
     check my comments''; otherwise comment ''LGTM!'' on the PR and reply ''<@author>
-    approved''. Fully automatic — no confirmation gate. Triggers on: ''review pr from
-    slack'', ''review slack pr link'', ''check pr in this slack message'', ''review
-    code từ link slack''.'
+    approved''. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block.
+    Fully automatic — no confirmation gate. Triggers on: ''review pr from slack'',
+    ''review slack pr link'', ''check pr in this slack message'', ''review code từ
+    link slack''.'
   has_references: false
   has_scripts: false
   name: slack-pr-review

@@ -1,6 +1,6 @@
 ---
 name: rk:slack-pr-review
-description: "Review a PR linked inside a Slack message, then act on the result end-to-end. Given a Slack message URL (whose text contains a GitHub PR link), run rk:code-review on that PR; if it surfaces Critical/Important findings, post them inline via rk:pr-comment and reply in the Slack thread '<@author> Please check my comments'; otherwise comment 'LGTM!' on the PR and reply '<@author> approved'. Fully automatic — no confirmation gate. Triggers on: 'review pr from slack', 'review slack pr link', 'check pr in this slack message', 'review code từ link slack'."
+description: "Review the PR(s) linked inside a Slack message, then act on the result end-to-end. Given a Slack message URL (whose text contains one or more GitHub PR links), run rk:code-review on each; if a PR has Critical/Important findings, post them inline via rk:pr-comment and reply in the Slack thread '<@author> Please check my comments'; otherwise comment 'LGTM!' on the PR and reply '<@author> approved'. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block. Fully automatic — no confirmation gate. Triggers on: 'review pr from slack', 'review slack pr link', 'check pr in this slack message', 'review code từ link slack'."
 argument-hint: "[<slack-message-url>] [--pr=<#N|url>] [--dry-run]"
 metadata:
   author: rock288
@@ -66,10 +66,15 @@ Read the target message (backend selection mirrors §6):
 From the parent message:
 - `author_id` = the message's `user` field. The Slack mention is `<@author_id>` — no
   display-name lookup needed; Slack renders the mention from the ID.
-- `text` = the message body. Extract the PR URL with:
+- `text` = the message body. Extract PR URLs with:
   `https://github\.com/[^/\s]+/[^/\s]+/pull/\d+`
-  Take the first match. If multiple distinct PRs are linked, ask the user which one (this is the
-  only interactive stop in the flow).
+  - `--pr=` was passed → review **exactly** that PR. Don't re-derive, don't ask.
+  - Otherwise → review **every distinct** PR linked, in the order they appear, one after
+    another. A release message routinely carries one PR per target branch
+    (`Master to debug / staging / develop`); reviewing only the first silently drops the rest.
+
+  **No interactive stop here.** A batch caller (e.g. a Slack bot) invokes this skill **once per
+  PR** with `--pr=`, so the multi-PR branch only applies to a human invocation.
 
 If no PR link is found and `--pr` was not passed → **STOP**: tell the user the message has no
 GitHub PR link and ask for `--pr=`.
@@ -114,6 +119,12 @@ would post, and the exact Slack reply text. Stop.
 
 ### 6. Reply into the Slack thread
 
+> **SKIP this step entirely when the caller owns the Slack write.** A caller that posts the reply
+> itself (a bot replying under its own token) withholds every Slack tool from the run on purpose,
+> so the reply arrives from the bot rather than from whoever's session tokens an MCP Slack backend
+> holds. In that mode your §7 block IS the output — don't hunt for another way to post, and don't
+> claim in your answer that you posted.
+
 Mirror [`ef-daily-report`](../ef-daily-report/SKILL.md) §5 / `ef-ship` §10 backend selection, always passing
 `thread_ts` = the parsed `ts` from step 1 so the reply lands **in the thread**:
 - **Preferred** (if registered): `mcp__slack-mcp__conversations_add_message` with `channel_id`,
@@ -124,13 +135,39 @@ Mirror [`ef-daily-report`](../ef-daily-report/SKILL.md) §5 / `ef-ship` §10 bac
 On post failure, surface the error but don't crash — print the reply text so the user can paste
 it manually.
 
+### 7. Result block (authoritative)
+
+End your answer with **exactly these four lines**, nothing after them. A caller parses this
+block to render the review card, so it is machine-read, not prose:
+
+```
+VERDICT: APPROVED|NEEDS_FIX
+MUST_FIX: <count of Critical + Important>
+OPTIONAL: <count of Nice-to-have>
+SUMMARY: <one English sentence, max 200 chars>
+```
+
+- `VERDICT` — `APPROVED` = the LGTM branch (5b); `NEEDS_FIX` = blocking findings posted (5a).
+  **If the run failed, emit no `VERDICT` line at all** — never guess a branch (see STOP rules).
+- `MUST_FIX` — exactly what you posted inline. `OPTIONAL` — Nice-to-have, never posted, never
+  routes anything.
+- `SUMMARY` — the **reason for the verdict**: what is right, plus the single most notable risk.
+  Not a description of the PR. One line. Shape to copy:
+  `SUMMARY: Correct, tested no-op dirty-check for profile stats; the per-client info trace adds standing Datadog log volume.`
+
+Emit the block even when a field is uncertain — a caller degrades a missing field gracefully,
+but cannot recover a block that was never printed.
+
 ## Output to the user
 
-Report compactly:
+Before the §7 block, report compactly:
 1. Resolved Slack message → `channel_id`, `thread_ts`, author `<@id>`.
 2. Resolved PR → `REPO#N`.
 3. Review verdict → counts: `Critical=X, Important=Y, Nice-to-have=Z` → branch taken.
-4. What was posted: PR review URL (5a) or `LGTM!` comment URL (5b), and the Slack reply `ts`.
+4. What was posted: PR review URL (5a) or `LGTM!` comment URL (5b), and the Slack reply `ts`
+   (or "caller owns the reply" when §6 was skipped).
+
+**The §7 block is authoritative** — this prose section is for a human reading the transcript.
 
 ## Edge cases & safety
 
@@ -149,6 +186,7 @@ Report compactly:
 ## STOP rules
 
 - ✗ No PR link in the message AND no `--pr=` → stop, ask for the PR.
+- ✗ Don't skip the §7 result block, and don't put anything after it.
 - ✗ Don't edit code or push commits — review + comment + reply only.
 - ✗ Don't post Nice-to-have findings inline; they never affect routing.
 - ✗ Don't change the two literal reply strings.
