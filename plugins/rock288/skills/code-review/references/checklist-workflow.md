@@ -4,7 +4,7 @@ How to apply structured review checklists during code review.
 
 ## When to Use
 
-- Pre-landing review (from `/ck:ship` pipeline)
+- Pre-landing review (from `/rk:ship` pipeline)
 - Explicit request for checklist review
 - Security audit before release
 - Code-reviewer agent when reviewing significant changes (10+ files or security-sensitive)
@@ -91,10 +91,10 @@ For each critical issue, use `AskUserQuestion`:
 
 If user chose A (fix): apply fixes, commit, then re-run tests before continuing.
 
-## Integration with /ck:ship
+## Integration with /rk:ship
 
 The ship pipeline calls this workflow at Step 4. Critical findings block the pipeline. Informational findings are included in the PR body.
 
-## Integration with /ck:code-review
+## Integration with /rk:code-review
 
 When invoked as part of standard code review, the checklist augments (not replaces) the existing scout → review → fix → verify pipeline. Checklist findings are merged with code-reviewer's own findings.

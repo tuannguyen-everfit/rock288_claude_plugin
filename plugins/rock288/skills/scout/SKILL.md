@@ -1,5 +1,5 @@
 ---
-name: ck:scout
+name: scout
 description: "Fast codebase scouting using parallel agents. Use for file discovery, task context gathering, quick searches across directories. Supports internal (Explore) and external (Gemini/OpenCode) agents."
 argument-hint: "[search-target] [ext]"
 metadata:
@@ -67,7 +67,7 @@ Load appropriate reference based on decision tree:
 - Each subagent must return a detailed summary report to a main agent
 
 ### 5. Collect Results
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "/rk:project-organization" skill to organize the outputs.
 
 - Timeout: 3 minutes per agent (skip non-responders)
 - `TaskUpdate` completed tasks; log timed-out agents in report (skip if Task tools unavailable)

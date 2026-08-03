@@ -1,5 +1,5 @@
 ---
-name: rk:ef-jira-card
+name: ef-jira-card
 description: "Create Everfit Jira card(s) in the team's house format from a chat request, a Slack thread link, or the current conversation. Builds the summary tags + the Epic/Point metadata line + Context/Goal|Symptom/Tasks|Investigate/Reference/AC body, resolves epic/priority/assignee/fixVersion, then creates the card immediately (no confirmation) and echoes what it wrote. Triggers on: 'tạo card', 'tạo card jira', 'tạo ticket', 'create jira card', 'create card', 'open a jira card', 'tách thành N card', 'tạo card từ thread này'."
 argument-hint: "<mô tả | slack-thread-url | (trống = lấy ngữ cảnh chat)> [--epic=UP-XXXXX] [--point=N] [--type=Task|Bug|Improvement] [--priority=Medium|High|Highest] [--assignee=me|<email>] [--project=UP] [--fix-version=<name>|none] [--prefix=S] [--pr=<url>] [--dry-run]"
 metadata:

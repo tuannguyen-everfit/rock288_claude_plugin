@@ -1,5 +1,5 @@
 ---
-name: ck:bootstrap
+name: bootstrap
 description: "Bootstrap new projects with research, tech stack, design, planning, and implementation. Modes: full (interactive), auto (default), fast (skip research), parallel (multi-agent)."
 license: MIT
 argument-hint: "[requirements] [--full|--auto|--fast|--parallel]"
@@ -17,7 +17,7 @@ End-to-end project bootstrapping from idea to running code.
 ## Usage
 
 ```
-/ck:bootstrap <user-requirements>
+/rk:bootstrap <user-requirements>
 ```
 
 **Flags** (optional, default `--auto`):
@@ -31,8 +31,8 @@ End-to-end project bootstrapping from idea to running code.
 
 **Example:**
 ```
-/ck:bootstrap "Build a SaaS dashboard with auth" --fast
-/ck:bootstrap "E-commerce platform with Stripe" --parallel
+/rk:bootstrap "Build a SaaS dashboard with auth" --fast
+/rk:bootstrap "E-commerce platform with Stripe" --parallel
 ```
 
 ## Workflow Overview
@@ -66,20 +66,20 @@ Check if Git initialized. If not:
 After early phases (research, tech stack, design), trigger downstream skills:
 
 ### Planning Phase
-Activate **ck:plan** skill with mode-appropriate flag:
-- `--full` → `/ck:plan --hard <requirements>` (thorough research + validation)
-- `--auto` → `/ck:plan --auto <requirements>` (auto-detect complexity)
-- `--fast` → `/ck:plan --fast <requirements>` (skip research)
-- `--parallel` → `/ck:plan --parallel <requirements>` (file ownership + dependency graph)
+Activate **rk:plan** skill with mode-appropriate flag:
+- `--full` → `/rk:plan --hard <requirements>` (thorough research + validation)
+- `--auto` → `/rk:plan --auto <requirements>` (auto-detect complexity)
+- `--fast` → `/rk:plan --fast <requirements>` (skip research)
+- `--parallel` → `/rk:plan --parallel <requirements>` (file ownership + dependency graph)
 
 Planning skill outputs a plan path. Pass this to cook.
 
 ### Implementation Phase
-Activate **ck:cook** skill with the plan path and mode-appropriate flag:
-- `--full` → `/ck:cook <plan-path>` (interactive review gates)
-- `--auto` → `/ck:cook --auto <plan-path>` (skip review gates)
-- `--fast` → `/ck:cook --auto <plan-path>` (skip review gates)
-- `--parallel` → `/ck:cook --parallel <plan-path>` (multi-agent execution)
+Activate **rk:cook** skill with the plan path and mode-appropriate flag:
+- `--full` → `/rk:cook <plan-path>` (interactive review gates)
+- `--auto` → `/rk:cook --auto <plan-path>` (skip review gates)
+- `--fast` → `/rk:cook --auto <plan-path>` (skip review gates)
+- `--parallel` → `/rk:cook --parallel <plan-path>` (multi-agent execution)
 
 ## Role
 
@@ -94,7 +94,7 @@ Elite software engineering expert specializing in system architecture and techni
 - DO NOT implement code directly — delegate through planning + cook skills
 - Sacrifice grammar for concision in reports
 - List unresolved questions at end of reports
-- Run `/ck:journal` to write a concise technical journal entry upon completion
+- Run `/rk:journal` to write a concise technical journal entry upon completion
 
 ## References
 

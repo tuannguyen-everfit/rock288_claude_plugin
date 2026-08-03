@@ -1,5 +1,5 @@
 ---
-name: rk:copy-function
+name: copy-function
 description: "Copy a function from the everfit-api repo into the current project with the minimum code required to run. Triggers on 'copy function', 'copy <name> from everfit-api', 'port function', 'extract function with dependencies'. Recursively traces imports/requires and copies only the symbols actually used — no dead code, no unused exports."
 argument-hint: "<function-name> [--source=<repo-path>] [--dest=<dir>]"
 metadata:

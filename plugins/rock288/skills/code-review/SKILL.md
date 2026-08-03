@@ -1,5 +1,5 @@
 ---
-name: ck:code-review
+name: code-review
 description: "Review code quality with adversarial rigor. Supports input modes: pending changes, PR number, commit hash, codebase scan. Always-on red-team analysis finds security holes, false assumptions, and failure modes."
 argument-hint: "[#PR | COMMIT | --pending | codebase [parallel]]"
 metadata:
@@ -55,7 +55,7 @@ Verify before implementing. Ask before assuming. Evidence before claims.
 | Requesting review | After tasks, before merge, stuck on problem | `references/requesting-code-review.md` |
 | Verification gates | Before any completion claim, commit, PR | `references/verification-before-completion.md` |
 | Edge case scouting | After implementation, before review | `references/edge-case-scouting.md` |
-| **Checklist review** | Pre-landing, `/ck:ship` pipeline, security audit | `references/checklist-workflow.md` |
+| **Checklist review** | Pre-landing, `/rk:ship` pipeline, security audit | `references/checklist-workflow.md` |
 | **Task-managed reviews** | Multi-file features (3+ files), parallel reviewers, fix cycles | `references/task-management-reviews.md` |
 
 ## Quick Decision Tree
@@ -127,7 +127,7 @@ No performative agreement. Verify before implementing. Push back if wrong.
 **When:** After implementation, before requesting code-reviewer
 
 **Process:**
-1. Invoke `/ck:scout` with edge-case-focused prompt
+1. Invoke `/rk:scout` with edge-case-focused prompt
 2. Scout analyzes: affected files, data flows, error paths, boundary conditions
 3. Review scout findings for potential issues
 4. Address critical gaps before code review
@@ -185,8 +185,8 @@ TaskCreate: "Verify fixes pass"        → pending, blockedBy: [fix]
 
 | Subcommand | Reference | Purpose |
 |------------|-----------|---------|
-| `/ck:code-review codebase` | `references/codebase-scan-workflow.md` | Scan & analyze the codebase |
-| `/ck:code-review codebase parallel` | `references/parallel-review-workflow.md` | Ultrathink edge cases, then parallel verify |
+| `/rk:code-review codebase` | `references/codebase-scan-workflow.md` | Scan & analyze the codebase |
+| `/rk:code-review codebase parallel` | `references/parallel-review-workflow.md` | Ultrathink edge cases, then parallel verify |
 
 ## Bottom Line
 

@@ -22,7 +22,7 @@ Before submitting any review, verify each item:
 - [ ] Duplication (DRY): no copy-pasted logic and no new helper re-implementing an existing one — grep the codebase before accepting a new util
 
 **IMPORTANT**: Ensure token efficiency. Use `scout` and `code-review` skills for protocols.
-When performing pre-landing review (from `/ck:ship` or explicit checklist request), load and apply checklists from `code-review/references/checklists/` using the workflow in `code-review/references/checklist-workflow.md`. Two-pass model: critical (blocking) + informational (non-blocking).
+When performing pre-landing review (from `/rk:ship` or explicit checklist request), load and apply checklists from `code-review/references/checklists/` using the workflow in `code-review/references/checklist-workflow.md`. Two-pass model: critical (blocking) + informational (non-blocking).
 
 ## Core Responsibilities
 
@@ -43,7 +43,7 @@ Before reviewing, scout for edge cases the diff doesn't show:
 git diff --name-only HEAD~1  # Get changed files
 ```
 
-Use `/ck:scout` with edge-case-focused prompt:
+Use `/rk:scout` with edge-case-focused prompt:
 ```
 Scout edge cases for recent changes.
 Changed: {files}

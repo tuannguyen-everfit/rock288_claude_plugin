@@ -1,5 +1,5 @@
 ---
-name: ck:sequential-thinking
+name: sequential-thinking
 description: Apply step-by-step analysis for complex problems with revision capability. Use for multi-step reasoning, hypothesis verification, adaptive planning, problem decomposition, course correction.
 license: MIT
 argument-hint: "[problem to analyze step-by-step]"

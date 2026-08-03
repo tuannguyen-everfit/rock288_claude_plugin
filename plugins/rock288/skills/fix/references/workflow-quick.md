@@ -13,7 +13,7 @@ Locate affected file(s) and their direct dependencies only.
 **Output:** `✓ Step 1: Scouted - [file], [N] direct deps`
 
 ### Step 2: Diagnose (Abbreviated)
-Activate `ck:debug` skill. Activate `ck:sequential-thinking` for structured analysis.
+Activate `rk:debug` skill. Activate `rk:sequential-thinking` for structured analysis.
 
 - Read error message/logs
 - **Capture pre-fix state:** Record exact error output (this is your verification baseline)
@@ -66,13 +66,13 @@ Report summary to user.
 
 | Step | Skills/Subagents |
 |------|------------------|
-| 1 | `ck:scout` (minimal) or direct file read |
-| 2 | `ck:debug`, `ck:sequential-thinking` |
+| 1 | `rk:scout` (minimal) or direct file read |
+| 2 | `rk:debug`, `rk:sequential-thinking` |
 | 3 | Parallel `Bash` for verification |
 | 4 | `code-reviewer` subagent |
 | 5 | `git-manager` subagent |
 
-**Extra:** `ck:context-engineering` if dealing with AI/LLM code
+**Extra:** `rk:context-engineering` if dealing with AI/LLM code
 
 ## Notes
 

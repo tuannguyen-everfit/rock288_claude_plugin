@@ -1,5 +1,5 @@
 ---
-name: ck:cook
+name: cook
 description: "ALWAYS activate this skill before implementing EVERY feature, plan, or fix."
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
 metadata:
@@ -16,7 +16,7 @@ End-to-end implementation with automatic workflow detection.
 ## Usage
 
 ```
-/ck:cook <natural language task OR plan path>
+/rk:cook <natural language task OR plan path>
 ```
 
 **IMPORTANT:** If no flag is provided, the skill will use the `interactive` mode by default for the workflow.
@@ -30,8 +30,8 @@ End-to-end implementation with automatic workflow detection.
 
 **Example:**
 ```
-/ck:cook "Add user authentication to the app" --fast
-/ck:cook path/to/plan.md --auto
+/rk:cook "Add user authentication to the app" --fast
+/rk:cook path/to/plan.md --auto
 ```
 
 <HARD-GATE>
@@ -130,14 +130,14 @@ Human review required at these checkpoints (skipped with `--auto`):
   2. `docs-manager` subagent → update `./docs` if changes warrant
   3. `TaskUpdate` → mark all Claude Tasks complete after sync-back verification (skip if Task tools unavailable)
   4. Ask user if they want to commit via `git-manager` subagent
-  5. Run `/ck:journal` to write a concise technical journal entry upon completion
+  5. Run `/rk:journal` to write a concise technical journal entry upon completion
 
 ## Required Subagents (MANDATORY)
 
 | Phase | Subagent | Requirement |
 |-------|----------|-------------|
 | Research | `researcher` | Optional in fast/code |
-| Scout | `ck:scout` | Optional in code |
+| Scout | `rk:scout` | Optional in code |
 | Plan | `planner` | Optional in code |
 | UI Work | `ui-ux-designer` | If frontend work |
 | Testing | `tester`, `debugger` | **MUST** spawn |

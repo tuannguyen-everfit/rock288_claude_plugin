@@ -1,5 +1,5 @@
 ---
-name: rk:sync-from-everfit
+name: sync-from-everfit
 description: "Compare files between a fork repo (e.g. metric-service, file-service) and the parent everfit-api repo, then list everfit-api commits that should be cherry-picked. Triggers on 'sync from everfit-api', 'compare metric-service vs everfit-api', 'tìm commit cần cherry-pick', 'check missing commits', 'find cherry-picks', 'so sánh code everfit-api metric-service'. Dual-channel discovery: blame on shared file lines + directory scan for new-file commits and blame-shadowed commits. Skips identical files; dedupes by git patch-id; drops merge commits and commits already in target; runs git apply --check to label each candidate 'clean' or 'manual check'."
 argument-hint: "[--target=<path>] [--everfit=<path>] [--everfit-ref=<branch>] [--scope=<dir>] [--since=<date>] [--no-dir-scan] [--report=<path>]"
 metadata:

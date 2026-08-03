@@ -10,7 +10,7 @@
 ## Step 2: Generate Content
 
 **Mermaid Diagram Syntax:**
-When generating mermaid code blocks, use `/ck:mermaidjs-v11` skill for v11 syntax rules.
+When generating mermaid code blocks, use `/rk:mermaidjs-v11` skill for v11 syntax rules.
 
 **Essential rules (always apply):**
 - Quote node text with special characters: `A["text with /slashes"]`
@@ -147,8 +147,8 @@ Follow the 4-phase workflow:
 
 **MANDATORY — Theme Toggle:** Every HTML page MUST include the light/dark theme toggle button from `html-css-patterns.md` → "Theme Toggle Button" section. This is non-negotiable. The toggle button (`<button class="theme-toggle">`) must be the first child of `<body>`, with its CSS and JS inlined. Pages without the toggle are considered incomplete.
 
-For `--slides`: recommend invoking `/ck:ui-ux-pro-max` for richer style selection.
-Must use `/ck:mermaidjs-v11` for any Mermaid diagrams.
+For `--slides`: recommend invoking `/rk:ui-ux-pro-max` for richer style selection.
+Must use `/rk:mermaidjs-v11` for any Mermaid diagrams.
 
 ### HTML Step 4: Open in Browser
 - macOS: `open "{output-path}"`

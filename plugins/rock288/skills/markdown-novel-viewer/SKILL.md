@@ -1,5 +1,5 @@
 ---
-name: ck:markdown-novel-viewer
+name: markdown-novel-viewer
 description: View markdown files with calm, book-like reading experience via HTTP server. Use for long-form content, documentation preview, novel reading, report viewing, distraction-free reading.
 argument-hint: "[file-or-directory]"
 metadata:
@@ -11,7 +11,7 @@ metadata:
 
 Background HTTP server rendering markdown files with calm, book-like reading experience.
 
-**Note:** HTML generation mode (`/ck:preview --html ...`) produces self-contained HTML files that open directly in the browser — they do not use this server.
+**Note:** HTML generation mode (`/rk:preview --html ...`) produces self-contained HTML files that open directly in the browser — they do not use this server.
 
 ## ⚠️ Installation Required
 
@@ -61,12 +61,12 @@ node .claude/skills/markdown-novel-viewer/scripts/server.cjs --stop
 
 ## Skill Invocation
 
-Use `/ck:preview` for quick access:
+Use `/rk:preview` for quick access:
 
 ```bash
-/ck:preview plans/my-plan/plan.md    # View markdown file
-/ck:preview plans/                   # Browse directory
-/ck:preview --stop                   # Stop server
+/rk:preview plans/my-plan/plan.md    # View markdown file
+/rk:preview plans/                   # Browse directory
+/rk:preview --stop                   # Stop server
 ```
 
 ## Features

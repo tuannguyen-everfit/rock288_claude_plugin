@@ -1,5 +1,5 @@
 ---
-name: rk:slack-pr-review
+name: slack-pr-review
 description: "Review the PR(s) linked inside a Slack message, then act on the result end-to-end. Given a Slack message URL (whose text contains one or more GitHub PR links), run rk:code-review on each; if a PR has Critical/Important findings, post them inline via rk:pr-comment and reply in the Slack thread '<@author> Please check my comments'; otherwise comment 'LGTM!' on the PR and reply '<@author> approved'. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block. Fully automatic — no confirmation gate. Triggers on: 'review pr from slack', 'review slack pr link', 'check pr in this slack message', 'review code từ link slack'."
 argument-hint: "[<slack-message-url>] [--pr=<#N|url>] [--dry-run]"
 metadata:
@@ -13,7 +13,7 @@ Take a **Slack message URL** whose text contains a **GitHub PR link**, review th
 [`rk:code-review`](../code-review/SKILL.md), and route the outcome automatically:
 
 - **Has blocking findings** (Critical or Important) → post them inline with
-  [`rk:pr-comment`](../pr-comment/SKILL.md), then reply in the Slack thread:
+  [`rk:pr-comment`](../ef-pr-comment/SKILL.md), then reply in the Slack thread:
   `<@author> Please check my comments`
 - **Clean / only Nice-to-have** → comment `LGTM!` on the PR, then reply in the thread:
   `<@author> approved`
@@ -98,7 +98,7 @@ would post, and the exact Slack reply text. Stop.
 ### 5a. Branch: needs fix
 
 1. Post the Critical + Important findings inline by invoking
-   [`rk:pr-comment`](../pr-comment/SKILL.md) with `--severity=critical,important` so it runs
+   [`rk:pr-comment`](../ef-pr-comment/SKILL.md) with `--severity=critical,important` so it runs
    **non-interactively** (that flag skips its multi-select prompt and posts all matching
    findings). The findings from step 3 are already in context, which is `pr-comment`'s
    precondition. Comment voice rules from `pr-comment` apply — comments must read as if a human

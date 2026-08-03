@@ -53,10 +53,21 @@ There is no top-level `package.json`, no lint config, no global build step. Per-
 - Shared logic lives in `hooks/lib/`. Most-touched modules: `ck-config-utils.cjs` (loads `.claude/.ck.json` config + session state), `hook-logger.cjs` (timing + crash logging), `project-detector.cjs` (mono-repo vs single-repo detection — also reused by an OpenCode plugin per the comment in `session-init.cjs`).
 - `hooks/lib/__tests__/` holds unit tests for the lib modules (currently empty in this snapshot — verify before assuming).
 
-### Skill naming convention (mid-migration)
-- The plugin was renamed from `claudekit` → `rk` (commits `5809bd7`, `ba72930`).
-- 75 of 77 existing skills still have `name: ck:<slug>` in their `SKILL.md` frontmatter (legacy). New skills should use `name: rk:<slug>` to match the current plugin namespace.
-- Folder name and `name` field slug must match. Use kebab-case.
+### Skill naming convention
+
+**`name` in `SKILL.md` frontmatter must be the BARE slug — no namespace prefix.**
+
+Claude Code builds a plugin skill's slash command as `/<plugin-name>:<frontmatter name>`, concatenated verbatim with no prefix de-duplication. So:
+
+| frontmatter `name` | slash command | |
+|---|---|---|
+| `git` | `/rk:git` | ✅ |
+| `ck:git` | `/rk:ck:git` | ❌ legacy, migrated away |
+| `rk:git` | `/rk:rk:git` | ❌ doubled |
+
+- Folder name and `name` must be identical (the folder is what the Skill tool listing uses — a mismatch makes `/rk:<folder>` and the tool name disagree).
+- Kebab-case, no prefix. Cross-references in skill bodies use the invocable form: `/rk:<slug>`.
+- History: plugin was `claudekit` → `rk` (`5809bd7`, `ba72930`); all `ck:`/`ckm:` frontmatter names were stripped to bare slugs in `rk` 4.0.0, and the 7 `ck-*` skill folders were renamed (`ck-debug` → `debug`, etc.).
 
 ### Session state
 - Hooks read/write session state via `hooks/lib/session-state-manager.cjs` and `ck-config-utils.cjs`.

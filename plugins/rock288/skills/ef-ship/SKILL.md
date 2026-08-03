@@ -1,5 +1,5 @@
 ---
-name: rk:ef-ship
+name: ef-ship
 description: "Commit + push the current Everfit feature branch and open a PR targeting develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>) to build the commit subject `<type>(<feature>): <CARD-ID> <subtitle>`, asks for the feature scope and a short subtitle (prompts for one when the branch has no slug so the commit + PR always carry a descriptor), pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description to fill the body. Triggers on: 'ship', 'commit and push', 'create PR', 'tạo PR', 'commit + PR', 'push and PR'."
 argument-hint: "[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
 metadata:

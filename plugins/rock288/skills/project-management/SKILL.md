@@ -1,5 +1,5 @@
 ---
-name: ck:project-management
+name: project-management
 description: "Track progress, update plan statuses, manage Claude Tasks, generate reports, coordinate docs updates. Use for project oversight, status checks, plan completion, task hydration, cross-session continuity."
 argument-hint: "[task: status, hydrate, sync, report]"
 metadata:
@@ -131,6 +131,6 @@ Update `status` when plan state changes.
 
 ## Related Skills
 
-- `ck:plan` — Creates implementation plans (planning phase)
-- `ck:cook` — Implements plans (execution phase, invokes project-manager at finalize)
+- `rk:plan` — Creates implementation plans (planning phase)
+- `rk:cook` — Implements plans (execution phase, invokes project-manager at finalize)
 - `plans-kanban` — Visual dashboard for plan viewing

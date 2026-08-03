@@ -34,6 +34,16 @@
   has_scripts: false
   name: ask
   path: ask/SKILL.md
+- argument_hint: '[Goal/Metric description] or inline config block'
+  category: utilities
+  description: Autonomous iterative optimization loop — run N iterations against a
+    mechanical metric, learn from git history, auto-keep/discard changes. Use for
+    improving measurable metrics (coverage, performance, bundle size, etc.) through
+    repeated experimentation.
+  has_references: true
+  has_scripts: false
+  name: autoresearch
+  path: autoresearch/SKILL.md
 - argument_hint: '[framework] [task]'
   category: backend
   description: Build backends with Node.js, Python, Go (NestJS, FastAPI, Django).
@@ -70,19 +80,6 @@
   has_scripts: false
   name: brainstorm
   path: brainstorm/SKILL.md
-- argument_hint: <jira-link-or-card-id> [--sprint=<sprint>] [--type=<feat|fix|...>]
-    [--base=<branch>] [--no-checkout] [--dry-run]
-  category: other
-  description: 'Generate Everfit-style branch from a Jira card link AND create it
-    locally off the latest tip of any base branch you pass (default: develop). Whatever
-    branch you pass as --base, it fetches that branch''s newest code from origin and
-    splits the new branch from it. Format: dev_<sprint>.<type>/<CARD-ID>. Example:
-    dev_s9_26.feat/UP-70961. Triggers on: ''branch name'', ''tạo branch'', ''new branch
-    from jira'', ''generate branch'', ''branch off <branch>'', ''tách branch từ <branch>''.'
-  has_references: false
-  has_scripts: false
-  name: branch-name
-  path: branch-name/SKILL.md
 - argument_hint: '[url or task]'
   category: multimedia
   description: Automate browsers with Puppeteer CLI scripts and persistent sessions.
@@ -92,72 +89,6 @@
   has_scripts: true
   name: chrome-devtools
   path: chrome-devtools/SKILL.md
-- argument_hint: '[Goal/Metric description] or inline config block'
-  category: utilities
-  description: Autonomous iterative optimization loop — run N iterations against a
-    mechanical metric, learn from git history, auto-keep/discard changes. Use for
-    improving measurable metrics (coverage, performance, bundle size, etc.) through
-    repeated experimentation.
-  has_references: true
-  has_scripts: false
-  name: ck-autoresearch
-  path: ck-autoresearch/SKILL.md
-- argument_hint: '[error or issue description]'
-  category: utilities
-  description: Debug systematically with root cause analysis before fixes. Use for
-    bugs, test failures, unexpected behavior, performance issues, call stack tracing,
-    multi-layer validation, log analysis, CI/CD failures, database diagnostics, system
-    investigation.
-  has_references: true
-  has_scripts: true
-  name: ck-debug
-  path: ck-debug/SKILL.md
-- argument_hint: '[Goal/Metric description] or inline config block'
-  category: utilities
-  description: Autonomous iterative optimization loop — run N iterations against a
-    mechanical metric, learn from git history, auto-keep/discard changes. Use for
-    improving measurable metrics (coverage, performance, bundle size, etc.) through
-    repeated experimentation.
-  has_references: true
-  has_scripts: false
-  name: ck-loop
-  path: ck-loop/SKILL.md
-- argument_hint: '[task] OR [archive|red-team|validate]'
-  category: utilities
-  description: Plan implementations, design architectures, create technical roadmaps
-    with detailed phases. Use for feature planning, system design, solution architecture,
-    implementation strategy, phase documentation.
-  has_references: true
-  has_scripts: false
-  name: ck-plan
-  path: ck-plan/SKILL.md
-- argument_hint: <feature description or change proposal> [--files <glob>]
-  category: utilities
-  description: 5 expert personas debate proposed changes before implementation. Catches
-    architectural, security, performance, and UX issues early. Use before major features
-    or risky changes.
-  has_references: false
-  has_scripts: false
-  name: ck-predict
-  path: ck-predict/SKILL.md
-- argument_hint: <file path or feature description>
-  category: utilities
-  description: Generate comprehensive edge cases and test scenarios by decomposing
-    features across 12 dimensions. Use before implementation or testing to catch issues
-    early.
-  has_references: false
-  has_scripts: false
-  name: ck-scenario
-  path: ck-scenario/SKILL.md
-- argument_hint: <scope glob or 'full'> [--fix] [--iterations N]
-  category: utilities
-  description: STRIDE + OWASP-based security audit with optional auto-fix. Scans code
-    for vulnerabilities, categorizes by severity, and can iteratively fix findings
-    using ck:autoresearch pattern.
-  has_references: true
-  has_scripts: false
-  name: ck-security
-  path: ck-security/SKILL.md
 - argument_hint: '[#PR | COMMIT | --pending | codebase [parallel]]'
   category: utilities
   description: 'Review code quality with adversarial rigor. Supports input modes:
@@ -222,6 +153,16 @@
   has_scripts: true
   name: databases
   path: databases/SKILL.md
+- argument_hint: '[error or issue description]'
+  category: utilities
+  description: Debug systematically with root cause analysis before fixes. Use for
+    bugs, test failures, unexpected behavior, performance issues, call stack tracing,
+    multi-layer validation, log analysis, CI/CD failures, database diagnostics, system
+    investigation.
+  has_references: true
+  has_scripts: true
+  name: debug
+  path: debug/SKILL.md
 - argument_hint: '[platform] [environment]'
   category: infrastructure
   description: Deploy projects to any platform with auto-detection. Use when user
@@ -272,6 +213,19 @@
   has_scripts: true
   name: docs-seeker
   path: docs-seeker/SKILL.md
+- argument_hint: <jira-link-or-card-id> [--sprint=<sprint>] [--type=<feat|fix|...>]
+    [--base=<branch>] [--no-checkout] [--dry-run]
+  category: other
+  description: 'Generate Everfit-style branch from a Jira card link AND create it
+    locally off the latest tip of any base branch you pass (default: develop). Whatever
+    branch you pass as --base, it fetches that branch''s newest code from origin and
+    splits the new branch from it. Format: dev_<sprint>.<type>/<CARD-ID>. Example:
+    dev_s9_26.feat/UP-70961. Triggers on: ''branch name'', ''tạo branch'', ''new branch
+    from jira'', ''generate branch'', ''branch off <branch>'', ''tách branch từ <branch>''.'
+  has_references: false
+  has_scripts: false
+  name: ef-branch-name
+  path: ef-branch-name/SKILL.md
 - argument_hint: '[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack]
     [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...]
     [--dry-run]'
@@ -301,6 +255,27 @@
   has_scripts: false
   name: ef-jira-card
   path: ef-jira-card/SKILL.md
+- argument_hint: '[#PR | PR-URL] [--severity=important,critical,niceto]'
+  category: other
+  description: 'Post selected findings from /rk:code-review as inline PR review comments
+    anchored to exact file:line locations. Use AFTER a code review when the user wants
+    the Important (or chosen) items pushed to GitHub as inline comments. Triggers
+    on: comment to pr, post review inline, push findings to pr, drop comments on pr.'
+  has_references: false
+  has_scripts: false
+  name: ef-pr-comment
+  path: ef-pr-comment/SKILL.md
+- argument_hint: <jira-link-or-card-id> [--scope=<scope>] [--lang=en|vi] [--draft]
+  category: other
+  description: 'Generate full PR descriptions in English (default) from code changes
+    + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed,
+    Test plan, Rollout). Pass --lang=vi for Vietnamese. Triggers on: ''pr description'',
+    ''tạo description PR'', ''write PR body'', ''generate PR description'', ''commit
+    description from jira''.'
+  has_references: true
+  has_scripts: false
+  name: ef-pr-description
+  path: ef-pr-description/SKILL.md
 - argument_hint: '[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft]
     [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>]
     [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>]
@@ -401,6 +376,16 @@
   has_scripts: true
   name: llms
   path: llms/SKILL.md
+- argument_hint: '[Goal/Metric description] or inline config block'
+  category: other
+  description: Autonomous iterative optimization loop — run N iterations against a
+    mechanical metric, learn from git history, auto-keep/discard changes. Use for
+    improving measurable metrics (coverage, performance, bundle size, etc.) through
+    repeated experimentation.
+  has_references: true
+  has_scripts: false
+  name: loop
+  path: loop/SKILL.md
 - argument_hint: '[file-or-directory]'
   category: utilities
   description: View markdown files with calm, book-like reading experience via HTTP
@@ -477,6 +462,15 @@
   has_scripts: true
   name: payment-integration
   path: payment-integration/SKILL.md
+- argument_hint: '[task] OR [archive|red-team|validate]'
+  category: utilities
+  description: Plan implementations, design architectures, create technical roadmaps
+    with detailed phases. Use for feature planning, system design, solution architecture,
+    implementation strategy, phase documentation.
+  has_references: true
+  has_scripts: false
+  name: plan
+  path: plan/SKILL.md
 - argument_hint: '[plans-dir]'
   category: dev-tools
   description: View plans dashboard with progress tracking and timeline visualization.
@@ -486,27 +480,15 @@
   has_scripts: true
   name: plans-kanban
   path: plans-kanban/SKILL.md
-- argument_hint: '[#PR | PR-URL] [--severity=important,critical,niceto]'
+- argument_hint: <feature description or change proposal> [--files <glob>]
   category: other
-  description: 'Post selected findings from /rk:code-review as inline PR review comments
-    anchored to exact file:line locations. Use AFTER a code review when the user wants
-    the Important (or chosen) items pushed to GitHub as inline comments. Triggers
-    on: comment to pr, post review inline, push findings to pr, drop comments on pr.'
+  description: 5 expert personas debate proposed changes before implementation. Catches
+    architectural, security, performance, and UX issues early. Use before major features
+    or risky changes.
   has_references: false
   has_scripts: false
-  name: pr-comment
-  path: pr-comment/SKILL.md
-- argument_hint: <jira-link-or-card-id> [--scope=<scope>] [--lang=en|vi] [--draft]
-  category: other
-  description: 'Generate full PR descriptions in English (default) from code changes
-    + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed,
-    Test plan, Rollout). Pass --lang=vi for Vietnamese. Triggers on: ''pr description'',
-    ''tạo description PR'', ''write PR body'', ''generate PR description'', ''commit
-    description from jira''.'
-  has_references: true
-  has_scripts: false
-  name: pr-description
-  path: pr-description/SKILL.md
+  name: predict
+  path: predict/SKILL.md
 - argument_hint: '[path] OR [--html] --explain|--slides|--diagram|--ascii [topic]
     OR --html --diff|--plan-review|--recap'
   category: utilities
@@ -588,6 +570,15 @@
   has_scripts: false
   name: retro
   path: retro/SKILL.md
+- argument_hint: <file path or feature description>
+  category: other
+  description: Generate comprehensive edge cases and test scenarios by decomposing
+    features across 12 dimensions. Use before implementation or testing to catch issues
+    early.
+  has_references: false
+  has_scripts: false
+  name: scenario
+  path: scenario/SKILL.md
 - argument_hint: '[search-target] [ext]'
   category: dev-tools
   description: Fast codebase scouting using parallel agents. Use for file discovery,
@@ -597,6 +588,15 @@
   has_scripts: false
   name: scout
   path: scout/SKILL.md
+- argument_hint: <scope glob or 'full'> [--fix] [--iterations N]
+  category: other
+  description: STRIDE + OWASP-based security audit with optional auto-fix. Scans code
+    for vulnerabilities, categorizes by severity, and can iteratively fix findings
+    using rk:autoresearch pattern.
+  has_references: true
+  has_scripts: false
+  name: security
+  path: security/SKILL.md
 - argument_hint: '[scope] [--secrets-only] [--deps-only] [--full]'
   category: utilities
   description: Scan codebase for security vulnerabilities, hardcoded secrets, dependency

@@ -17,7 +17,7 @@ All modes share core steps with mode-specific variations.
 
 **Interactive/Auto:**
 - Spawn multiple `researcher` agents in parallel
-- Use `/ck:scout ext` or `scout` agent for codebase search
+- Use `/rk:scout ext` or `scout` agent for codebase search
 - Keep reports ≤150 lines
 
 **Parallel:**
@@ -37,11 +37,11 @@ All modes share core steps with mode-specific variations.
 - Create `plan.md` + `phase-XX-*.md` files
 
 **Fast:**
-- Use `/ck:plan --fast` with scout results only
+- Use `/rk:plan --fast` with scout results only
 - Minimal planning, focus on action
 
 **Parallel:**
-- Use `/ck:plan --parallel` for dependency graph + file ownership matrix
+- Use `/rk:plan --parallel` for dependency graph + file ownership matrix
 
 **Code:**
 - Skip - plan already exists
@@ -52,7 +52,7 @@ All modes share core steps with mode-specific variations.
 ### [Review Gate 2] Post-Plan (skip if auto mode)
 - Present plan overview with phases
 - Use `AskUserQuestion` to ask: "Validate the plan or approve plan to start implementation?" - "Validate" / "Approve" / "Abort" / "Other" ("Request revisions")
-  - "Validate": run `/ck:plan validate` skill invocation
+  - "Validate": run `/rk:plan validate` skill invocation
   - "Approve": continue to implementation
   - "Abort": stop the workflow
   - "Other": revise the plan based on user's feedback
@@ -70,7 +70,7 @@ All modes share core steps with mode-specific variations.
 - Use `TaskUpdate` to mark tasks as `in_progress` immediately.
 - Execute phase tasks sequentially (Step 3.1, 3.2, etc.)
 - Use `ui-ux-designer` for frontend
-- Use `ck:ai-multimodal` for image assets
+- Use `rk:ai-multimodal` for image assets
 - Run type checking after each file
 
 **Parallel mode:**

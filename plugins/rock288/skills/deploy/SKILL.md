@@ -1,5 +1,5 @@
 ---
-name: ck:deploy
+name: deploy
 description: Deploy projects to any platform with auto-detection. Use when user says "deploy", "publish", "ship", "go live", "push to production", "host this app", or mentions any hosting platform (Vercel, Netlify, Cloudflare, Railway, Fly.io, Render, Heroku, TOSE, Github Pages, AWS, GCP, Digital Ocean, Vultr, Coolify, Dokploy). Auto-detects deployment target from config files and docs/deployment.md.
 license: MIT
 argument-hint: "[platform] [environment]"
@@ -16,7 +16,7 @@ Auto-detect deployment target and deploy the current project. Supports 15 platfo
 
 This skill handles: project deployment, platform selection, deployment docs creation/update.
 Does NOT handle: infrastructure provisioning, database migrations, DNS management, SSL certificates, CI/CD pipeline creation.
-For advanced infrastructure/troubleshooting, activate `/ck:devops` skill.
+For advanced infrastructure/troubleshooting, activate `/rk:devops` skill.
 
 ## Workflow
 
@@ -111,7 +111,7 @@ On subsequent deploys, update if config changed.
 ### 7. Troubleshooting
 
 1. Check error output, attempt auto-fix for common issues
-2. If unresolvable → activate `/ck:devops` skill
+2. If unresolvable → activate `/rk:devops` skill
 3. Update `docs/deployment.md` with troubleshooting notes
 
 ## AskUserQuestion Template

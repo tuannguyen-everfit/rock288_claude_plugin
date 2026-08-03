@@ -1,5 +1,5 @@
 ---
-name: ck:chrome-devtools
+name: chrome-devtools
 description: Automate browsers with Puppeteer CLI scripts and persistent sessions. Use for screenshots, performance analysis, network monitoring, web scraping, form automation, JavaScript debugging.
 license: Apache-2.0
 argument-hint: "[url or task]"
@@ -293,7 +293,7 @@ node $SKILL_DIR/.claude/chrome-devtools/tmp/login-test.js
 
 Skills can exist in **project-scope** or **user-scope**. Priority: project-scope > user-scope.
 
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "/rk:project-organization" skill to organize the outputs.
 
 Store screenshots for analysis in `<project>/.claude/chrome-devtools/screenshots/`:
 

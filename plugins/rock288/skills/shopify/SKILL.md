@@ -1,5 +1,5 @@
 ---
-name: ck:shopify
+name: shopify
 description: Build Shopify apps, extensions, themes with Shopify CLI. Use for GraphQL/REST APIs, Polaris UI, Liquid templates, checkout customization, webhooks, billing integration.
 argument-hint: "[extension-type] [feature]"
 metadata:

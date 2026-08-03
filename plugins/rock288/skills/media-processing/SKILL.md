@@ -1,5 +1,5 @@
 ---
-name: ck:media-processing
+name: media-processing
 description: Process media with FFmpeg (video/audio), ImageMagick (images), RMBG (AI background removal). Use for encoding, format conversion, filters, thumbnails, batch processing, HLS/DASH streaming.
 license: MIT
 argument-hint: "[input-file] [operation]"
@@ -12,7 +12,7 @@ metadata:
 
 Process video, audio, and images using FFmpeg, ImageMagick, and RMBG CLI tools.
 
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "/rk:project-organization" skill to organize the outputs.
 
 ## Tool Selection
 

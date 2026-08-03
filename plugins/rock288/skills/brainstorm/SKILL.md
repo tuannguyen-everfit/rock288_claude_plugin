@@ -1,5 +1,5 @@
 ---
-name: ck:brainstorm
+name: brainstorm
 description: "Brainstorm solutions with trade-off analysis and brutal honesty. Use for ideation, architecture decisions, technical debates, feature exploration, feasibility assessment, design discussions."
 license: MIT
 argument-hint: "[topic or problem]"
@@ -37,10 +37,10 @@ You operate by the holy trinity of software engineering: **YAGNI** (You Aren't G
 - Consult the `planner` agent to research industry best practices and find proven solutions
 - Engage the `docs-manager` agent to understand existing project implementation and constraints
 - Use `WebSearch` tool to find efficient approaches and learn from others' experiences
-- Use `ck:docs-seeker` skill to read latest documentation of external plugins/packages
-- Leverage `ck:ai-multimodal` skill to analyze visual materials and mockups
+- Use `rk:docs-seeker` skill to read latest documentation of external plugins/packages
+- Leverage `rk:ai-multimodal` skill to analyze visual materials and mockups
 - Query `psql` command to understand current database structure and existing data
-- Employ `ck:sequential-thinking` skill for complex problem-solving that requires structured analysis
+- Employ `rk:sequential-thinking` skill for complex problem-solving that requires structured analysis
 
 <HARD-GATE>
 Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it.
@@ -72,16 +72,16 @@ flowchart TD
     G -->|No| F
     G -->|Yes| H[Write Design Doc / Report]
     H --> I{Create Plan?}
-    I -->|Yes| J[Invoke /ck:plan]
+    I -->|Yes| J[Invoke /rk:plan]
     I -->|No| K[End Session]
     J --> L[Journal]
     K --> L
 ```
 
-**This diagram is the authoritative workflow.** If prose conflicts with this flow, follow the diagram. The terminal state is either `/ck:plan` or end.
+**This diagram is the authoritative workflow.** If prose conflicts with this flow, follow the diagram. The terminal state is either `/rk:plan` or end.
 
 ## Your Process
-1. **Scout Phase**: Use `ck:scout` skill to discover relevant files and code patterns, read relevant docs in `<project-dir>/docs` directory, to understand the current state of the project
+1. **Scout Phase**: Use `rk:scout` skill to discover relevant files and code patterns, read relevant docs in `<project-dir>/docs` directory, to understand the current state of the project
 2. **Discovery Phase**: Use `AskUserQuestion` tool to ask clarifying questions about requirements, constraints, timeline, and success criteria
 3. **Scope Assessment**: Before deep-diving, assess if request covers multiple independent subsystems:
    - If request describes 3+ independent concerns (e.g., "build platform with chat, billing, analytics") → flag immediately
@@ -94,16 +94,16 @@ flowchart TD
 7. **Consensus Phase**: Ensure alignment on the chosen approach and document decisions
 8. **Documentation Phase**: Create a comprehensive markdown summary report with the final agreed solution
 9. **Finalize Phase**: Use `AskUserQuestion` tool to ask if user wants to create a detailed implementation plan.
-   - If `Yes`: Run `/ck:plan` command with the brainstorm summary context as the argument to ensure plan continuity.
+   - If `Yes`: Run `/rk:plan` command with the brainstorm summary context as the argument to ensure plan continuity.
      **CRITICAL:** The invoked plan command will create `plan.md` with YAML frontmatter including `status: pending`.
    - If `No`: End the session.
-10. **Journal Phase**: Run `/ck:journal` to write a concise technical journal entry upon completion.
+10. **Journal Phase**: Run `/rk:journal` to write a concise technical journal entry upon completion.
 
 ## Report Output
 Use the naming pattern from the `## Naming` section in the injected context. The pattern includes the full path and computed date.
 
 ## Output Requirements
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the reports.
+**IMPORTANT:** Invoke "/rk:project-organization" skill to organize the reports.
 
 When brainstorming concludes with agreement, create a detailed markdown summary report including:
 - Problem statement and requirements

@@ -1,5 +1,5 @@
 ---
-name: rk:ef-daily-report
+name: ef-daily-report
 description: "Generate an Everfit daily standup report from Jira worklogs and post it as a reply into a Slack thread you provide. Pulls cards you logged work on the target date (DONE / PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY, max 5), derives progress % from time tracking, then drafts the report for your review before replying into the thread. Triggers on: 'daily report', 'standup', 'daily', 'EOD report', 'báo cáo ngày', 'wrap up'."
 argument-hint: "[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack] [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]"
 metadata:

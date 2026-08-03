@@ -21,7 +21,7 @@ T6 = TaskCreate(subject="Finalize",               activeForm="Finalizing",      
 `TaskUpdate(T1, status="in_progress")`
 
 **Mandatory skill chain:**
-1. Activate `ck:scout` skill OR launch 2-3 parallel `Explore` subagents.
+1. Activate `rk:scout` skill OR launch 2-3 parallel `Explore` subagents.
 2. Map: affected files, module boundaries, dependencies, related tests, recent git changes.
 
 **Pattern:** In SINGLE message, launch 2-3 Explore agents:
@@ -41,10 +41,10 @@ See `references/parallel-exploration.md` for patterns.
 
 **Mandatory skill chain:**
 1. **Capture pre-fix state:** Record exact error messages, failing test output, stack traces.
-2. Activate `ck:debug` skill. Use `debugger` subagent if needed.
-3. Activate `ck:sequential-thinking` — form hypotheses through structured reasoning.
+2. Activate `rk:debug` skill. Use `debugger` subagent if needed.
+3. Activate `rk:sequential-thinking` — form hypotheses through structured reasoning.
 4. Spawn parallel `Explore` subagents to test hypotheses against codebase evidence.
-5. If 2+ hypotheses fail → auto-activate `ck:problem-solving`.
+5. If 2+ hypotheses fail → auto-activate `rk:problem-solving`.
 6. Trace backward to root cause (not just symptom location).
 
 See `references/diagnosis-protocol.md` for full methodology.
@@ -57,8 +57,8 @@ See `references/diagnosis-protocol.md` for full methodology.
 
 Fix the ROOT CAUSE per diagnosis findings. Not symptoms.
 
-- Apply `ck:problem-solving` skill if stuck
-- Use `ck:sequential-thinking` for complex logic
+- Apply `rk:problem-solving` skill if stuck
+- Use `rk:sequential-thinking` for complex logic
 - Minimal changes. Follow existing patterns.
 
 `TaskUpdate(T3, status="completed")`
@@ -96,10 +96,10 @@ See `references/review-cycle.md` for mode-specific handling.
 ### Step 6: Finalize
 `TaskUpdate(T6, status="in_progress")`
 - Report summary: root cause, changes, prevention measures, confidence score
-- Activate `ck:project-management` for task sync-back and plan status updates
+- Activate `rk:project-management` for task sync-back and plan status updates
 - Update docs if needed via `docs-manager`
 - Ask to commit via `git-manager` subagent
-- Run `/ck:journal`
+- Run `/rk:journal`
 
 `TaskUpdate(T6, status="completed")`
 **Output:** `✓ Step 6: Complete - [action]`
@@ -108,13 +108,13 @@ See `references/review-cycle.md` for mode-specific handling.
 
 | Step | Skills/Subagents |
 |------|------------------|
-| 1 | `ck:scout` OR parallel `Explore` subagents |
-| 2 | `ck:debug`, `ck:sequential-thinking`, `debugger` subagent, parallel `Explore`, (`ck:problem-solving` auto) |
-| 3 | `ck:problem-solving` (if stuck), `ck:sequential-thinking` (complex logic) |
+| 1 | `rk:scout` OR parallel `Explore` subagents |
+| 2 | `rk:debug`, `rk:sequential-thinking`, `debugger` subagent, parallel `Explore`, (`rk:problem-solving` auto) |
+| 3 | `rk:problem-solving` (if stuck), `rk:sequential-thinking` (complex logic) |
 | 4 | `tester` subagent, parallel `Bash` verification |
 | 5 | `code-reviewer` subagent |
-| 6 | `ck:project-management`, `git-manager`, `docs-manager` subagents |
+| 6 | `rk:project-management`, `git-manager`, `docs-manager` subagents |
 
 **Rules:** Don't skip steps. Validate before proceeding. One phase at a time.
-**Frontend:** Use `chrome`, `ck:chrome-devtools` or any relevant skills/tools to verify.
-**Visual Assets:** Use `ck:ai-multimodal` for visual assets generation, analysis and verification.
+**Frontend:** Use `chrome`, `rk:chrome-devtools` or any relevant skills/tools to verify.
+**Visual Assets:** Use `rk:ai-multimodal` for visual assets generation, analysis and verification.

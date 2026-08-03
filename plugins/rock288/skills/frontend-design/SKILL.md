@@ -1,5 +1,5 @@
 ---
-name: ck:frontend-design
+name: frontend-design
 description: Create polished frontend interfaces from designs/screenshots/videos. Use for web components, 3D experiences, replicating UI designs, quick prototypes, immersive interfaces, avoiding AI slop.
 license: Complete terms in LICENSE.txt
 metadata:
@@ -26,13 +26,13 @@ Choose workflow based on input type:
 | Existing project upgrade | Redesign Audit | `./references/redesign-audit-checklist.md` |
 | From scratch | Design Thinking below | - |
 
-**All workflows**: Activate `ck:ui-ux-pro-max` skill FIRST for design intelligence.
+**All workflows**: Activate `rk:ui-ux-pro-max` skill FIRST for design intelligence.
 
-**Precedence:** When anti-slop rules (below) conflict with `ck:ui-ux-pro-max` recommendations (e.g., Inter font, AI Purple palette, Lucide-only icons), substitute with alternatives from `./references/anti-slop-rules.md` unless the user explicitly requested the conflicting choice.
+**Precedence:** When anti-slop rules (below) conflict with `rk:ui-ux-pro-max` recommendations (e.g., Inter font, AI Purple palette, Lucide-only icons), substitute with alternatives from `./references/anti-slop-rules.md` unless the user explicitly requested the conflicting choice.
 
 ## Screenshot/Video Replication (Quick Reference)
 
-1. **Analyze** with `ck:ai-multimodal` skill - extract colors, fonts, spacing, effects
+1. **Analyze** with `rk:ai-multimodal` skill - extract colors, fonts, spacing, effects
 2. **Plan** with `ui-ux-designer` subagent - create phased implementation
 3. **Implement** - match source precisely
 4. **Verify** - compare to original
@@ -87,7 +87,7 @@ Interpret creatively and make unexpected choices that feel genuinely designed fo
 
 **Remember:** Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
 
-**Assets**: Generate images with `ck:ai-multimodal`, process with `ck:media-processing`
+**Assets**: Generate images with `rk:ai-multimodal`, process with `rk:media-processing`
 
 ## Asset & Analysis References
 

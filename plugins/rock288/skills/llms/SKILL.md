@@ -1,5 +1,5 @@
 ---
-name: ck:llms
+name: llms
 description: "Generate llms.txt files from docs or codebase scanning. Follows llmstxt.org spec. Use for LLM-friendly site indexes, documentation summaries, AI context optimization."
 argument-hint: "[path|url] [--full] [--output path]"
 metadata:
@@ -38,7 +38,7 @@ This skill generates `llms.txt` and `llms-full.txt` files. Does NOT handle: host
 ```bash
 # Scout docs directory for markdown files
 ```
-Use `/ck:scout` to find all `.md`, `.mdx` files in target directory.
+Use `/rk:scout` to find all `.md`, `.mdx` files in target directory.
 
 **From URL:**
 Use `WebFetch` to retrieve existing documentation structure.

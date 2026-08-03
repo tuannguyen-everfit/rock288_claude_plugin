@@ -1,5 +1,5 @@
 ---
-name: ck:preview
+name: preview
 description: "View files/directories OR generate visual explanations, slides, diagrams (Markdown or self-contained HTML)."
 argument-hint: "[path] OR [--html] --explain|--slides|--diagram|--ascii [topic] OR --html --diff|--plan-review|--recap"
 metadata:
@@ -35,23 +35,23 @@ Present as options via `AskUserQuestion` with header "Preview Operation", questi
 ## Usage
 
 ### View Mode
-- `/ck:preview <file.md>` - View markdown file in novel-reader UI
-- `/ck:preview <directory/>` - Browse directory contents
-- `/ck:preview --stop` - Stop running server
+- `/rk:preview <file.md>` - View markdown file in novel-reader UI
+- `/rk:preview <directory/>` - Browse directory contents
+- `/rk:preview --stop` - Stop running server
 
 ### Generation Mode (Markdown)
-- `/ck:preview --explain <topic>` - Generate visual explanation (ASCII + Mermaid + prose)
-- `/ck:preview --slides <topic>` - Generate presentation slides (one concept per slide)
-- `/ck:preview --diagram <topic>` - Generate focused diagram (ASCII + Mermaid)
-- `/ck:preview --ascii <topic>` - Generate ASCII-only diagram (terminal-friendly)
+- `/rk:preview --explain <topic>` - Generate visual explanation (ASCII + Mermaid + prose)
+- `/rk:preview --slides <topic>` - Generate presentation slides (one concept per slide)
+- `/rk:preview --diagram <topic>` - Generate focused diagram (ASCII + Mermaid)
+- `/rk:preview --ascii <topic>` - Generate ASCII-only diagram (terminal-friendly)
 
 ### Generation Mode (HTML)
-- `/ck:preview --html --explain <topic>` - Self-contained HTML explanation
-- `/ck:preview --html --slides <topic>` - Magazine-quality HTML slide deck
-- `/ck:preview --html --diagram <topic>` - HTML diagram with zoom controls
-- `/ck:preview --html --diff [ref]` - Visual diff review
-- `/ck:preview --html --plan-review [plan-file]` - Plan vs codebase comparison
-- `/ck:preview --html --recap [timeframe]` - Project context snapshot
+- `/rk:preview --html --explain <topic>` - Self-contained HTML explanation
+- `/rk:preview --html --slides <topic>` - Magazine-quality HTML slide deck
+- `/rk:preview --html --diagram <topic>` - HTML diagram with zoom controls
+- `/rk:preview --html --diff [ref]` - Visual diff review
+- `/rk:preview --html --plan-review [plan-file]` - Plan vs codebase comparison
+- `/rk:preview --html --recap [timeframe]` - Project context snapshot
 
 ## Argument Resolution
 
@@ -84,10 +84,10 @@ When processing arguments, follow this priority order:
 | Error | Action |
 |-------|--------|
 | Invalid topic (empty) | Ask user to provide a topic |
-| Flag without topic | Ask user: "Please provide a topic: `/ck:preview --explain <topic>`" |
+| Flag without topic | Ask user: "Please provide a topic: `/rk:preview --explain <topic>`" |
 | Topic becomes empty after sanitization | Ask for topic with alphanumeric characters |
 | File write failure | Report error, suggest checking disk space and permissions |
-| Server startup failure | Check if port in use, try `/ck:preview --stop` first |
+| Server startup failure | Check if port in use, try `/rk:preview --stop` first |
 | No generation flag + unresolvable reference | Ask user to clarify which file they meant |
 | Existing file at output path | Overwrite with new content (no prompt) |
 | Server already running | Reuse existing server instance, just open new URL |
@@ -123,7 +123,7 @@ Before generating, agent MUST read these references:
 
 Multi-section pages (`--explain`, `--diff`, `--plan-review`, `--recap`): also read `html-responsive-nav.md`.
 
-Use `/ck:mermaidjs-v11` skill for Mermaid syntax validation.
+Use `/rk:mermaidjs-v11` skill for Mermaid syntax validation.
 
 ### HTML-Only Modes
 
@@ -145,5 +145,5 @@ Output: project identity, architecture snapshot (Mermaid), recent activity, deci
 
 ### Style Strategy
 - Default: static anti-slop rules from `html-design-guidelines.md` (6 curated presets)
-- For `--slides`: consider invoking `/ck:ui-ux-pro-max` for richer style selection
+- For `--slides`: consider invoking `/rk:ui-ux-pro-max` for richer style selection
 - Agent must vary aesthetics between consecutive HTML outputs (different font pair, palette)

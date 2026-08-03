@@ -1,5 +1,5 @@
 ---
-name: ck:retro
+name: retro
 description: "Data-driven sprint retrospective. Gathers git metrics (commits, LOC, hotspots, churn), computes derived health indicators, and generates a structured markdown or HTML report. Use after sprints, weekly check-ins, or any review period."
 license: MIT
 argument-hint: "[timeframe] [--compare] [--team] [--format html|md]"

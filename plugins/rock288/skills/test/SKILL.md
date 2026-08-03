@@ -1,5 +1,5 @@
 ---
-name: ck:test
+name: test
 description: "Run unit, integration, e2e, and UI tests. Use for test execution, coverage analysis, build verification, visual regression, and QA reports."
 argument-hint: "[context] OR ui [url]"
 metadata:
@@ -44,7 +44,7 @@ Execute test suites, analyze results, generate coverage. Supports JS/TS (Jest/Vi
 
 ### 2. UI Testing (`references/ui-testing-workflow.md`)
 
-Browser-based visual testing via `ck:chrome-devtools` skill. Screenshots, responsive checks, accessibility audits, form automation, console error collection. Includes auth injection for protected routes.
+Browser-based visual testing via `rk:chrome-devtools` skill. Screenshots, responsive checks, accessibility audits, form automation, console error collection. Includes auth injection for protected routes.
 
 **Load when:** Visual regression testing, UI bugs, responsive layout checks, accessibility audits
 
@@ -76,17 +76,17 @@ Reports        → report-format.md
 3. Execute appropriate test suites
 4. Analyze results — focus on failures
 5. Generate coverage reports if applicable
-6. For frontend: run UI tests via `ck:chrome-devtools` skill
+6. For frontend: run UI tests via `rk:chrome-devtools` skill
 7. Produce structured summary report
 
 ## Tools Integration
 
 - **Test runners**: Jest, Vitest, Mocha, pytest, go test, cargo test, flutter test
 - **Coverage**: Istanbul/c8/nyc, pytest-cov, go cover
-- **Browser**: `ck:chrome-devtools` skill for UI testing (screenshots, ARIA, console, network)
-- **Analysis**: `ck:ai-multimodal` skill for screenshot analysis
-- **Debugging**: `ck:debug` skill when tests reveal bugs requiring investigation
-- **Thinking**: `ck:sequential-thinking` skill for complex test failure analysis
+- **Browser**: `rk:chrome-devtools` skill for UI testing (screenshots, ARIA, console, network)
+- **Analysis**: `rk:ai-multimodal` skill for screenshot analysis
+- **Debugging**: `rk:debug` skill when tests reveal bugs requiring investigation
+- **Thinking**: `rk:sequential-thinking` skill for complex test failure analysis
 
 ## Quality Standards
 
@@ -98,7 +98,7 @@ Reports        → report-format.md
 - Never ignore failing tests to pass the build
 
 ## Report Output
-**IMPORTANT:** Invoke "/ck:project-organization" skill to organize the outputs.
+**IMPORTANT:** Invoke "/rk:project-organization" skill to organize the outputs.
 
 Use naming pattern from `## Naming` section injected by hooks.
 

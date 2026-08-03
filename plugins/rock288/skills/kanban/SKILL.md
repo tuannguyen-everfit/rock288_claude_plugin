@@ -1,5 +1,5 @@
 ---
-name: ck:kanban
+name: kanban
 description: "AI agent orchestration board for task visualization and team coordination."
 argument-hint: "[dir]"
 metadata:
@@ -13,9 +13,9 @@ Plans dashboard with progress tracking and timeline visualization.
 
 ## Usage
 
-- `/ck:kanban` - View dashboard for ./plans directory
-- `/ck:kanban <dir>` - View dashboard for specific directory
-- `/ck:kanban --stop` - Stop running server
+- `/rk:kanban` - View dashboard for ./plans directory
+- `/rk:kanban <dir>` - View dashboard for specific directory
+- `/rk:kanban --stop` - Stop running server
 
 ## Features
 
@@ -80,7 +80,7 @@ After starting, parse the JSON output and report:
 
 ## Future Plans
 
-The `/ck:kanban` command will evolve into **VibeKanban-inspired** AI agent orchestration:
+The `/rk:kanban` command will evolve into **VibeKanban-inspired** AI agent orchestration:
 
 ### Phase 1 (Current - MVP)
 - Task board with progress tracking

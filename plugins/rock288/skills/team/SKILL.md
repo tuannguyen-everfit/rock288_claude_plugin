@@ -1,5 +1,5 @@
 ---
-name: ck:team
+name: team
 description: "Orchestrate Agent Teams for parallel multi-session collaboration. Use for research, implementation, review, and debug workflows requiring independent teammates."
 argument-hint: "<template> <context> [--devs|--researchers|--reviewers N] [--delegate]"
 metadata:
@@ -18,10 +18,10 @@ Coordinate multiple independent Claude Code sessions. Each teammate has own cont
 ## Usage
 
 ```
-/ck:team <template> <context> [flags]
+/rk:team <template> <context> [flags]
 ```
 
-**Templates:** `ck:research`, `ck:cook`, `ck:code-review`, `ck:debug`
+**Templates:** `rk:research`, `rk:cook`, `rk:code-review`, `rk:debug`
 
 **Flags:**
 - `--devs N` | `--researchers N` | `--reviewers N` | `--debuggers N` -- team size
@@ -35,7 +35,7 @@ Coordinate multiple independent Claude Code sessions. Each teammate has own cont
 1. Step 2 of every template calls `TeamCreate(team_name: "...", ...)`. Do NOT check whether the tool exists first -- just call it.
 2. If the call SUCCEEDS: continue with the template.
 3. If the call returns an ERROR or is unrecognized: **STOP. Tell user:** "Agent Teams requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json. Team mode is not available."
-4. Do NOT fall back to subagents. `/ck:team` MUST use Agent Teams or abort.
+4. Do NOT fall back to subagents. `/rk:team` MUST use Agent Teams or abort.
 5. Ensure `TeamCreate` was called before spawning teammates -- team association happens via session context.
 
 When activated, IMMEDIATELY execute the matching template sequence below.
@@ -112,9 +112,9 @@ CK Context:
 
 ---
 
-## ON `/ck:team research <topic>` [--researchers N]:
+## ON `/rk:team research <topic>` [--researchers N]:
 
-*Wraps /ck:research skill -- scope, gather, analyze, report.*
+*Wraps /rk:research skill -- scope, gather, analyze, report.*
 
 IMMEDIATELY execute in order:
 
@@ -151,13 +151,13 @@ IMMEDIATELY execute in order:
 9. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 10. **REPORT**: Tell user `Research complete. Summary: {path}. N reports generated.`
-11. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+11. **JOURNAL**: Run `/rk:journal` to write a concise technical journal entry upon completion
 
 ---
 
-## ON `/ck:team cook <plan-path-or-description>` [--devs N]:
+## ON `/rk:team cook <plan-path-or-description>` [--devs N]:
 
-*Wraps /ck:cook skill -- plan, code, test, review, finalize.*
+*Wraps /rk:cook skill -- plan, code, test, review, finalize.*
 
 IMMEDIATELY execute in order:
 
@@ -196,7 +196,7 @@ IMMEDIATELY execute in order:
    - Cleanup: `git worktree remove <path>` for each worktree
    - Verify: `git log --oneline --graph` to confirm merge topology
 
-7. **DOCS SYNC EVAL** (MANDATORY for cook -- from /ck:cook finalize):
+7. **DOCS SYNC EVAL** (MANDATORY for cook -- from /rk:cook finalize):
    ```
    Docs impact: [none|minor|major]
    Action: [no update needed -- <reason>] | [updated <page>] | [needs separate PR]
@@ -206,13 +206,13 @@ IMMEDIATELY execute in order:
 9. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 10. **REPORT**: Tell user what was cooked, test results, docs impact.
-11. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+11. **JOURNAL**: Run `/rk:journal` to write a concise technical journal entry upon completion
 
 ---
 
-## ON `/ck:team review <scope>` [--reviewers N]:
+## ON `/rk:team review <scope>` [--reviewers N]:
 
-*Wraps /ck:code-review skill -- scout, review, synthesize with evidence gates.*
+*Wraps /rk:code-review skill -- scout, review, synthesize with evidence gates.*
 
 IMMEDIATELY execute in order:
 
@@ -247,13 +247,13 @@ IMMEDIATELY execute in order:
 8. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 9. **REPORT**: Tell user `Review complete. {X} findings ({Y} critical). Report: {path}.`
-10. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+10. **JOURNAL**: Run `/rk:journal` to write a concise technical journal entry upon completion
 
 ---
 
-## ON `/ck:team debug <issue>` [--debuggers N]:
+## ON `/rk:team debug <issue>` [--debuggers N]:
 
-*Wraps /ck:fix skill -- root-cause-first, adversarial hypotheses, disprove to converge.*
+*Wraps /rk:fix skill -- root-cause-first, adversarial hypotheses, disprove to converge.*
 
 IMMEDIATELY execute in order:
 
@@ -288,7 +288,7 @@ IMMEDIATELY execute in order:
 9. **CLEANUP**: `TeamDelete` (no parameters -- just call it)
 
 10. **REPORT**: Tell user `Debug complete. Root cause: <summary>. Report: {path}.`
-11. **JOURNAL**: Run `/ck:journal` to write a concise technical journal entry upon completion
+11. **JOURNAL**: Run `/rk:journal` to write a concise technical journal entry upon completion
 
 ---
 

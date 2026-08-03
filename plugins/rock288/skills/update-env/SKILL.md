@@ -1,5 +1,5 @@
 ---
-name: rk:update-env
+name: update-env
 description: "Sync the default.env file of an everfit-style Node.js repo (everfit-api, metric-service, file-service, etc.) with env vars actually used in the code. Triggers on 'update env', 'update default.env', 'sync env', 'cập nhật default.env', 'thiếu env', 'check missing env'. Scans common/config/*.js Joi schemas + greps process.env.* across the codebase, then adds missing keys (with Joi defaults if available) and reports orphans without deleting."
 argument-hint: "[--source=<repo-path>] [--env-file=<path>] [--write] [--report=<path>]"
 metadata:

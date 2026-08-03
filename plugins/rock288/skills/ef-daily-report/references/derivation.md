@@ -1,7 +1,7 @@
 # Daily report — Jira/worklog derivation
 
 How to build each report section from Jira (Atlassian MCP, `everfit.atlassian.net`).
-Read pattern mirrors [`branch-name`](../../branch-name/SKILL.md): `getJiraIssue` for
+Read pattern mirrors [`branch-name`](../../ef-branch-name/SKILL.md): `getJiraIssue` for
 fields, `searchJiraIssuesUsingJql` for lists.
 
 ## Day window — Vietnam time (Asia/Saigon)

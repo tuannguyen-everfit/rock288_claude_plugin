@@ -1,5 +1,5 @@
 ---
-name: ck:worktree
+name: worktree
 description: "Create isolated git worktree for parallel development in monorepos."
 argument-hint: "[feature-description] OR [project] [feature]"
 metadata:

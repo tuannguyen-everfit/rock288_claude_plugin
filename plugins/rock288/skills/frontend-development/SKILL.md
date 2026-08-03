@@ -1,5 +1,5 @@
 ---
-name: ck:frontend-development
+name: frontend-development
 description: Build React/TypeScript frontends with modern patterns. Use for components, Suspense, lazy loading, useSuspenseQuery, MUI v7 styling, TanStack Router, performance optimization.
 argument-hint: "[component or feature]"
 metadata:

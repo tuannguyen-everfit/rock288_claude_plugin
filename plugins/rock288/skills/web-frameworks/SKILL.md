@@ -1,5 +1,5 @@
 ---
-name: ck:web-frameworks
+name: web-frameworks
 description: Build with Next.js (App Router, RSC, SSR, ISR), Turborepo monorepos. Use for React apps, server rendering, build optimization, caching strategies, shared dependencies.
 license: MIT
 argument-hint: "[framework] [feature]"

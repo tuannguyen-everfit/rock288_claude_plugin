@@ -1,5 +1,5 @@
 ---
-name: ck:security-scan
+name: security-scan
 description: "Scan codebase for security vulnerabilities, hardcoded secrets, dependency issues, and OWASP patterns. Use when asked to 'security scan', 'check for secrets', 'audit security', or before major releases."
 argument-hint: "[scope] [--secrets-only] [--deps-only] [--full]"
 metadata:
@@ -14,10 +14,10 @@ Lightweight security scanner using Claude's reasoning + shell tools. No external
 ## Usage
 
 ```
-/ck:security-scan              # Full scan of current project
-/ck:security-scan --secrets-only   # Only secret/credential detection
-/ck:security-scan --deps-only      # Only dependency audit
-/ck:security-scan src/api/         # Scan specific directory
+/rk:security-scan              # Full scan of current project
+/rk:security-scan --secrets-only   # Only secret/credential detection
+/rk:security-scan --deps-only      # Only dependency audit
+/rk:security-scan src/api/         # Scan specific directory
 ```
 
 ## Scan Categories

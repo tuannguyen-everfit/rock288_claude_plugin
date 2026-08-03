@@ -18,7 +18,7 @@ Task(subagent_type="researcher", prompt="Research [topic]. Report ≤150 lines."
 ```
 Task(subagent_type="scout", prompt="Find files related to [feature] in codebase", description="Scout [feature]")
 ```
-- Use `/ck:scout ext` (preferred) or `/ck:scout` (fallback)
+- Use `/rk:scout ext` (preferred) or `/rk:scout` (fallback)
 
 ## Planning Phase
 ```
