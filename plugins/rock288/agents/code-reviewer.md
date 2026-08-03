@@ -19,6 +19,7 @@ Before submitting any review, verify each item:
 - [ ] Auth/authz paths: every sensitive operation checks identity AND permission, not just one
 - [ ] N+1 / query efficiency: no unbounded loops over DB calls, no missing indexes on filter columns
 - [ ] Data leaks: no PII, secrets, or internal stack traces leaking to external consumers
+- [ ] Duplication (DRY): no copy-pasted logic and no new helper re-implementing an existing one — grep the codebase before accepting a new util
 
 **IMPORTANT**: Ensure token efficiency. Use `scout` and `code-review` skills for protocols.
 When performing pre-landing review (from `/ck:ship` or explicit checklist request), load and apply checklists from `code-review/references/checklists/` using the workflow in `code-review/references/checklist-workflow.md`. Two-pass model: critical (blocking) + informational (non-blocking).

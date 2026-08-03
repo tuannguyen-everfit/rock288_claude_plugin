@@ -66,6 +66,13 @@ Be terse. One line problem, one line fix. No preamble.
 - Bare numeric literals used in multiple files — should be named constants
 - Error message strings used as query filters elsewhere (grep for the string)
 
+### Duplication & Reuse (DRY)
+- Logic block copy-pasted across files with only literals/names changed — extract a shared helper
+- New helper/util duplicating one that already exists — grep for the function name AND its core operation before accepting a new util
+- Same validation, mapping, or error-handling shape repeated at 3+ call sites
+- Inline reimplementation of something the project already exposes (service method, constant, type, existing query)
+- Copies that MUST change together (same business rule in 2 places) — flag even at 2 sites
+
 ### Dead Code & Consistency
 - Variables assigned but never read
 - Stale comments describing old behavior after code changed
@@ -91,6 +98,7 @@ Be terse. One line problem, one line fix. No preamble.
 ## Suppressions — DO NOT flag these
 
 - Redundancy that aids readability (e.g., `present?` redundant with length check)
+- Duplication at 2 sites that reads clearer inline and can diverge independently — premature abstraction is worse than a copy
 - "Add comment explaining why this threshold was chosen" — thresholds change, comments rot
 - "This assertion could be tighter" when assertion already covers the behavior
 - Consistency-only changes (wrapping a value to match how another constant is guarded)

@@ -4,7 +4,7 @@ description: "Review code quality with adversarial rigor. Supports input modes: 
 argument-hint: "[#PR | COMMIT | --pending | codebase [parallel]]"
 metadata:
   author: rock288
-  version: "2.0.0"
+  version: "2.0.1"
 ---
 
 # Code Review
