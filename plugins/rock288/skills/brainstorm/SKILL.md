@@ -5,7 +5,7 @@ license: MIT
 argument-hint: "[topic or problem]"
 metadata:
   author: rock288
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # Brainstorming Skill
@@ -25,6 +25,20 @@ You operate by the holy trinity of software engineering: **YAGNI** (You Aren't G
 - User Experience (UX) and Developer Experience (DX) optimization
 - Technical debt management and maintainability
 - Performance optimization and bottleneck identification
+
+## Asking Questions (MANDATORY)
+
+Every `AskUserQuestion` call in this skill MUST follow `references/question-design.md`. Read it before your first question.
+
+Non-negotiables:
+1. **Context block first** — before each tool call, emit 3-6 lines in chat: what you found (real files/tables), why this decision matters now, what it blocks. The picker UI is too cramped to hold reasoning.
+2. **Question text = decision + consequence** — not a topic label. `"Auth method?"` is banned; `"Which auth should integrators use — decides if we store/rotate tokens ourselves or hand that to the IdP?"` is the bar.
+3. **Each option description carries 4 things** — what it means concretely in *this* codebase, main win (quantified), main cost/risk, rough effort. One-word descriptions ("Faster", "Simpler") are banned.
+4. **Recommend** — recommended option first, label suffixed `(Recommended)`, reason in its description.
+5. **`preview`** for concrete artifacts (schema, payload, folder layout, UI arrangement).
+6. **One decision per question**, max 4 per call, dependent decisions split across calls.
+7. **Mirror the user's language** (Vietnamese prompt → Vietnamese question/options; keep technical terms in English).
+8. **Never ask what the code can answer** — go read it instead.
 
 ## Your Approach
 1. **Question Everything**: Use `AskUserQuestion` tool to ask probing questions to fully understand the user's request, constraints, and true objectives. Don't assume - clarify until you're 100% certain.
@@ -57,6 +71,8 @@ The design can be brief for simple projects, but you MUST present it and get app
 | "The user wants action, not talk" | Bad action wastes more time than good planning. |
 | "Let me explore the code first" | Brainstorming tells you HOW to explore. Follow the process. |
 | "I'll just prototype quickly" | Prototypes become production code. Design first. |
+| "Short question = less noise" | User can't decide what they don't understand. A vague question costs a whole round-trip. |
+| "The options are self-explanatory" | To you, after scouting. Not to the user who hasn't read the code. Spell out the trade-off. |
 
 ## Process Flow (Authoritative)
 
@@ -82,7 +98,7 @@ flowchart TD
 
 ## Your Process
 1. **Scout Phase**: Use `rk:scout` skill to discover relevant files and code patterns, read relevant docs in `<project-dir>/docs` directory, to understand the current state of the project
-2. **Discovery Phase**: Use `AskUserQuestion` tool to ask clarifying questions about requirements, constraints, timeline, and success criteria
+2. **Discovery Phase**: Use `AskUserQuestion` tool to ask clarifying questions about requirements, constraints, timeline, and success criteria — following `references/question-design.md` (context block + decision/consequence phrasing + 4-part option descriptions)
 3. **Scope Assessment**: Before deep-diving, assess if request covers multiple independent subsystems:
    - If request describes 3+ independent concerns (e.g., "build platform with chat, billing, analytics") → flag immediately
    - Help user decompose into sub-projects: identify pieces, relationships, build order
@@ -90,7 +106,7 @@ flowchart TD
    - Don't spend questions refining details of a project that needs decomposition first
 4. **Research Phase**: Gather information from other agents and external sources
 5. **Analysis Phase**: Evaluate multiple approaches using your expertise and principles
-6. **Debate Phase**: Use `AskUserQuestion` tool to Present options, challenge user preferences, and work toward the optimal solution
+6. **Debate Phase**: Use `AskUserQuestion` tool to present options, challenge user preferences, and work toward the optimal solution — same question standard applies; use `preview` to show competing artifacts side by side
 7. **Consensus Phase**: Ensure alignment on the chosen approach and document decisions
 8. **Documentation Phase**: Create a comprehensive markdown summary report with the final agreed solution
 9. **Finalize Phase**: Use `AskUserQuestion` tool to ask if user wants to create a detailed implementation plan.
