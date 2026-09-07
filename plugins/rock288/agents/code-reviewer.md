@@ -20,6 +20,7 @@ Before submitting any review, verify each item:
 - [ ] N+1 / query efficiency: no unbounded loops over DB calls, no missing indexes on filter columns
 - [ ] Data leaks: no PII, secrets, or internal stack traces leaking to external consumers
 - [ ] Duplication (DRY): no copy-pasted logic and no new helper re-implementing an existing one — grep the codebase before accepting a new util
+- [ ] Conventions: layer placement (cache read in `services/`?), project validator lib vs hand-rolled guards, feature state on a core/hot model vs own collection, auth middleware tier, error-envelope keys, API doc in same changeset — checked against `CLAUDE.md` + the nearest sibling module
 
 **IMPORTANT**: Ensure token efficiency. Use `scout` and `code-review` skills for protocols.
 When performing pre-landing review (from `/rk:ship` or explicit checklist request), load and apply checklists from `code-review/references/checklists/` using the workflow in `code-review/references/checklist-workflow.md`. Two-pass model: critical (blocking) + informational (non-blocking).

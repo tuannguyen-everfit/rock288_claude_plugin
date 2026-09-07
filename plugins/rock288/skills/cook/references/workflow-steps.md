@@ -67,6 +67,7 @@ All modes share core steps with mode-specific variations.
 4. Tasks can be blocked by other tasks via `addBlockedBy`
 
 **All modes:**
+- **Convention pre-flight FIRST** (`SKILL.md` → `references/convention-preflight.md`): resolve layer placement, validator lib, feature-state location, auth tier, server-side enforcement, error envelope, API-doc location and module isolation from `CLAUDE.md` + the nearest sibling module. Emit `✓ Pre-flight: ...` before the first file is written.
 - Use `TaskUpdate` to mark tasks as `in_progress` immediately.
 - Execute phase tasks sequentially (Step 3.1, 3.2, etc.)
 - Use `ui-ux-designer` for frontend
@@ -153,7 +154,7 @@ only change the Status column cell, preserve table structure.
    - Update `plan.md` status/progress (`pending`/`in-progress`/`completed`) from actual checkbox state.
    - Return unresolved mappings if any completed task cannot be matched to a phase file.
 3. Use `TaskUpdate` to mark Claude Tasks complete after sync-back confirmation.
-4. Onboarding check (API keys, env vars)
+4. Onboarding check (API keys, env vars) + **API-doc check**: every new/changed endpoint has its OpenAPI / doc-repo change in the same changeset (Pre-flight #7)
 5. **MUST** spawn git subagent: `Task(subagent_type="git-manager", prompt="Stage and commit changes", description="Commit")`
 
 **CRITICAL:** Step 6 is INCOMPLETE without spawning all 3 subagents. DO NOT skip subagent delegation.

@@ -4,7 +4,7 @@ description: "Review code quality with adversarial rigor. Supports input modes: 
 argument-hint: "[#PR | COMMIT | --pending | codebase [parallel]]"
 metadata:
   author: rock288
-  version: "2.0.1"
+  version: "2.0.2"
 ---
 
 # Code Review
@@ -56,6 +56,7 @@ Verify before implementing. Ask before assuming. Evidence before claims.
 | Verification gates | Before any completion claim, commit, PR | `references/verification-before-completion.md` |
 | Edge case scouting | After implementation, before review | `references/edge-case-scouting.md` |
 | **Checklist review** | Pre-landing, `/rk:ship` pipeline, security audit | `references/checklist-workflow.md` |
+| **Convention compliance** | Every review — load `CLAUDE.md` + the nearest sibling module; check placement, validation lib, feature-state location, auth tier, enforcement, error envelope, API docs | `references/checklists/base.md` (Layer & Data Placement), `references/checklists/api.md` |
 | **Task-managed reviews** | Multi-file features (3+ files), parallel reviewers, fix cycles | `references/task-management-reviews.md` |
 
 ## Quick Decision Tree
@@ -95,6 +96,7 @@ SITUATION?
 **Stage 2 — Code Quality** (code-reviewer subagent)
 - Only runs AFTER spec compliance passes
 - Standards, security, performance, edge cases
+- **Convention compliance** against `CLAUDE.md` + the nearest sibling module — these are findings, not nits (they are what post-merge lead reviews are made of): layer placement (a Redis read under `services/`?), project validator lib vs hand-rolled guards, feature state appended to a core/hot model vs its own collection, auth middleware tier vs what the handler reads, server-side enforcement of any allow-list returned to the client, error-envelope keys (`localization_code`…) on every new error, API doc in the same changeset, repository touching only its own model
 
 **Stage 3 — Adversarial Review** (load `references/adversarial-review.md`)
 - Runs AFTER Stage 2 passes, subject to scope gate (skip if <=2 files, <=30 lines, no security files)
@@ -195,5 +197,6 @@ TaskCreate: "Verify fixes pass"        → pending, blockedBy: [fix]
 3. Scout edge cases before review
 4. Adversarial review on EVERY review — no exceptions
 5. Evidence before claims
+6. Convention compliance is a finding — placement, validation lib, model-widening, auth tier, missing docs are the top post-merge lead comments
 
 Verify. Scout. Red-team. Question. Then implement. Evidence. Then claim.

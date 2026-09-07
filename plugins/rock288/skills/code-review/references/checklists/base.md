@@ -73,6 +73,13 @@ Be terse. One line problem, one line fix. No preamble.
 - Inline reimplementation of something the project already exposes (service method, constant, type, existing query)
 - Copies that MUST change together (same business rule in 2 places) — flag even at 2 sites
 
+### Layer & Data Placement (Conventions)
+- Code placed in a layer that doesn't match its dependency — a Redis/cache read under `services/`, a cache key builder under `helpers/`, a DB query in a helper, HTTP context in a service. Check the module's folder inventory (`cache/`, `caches/`, `helpers/`, `repositories/`) and the nearest sibling module's precedent before accepting the path
+- Feature-state fields appended to a core/hot model (`user`, `profile`, `account`) when the sibling feature keeps its state in its own collection — every unprojected read of the core document pays for the new fields forever, and migrating after downstream consumers ship is far harder
+- Repository/data layer reading another module's model directly instead of calling that module's service (module isolation)
+- Hand-rolled validation (`isPlainObject`, key loops, manual type/enum checks) where the project has a schema validator (Joi/Zod/Pydantic) — even for "tiny" guards
+- Project error-envelope keys missing on a NEW error response (e.g. `localization_code`, error enum) — grep how sibling responses are built
+
 ### Dead Code & Consistency
 - Variables assigned but never read
 - Stale comments describing old behavior after code changed

@@ -4,7 +4,7 @@ description: "ALWAYS activate this skill before implementing EVERY feature, plan
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
 metadata:
   author: rock288
-  version: "2.1.1"
+  version: "2.1.2"
 ---
 
 # Cook - Smart Feature Implementation
@@ -51,6 +51,7 @@ User override: If user explicitly says "just code it" or "skip planning", respec
 | "The user wants speed" | Fastest path = plan → implement → done. Not: implement → debug → rewrite. |
 | "I'll plan as I go" | That's not planning, that's hoping. |
 | "Just this once" | Every skip is "just this once." No exceptions. |
+| "The plan covers it, conventions can wait" | Lead reviews reject placement, validation, model-widening and auth tier even when behaviour is right. Run the Convention Pre-flight. |
 
 ## Smart Intent Detection
 
@@ -132,6 +133,23 @@ Human review required at these checkpoints (skipped with `--auto`):
   4. Ask user if they want to commit via `git-manager` subagent
   5. Run `/rk:journal` to write a concise technical journal entry upon completion
 
+## Convention Pre-flight (MANDATORY — before Step 3, re-check before Step 5)
+
+Plans decide *what*; conventions decide *where it lives, what it reuses, what it may touch*. Resolve each row from `CLAUDE.md` + the nearest sibling module BEFORE coding — every row is a real post-merge lead finding that cost a fix branch.
+
+| Check | Resolve from | Not this | This |
+|-------|--------------|----------|------|
+| Layer placement | module tree (`cache/`, `caches/`, `helpers/`, `repositories/`…) | Redis read + key builder in `services/` / `helpers/` | `caches/<name>` (key builder co-located, like the sibling cache) |
+| Validation | project validator lib (`validators/`) | hand-rolled `isPlainObject` + `$`-key loop in a controller | Joi/Zod schema as middleware — even for tiny guards |
+| Feature state | sibling precedent + who reads the core model unprojected | 6 fields appended to `profile`/`user` | own collection owned by the module |
+| Auth tier | middleware inventory | full `isAuthenticated` on a read-only GET | lightest tier that has the props used (`isAuthenticatedLite`) |
+| Enforcement | design doc names the rejecting endpoint | allow-list returned, FE hides, server never checks | server validates against the same list; FE hide = UX only |
+| Error envelope | error helper / `CLAUDE.md` | 400 without `localization_code` | every error carries the project's required keys — now, not later |
+| API docs | sibling PRs, doc repo (OpenAPI) | endpoint merged, no doc | doc change in the SAME changeset |
+| Module isolation | `CLAUDE.md` isolation rule | repository reads another module's model | own model; other data via that module's service |
+
+Output: `✓ Pre-flight: [N] conventions resolved - [placement|validation|state|auth|enforcement|envelope|docs|isolation]`. Full guide + anti-rationalization: `references/convention-preflight.md`.
+
 ## Required Subagents (MANDATORY)
 
 | Phase | Subagent | Requirement |
@@ -156,3 +174,4 @@ Human review required at these checkpoints (skipped with `--auto`):
 - `references/workflow-steps.md` - Detailed step definitions for all modes
 - `references/review-cycle.md` - Interactive and auto review processes
 - `references/subagent-patterns.md` - Subagent invocation patterns
+- `references/convention-preflight.md` - Convention pre-flight: layer placement, validator lib, feature-state location, auth tier, server-side enforcement, error envelope, API docs, module isolation
