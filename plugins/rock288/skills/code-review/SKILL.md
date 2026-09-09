@@ -56,7 +56,8 @@ Verify before implementing. Ask before assuming. Evidence before claims.
 | Verification gates | Before any completion claim, commit, PR | `references/verification-before-completion.md` |
 | Edge case scouting | After implementation, before review | `references/edge-case-scouting.md` |
 | **Checklist review** | Pre-landing, `/rk:ship` pipeline, security audit | `references/checklist-workflow.md` |
-| **Convention compliance** | Every review — load `CLAUDE.md` + the nearest sibling module; check placement, validation lib, feature-state location, auth tier, enforcement, error envelope, API docs | `references/checklists/base.md` (Layer & Data Placement), `references/checklists/api.md` |
+| **Reference resolution** | Every review — FIRST pass, before anything subjective: grep every new `ref:`/model name/enum literal/config key and confirm it resolves | `references/checklists/base.md` (Dangling References) |
+| **Convention compliance** | Every review — `Read` the review cwd's `CLAUDE.md` YOURSELF (a headless/SDK run may load user settings only, so it is often NOT auto-injected) + the nearest sibling module; check placement, validation lib, feature-state location, auth tier, enforcement, error envelope, API docs | `references/checklists/base.md` (Layer & Data Placement), `references/checklists/api.md` |
 | **Task-managed reviews** | Multi-file features (3+ files), parallel reviewers, fix cycles | `references/task-management-reviews.md` |
 
 ## Quick Decision Tree
@@ -74,19 +75,34 @@ SITUATION?
 │
 ├─ Received feedback → STOP if unclear, verify if external, implement if human partner
 ├─ Completed work from plan/spec:
+│   ├─ Stage 0: Ground the review (read CLAUDE.md, resolve every new name)
 │   ├─ Stage 1: Spec compliance review (references/spec-compliance-review.md)
 │   │   └─ PASS? → Stage 2 │ FAIL? → Fix → Re-review Stage 1
 │   ├─ Stage 2: Code quality review (code-reviewer subagent)
 │   │   └─ Scout edge cases → Review standards, performance
 │   └─ Stage 3: Adversarial review (references/adversarial-review.md) [ALWAYS-ON]
 │       └─ Red-team the code → Adjudicate → Accept/Reject findings
-├─ Completed work (no plan) → Scout → Code quality → Adversarial review
+├─ Completed work (no plan) → Ground → Scout → Code quality → Adversarial review
 ├─ Pre-landing / ship → Load checklists → Two-pass review → Adversarial review
 ├─ Multi-file feature (3+ files) → Create review pipeline tasks (scout→review→adversarial→fix→verify)
 └─ About to claim status → RUN verification command FIRST
 ```
 
-### Three-Stage Review Protocol
+### Review Protocol
+
+**Stage 0 — Ground the review** (mandatory, every mode, before any finding is written)
+
+The diff alone cannot tell you whether a name is right. Two cheap steps buy most of the difference
+between a review that reads the patch and one that reviews the code:
+
+1. **Read the project's own rules.** `Read` `CLAUDE.md` (and any rules file it points at) from the
+   review cwd. ⚠️ Do NOT assume the harness injected it — a headless or SDK-driven run commonly
+   loads user settings only, so the target repo's CLAUDE.md never reaches you unless you open it.
+   Same for the nearest sibling module: it is the repo's real precedent.
+2. **Resolve every new name** the diff introduces — `ref:`/`refPath:`, registered model/queue/topic
+   names, enum literals, config keys, deep import paths — with a grep against the repo. See
+   `references/checklists/base.md` → **Dangling References**. A name that resolves to nothing is
+   Critical or Important, never a nit, and is invisible to anyone who only read the new file.
 
 **Stage 1 — Spec Compliance** (load `references/spec-compliance-review.md`)
 - Does code match what was requested?
@@ -193,10 +209,11 @@ TaskCreate: "Verify fixes pass"        → pending, blockedBy: [fix]
 ## Bottom Line
 
 1. Resolve input mode first — know WHAT you're reviewing
-2. Technical rigor over social performance
-3. Scout edge cases before review
-4. Adversarial review on EVERY review — no exceptions
-5. Evidence before claims
-6. Convention compliance is a finding — placement, validation lib, model-widening, auth tier, missing docs are the top post-merge lead comments
+2. Ground before judging — read the repo's CLAUDE.md, then grep every new name until it resolves
+3. Technical rigor over social performance
+4. Scout edge cases before review
+5. Adversarial review on EVERY review — no exceptions
+6. Evidence before claims
+7. Convention compliance is a finding — placement, validation lib, model-widening, auth tier, missing docs are the top post-merge lead comments
 
 Verify. Scout. Red-team. Question. Then implement. Evidence. Then claim.

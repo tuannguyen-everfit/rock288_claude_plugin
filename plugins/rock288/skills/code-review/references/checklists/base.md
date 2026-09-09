@@ -28,6 +28,22 @@ Be terse. One line problem, one line fix. No preamble.
 
 ## Pass 1 — CRITICAL (blocking)
 
+### Dangling References (every NEW name must resolve)
+
+Mechanical, and the cheapest finding there is — do it FIRST, before judging anything subjective.
+A diff introduces names that point at something defined elsewhere; grep each one and confirm the
+target exists. Reading the new file alone can never catch these.
+
+- ORM/ODM relation targets — mongoose `ref:` / `refPath:`, ActiveRecord `class_name:`, SQLAlchemy `relationship()` — must match the string the target is REGISTERED under (`mongoose.model('<name>', …)`), not its file or folder name and not a pluralised guess. Grep how sibling models in the same repo spell the same ref.
+- Registered name of anything NEW (model, collection, queue, topic, job, event, feature flag, DI token) against the repo's existing spelling — singular vs plural, snake vs kebab. If every sibling directory registers `foo`, a new one must not register `foos`.
+- Enum / union literals (`enum: [...]`, `refPath` targets, status strings) — every member must be a value something else actually produces or accepts.
+- Keys read indirectly — `process.env.X`, `config.get('a.b')`, `include('path')`, deep import paths — the key or file must exist.
+
+Severity: **Critical** when a shipped path resolves the name today (it throws now).
+**Important** when nothing resolves it yet — a schema `ref` with no `.populate()` caller is still
+wrong, and will throw on the first one. NEVER a nit: a name that resolves to nothing is a defect,
+not a preference.
+
 ### Injection & Data Safety
 - String interpolation in SQL/database queries (even with type casting — use parameterized queries)
 - Unsanitized user input written to database or rendered in HTML
