@@ -5,7 +5,7 @@ argument-hint: "[task] OR [archive|red-team|validate]"
 license: MIT
 metadata:
   author: rock288
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # Planning
@@ -85,9 +85,11 @@ Load: `references/scope-challenge.md`
 Load: `references/convention-grounding.md`
 
 `Read` the target repo's `CLAUDE.md` explicitly (a subagent/headless run may not have it injected),
-plus `docs/code-standards*` and any **team style guide the user references** — those live outside the
-repo often enough (Slack-shared `coding-style.md`, wiki page) that you must ASK for one when the user
-mentions a style doc or review thread. Precedence: **documented standard > nearest sibling precedent >
+plus `docs/code-standards*`, plus — **every time, one call** —
+`ls .cursor/rules/ .github/instructions/ .cursorrules .windsurfrules AGENTS.md 2>/dev/null`:
+another tool's agent-rule file is routinely the longest and most current style source in the repo and
+`CLAUDE.md` rarely links it. Also ask for any **team style guide that lives outside the repo**
+(Slack-shared `coding-style.md`, wiki) when the user mentions a style doc or review thread. Precedence: **documented standard > nearest sibling precedent >
 the file you are editing.** A neighbouring line that disagrees with the standard is evidence the
 neighbour is old, not that the standard is optional.
 
