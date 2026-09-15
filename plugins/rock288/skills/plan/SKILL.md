@@ -5,7 +5,7 @@ argument-hint: "[task] OR [archive|red-team|validate]"
 license: MIT
 metadata:
   author: rock288
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Planning
@@ -81,6 +81,20 @@ Always honoring **YAGNI**, **KISS**, and **DRY** principles.
 Load: `references/scope-challenge.md`
 **Skip if:** `--fast` mode or trivial task (single file fix, <20 word description)
 
+### 0.5 Convention Grounding (MANDATORY — never skipped, including `--fast`)
+Load: `references/convention-grounding.md`
+
+`Read` the target repo's `CLAUDE.md` explicitly (a subagent/headless run may not have it injected),
+plus `docs/code-standards*` and any **team style guide the user references** — those live outside the
+repo often enough (Slack-shared `coding-style.md`, wiki page) that you must ASK for one when the user
+mentions a style doc or review thread. Precedence: **documented standard > nearest sibling precedent >
+the file you are editing.** A neighbouring line that disagrees with the standard is evidence the
+neighbour is old, not that the standard is optional.
+
+A plan freezes convention decisions that cook implements verbatim — cook's Convention Pre-flight
+catches what a plan left OPEN, never what a plan decided WRONGLY. Deviate when it is right to, but
+every deviation is a row in the plan with its reason; silent ones are the failure mode.
+
 ### 1. Research & Analysis
 Load: `references/research-phase.md`
 **Skip if:** Fast mode or provided with researcher reports
@@ -103,13 +117,14 @@ Load: `references/output-standards.md`
 ```mermaid
 flowchart TD
     A[Pre-Creation Check] --> B[Cross-Plan Scan]
-    B --> C[Scope Challenge]
+    B --> B2[Convention Grounding]
+    B2 --> C[Scope Challenge]
     C --> D[Mode Detection]
     D -->|fast| E[Skip Research]
     D -->|hard/parallel/two| F[Spawn Researchers]
     E --> G[Codebase Analysis]
     F --> G
-    G --> H[Write Plan via Planner]
+    G --> H[Write Plan via Planner<br/>+ Convention Compliance table]
     H --> I{Red Team?}
     I -->|Yes| J[Red Team Review]
     I -->|No| K{Validate?}
@@ -129,10 +144,13 @@ flowchart TD
 1b. **Cross-Plan Scan** → Scan unfinished plans, detect `blockedBy`/`blocks` relationships, update both plans
 1c. **Scope Challenge** → Run Step 0 scope questions, select mode (see `references/scope-challenge.md`)
     **Skip if:** `--fast` mode or trivial task
+1d. **Convention Grounding** → Read repo `CLAUDE.md` + code standards + any team style guide the user
+    references; resolve the checklist in `references/convention-grounding.md`. **Never skipped.**
 2. **Mode Detection** → Auto-detect or use explicit flag (see `workflow-modes.md`)
 3. **Research Phase** → Spawn researchers (skip in fast mode)
 4. **Codebase Analysis** → Read docs, scout if needed
-5. **Plan Documentation** → Write comprehensive plan via planner subagent
+5. **Plan Documentation** → Write comprehensive plan via planner subagent, including the mandatory
+   **Convention Compliance** table + **Deliberate deviations** block
 6. **Red Team Review** → Run `/rk:plan red-team {plan-path}` (hard/parallel/two modes)
 7. **Post-Plan Validation** → Run `/rk:plan validate {plan-path}` (hard/parallel/two modes)
 8. **Hydrate Tasks** → Create Claude Tasks from phases (default on, `--no-tasks` to skip)
@@ -194,5 +212,6 @@ Reports: Active plans → plan-specific path. Suggested → default path.
 - Address security and performance concerns
 - Detailed enough for junior developers
 - Validate against existing codebase patterns
+- Conventions resolved BEFORE the first plan file; deviations recorded, never silent
 
 **Remember:** Plan quality determines implementation success. Be comprehensive and consider all solution aspects.

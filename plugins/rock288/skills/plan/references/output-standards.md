@@ -56,6 +56,31 @@ Use these predefined tags for consistency:
 
 See `task-management.md` for full TaskCreate patterns and metadata.
 
+## Convention Compliance (REQUIRED section in `plan.md`)
+
+Every plan carries two blocks, sourced from `references/convention-grounding.md`:
+
+```markdown
+## Convention Compliance (source: <repo CLAUDE.md / docs / team guide + date>)
+
+| Rule | Applied in this plan |
+|---|---|
+| §5 localization on user-facing errors | Phase 2 — new key beside the module's existing group |
+| §10 prefer lodash `_.get` | Phase 2 — `_` already imported in the target file |
+
+### Deliberate deviations
+
+| Rule | What this plan does instead | Why |
+|---|---|---|
+| §5 spells the import `errorsCodes` | Keeps the file's existing `Error` alias | Same exported shape; a second alias for one line is worse than the deviation |
+```
+
+Rules:
+- One row per rule the change actually touches — do not pad with rules it never hits.
+- "None" is a valid deviations block. **Omitting** the block is not.
+- A convention that changed a design choice also gets a row in the plan's decisions table, not just here.
+- Cite the guide's identity + date when it lives outside the repo.
+
 ## Task Breakdown
 
 - Transform complex requirements into manageable, actionable tasks
