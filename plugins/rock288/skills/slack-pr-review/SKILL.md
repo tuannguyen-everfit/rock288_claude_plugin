@@ -88,8 +88,11 @@ severities + `file:line` anchors so step 5 (`rk:pr-comment`) has them in context
 ⚠️ **This is a headless run, so `code-review`'s Stage 0 is on YOU to enforce** — nobody is
 watching it get skipped, and the two things it buys are exactly what a diff-only read misses:
 
-- **`Read` the checkout's `CLAUDE.md` yourself.** A bot-driven run typically loads user settings
-  only, so the target repo's CLAUDE.md is NOT auto-injected. Without it the review has no idea
+- **Read the repo's written rules yourself** — `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/*.mdc`, plus
+  the same files in ancestor dirs of changed paths (a repo may have `AGENTS.md` and no `CLAUDE.md`).
+  A bot-driven run typically loads user settings only, so they are NOT auto-injected. When the
+  caller names a base ref, read them there (`gh api …/contents/PATH?ref=<base>`), not from the
+  checkout — it may be stale. Without them the review has no idea
   what the repo's conventions are and every convention finding silently disappears.
 - **Resolve every new name in the diff** (`ref:`/`refPath:`, registered model/queue/topic names,
   enum literals, config keys, import paths) with a grep against the checkout — see

@@ -57,7 +57,7 @@ Verify before implementing. Ask before assuming. Evidence before claims.
 | Edge case scouting | After implementation, before review | `references/edge-case-scouting.md` |
 | **Checklist review** | Pre-landing, `/rk:ship` pipeline, security audit | `references/checklist-workflow.md` |
 | **Reference resolution** | Every review — FIRST pass, before anything subjective: grep every new `ref:`/model name/enum literal/config key and confirm it resolves | `references/checklists/base.md` (Dangling References) |
-| **Convention compliance** | Every review — `Read` the review cwd's `CLAUDE.md` YOURSELF (a headless/SDK run may load user settings only, so it is often NOT auto-injected) + the nearest sibling module; check placement, validation lib, feature-state location, auth tier, enforcement, error envelope, API docs | `references/checklists/base.md` (Layer & Data Placement), `references/checklists/api.md` |
+| **Convention compliance** | Every review — `Read` the review cwd's written rules YOURSELF — `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/*.mdc`, and the same files in ancestor dirs of changed paths (a headless/SDK run may load user settings only, so it is often NOT auto-injected) + the nearest sibling module; check placement, validation lib, feature-state location, auth tier, enforcement, error envelope, API docs | `references/checklists/base.md` (Layer & Data Placement), `references/checklists/api.md` |
 | **Task-managed reviews** | Multi-file features (3+ files), parallel reviewers, fix cycles | `references/task-management-reviews.md` |
 
 ## Quick Decision Tree
@@ -75,7 +75,7 @@ SITUATION?
 │
 ├─ Received feedback → STOP if unclear, verify if external, implement if human partner
 ├─ Completed work from plan/spec:
-│   ├─ Stage 0: Ground the review (read CLAUDE.md, resolve every new name)
+│   ├─ Stage 0: Ground the review (read CLAUDE.md/AGENTS.md, resolve every new name)
 │   ├─ Stage 1: Spec compliance review (references/spec-compliance-review.md)
 │   │   └─ PASS? → Stage 2 │ FAIL? → Fix → Re-review Stage 1
 │   ├─ Stage 2: Code quality review (code-reviewer subagent)
@@ -95,9 +95,12 @@ SITUATION?
 The diff alone cannot tell you whether a name is right. Two cheap steps buy most of the difference
 between a review that reads the patch and one that reviews the code:
 
-1. **Read the project's own rules.** `Read` `CLAUDE.md` (and any rules file it points at) from the
-   review cwd. ⚠️ Do NOT assume the harness injected it — a headless or SDK-driven run commonly
-   loads user settings only, so the target repo's CLAUDE.md never reaches you unless you open it.
+1. **Read the project's own rules.** `Read` `CLAUDE.md`, `AGENTS.md` and every `.cursor/rules/*.mdc`
+   (and any rules file they point at) from the review cwd, plus `CLAUDE.md` / `AGENTS.md` in every
+   ancestor directory of a changed path. A repo may have `AGENTS.md` and no `CLAUDE.md` — reading
+   only `CLAUDE.md` there means reading nothing. ⚠️ Do NOT assume the harness injected them — a
+   headless or SDK-driven run commonly loads user settings only, so the target repo's rules never
+   reach you unless you open them.
    Same for the nearest sibling module: it is the repo's real precedent.
 2. **Resolve every new name** the diff introduces — `ref:`/`refPath:`, registered model/queue/topic
    names, enum literals, config keys, deep import paths — with a grep against the repo. See
@@ -112,7 +115,7 @@ between a review that reads the patch and one that reviews the code:
 **Stage 2 — Code Quality** (code-reviewer subagent)
 - Only runs AFTER spec compliance passes
 - Standards, security, performance, edge cases
-- **Convention compliance** against `CLAUDE.md` + the nearest sibling module — these are findings, not nits (they are what post-merge lead reviews are made of): layer placement (a Redis read under `services/`?), project validator lib vs hand-rolled guards, feature state appended to a core/hot model vs its own collection, auth middleware tier vs what the handler reads, server-side enforcement of any allow-list returned to the client, error-envelope keys (`localization_code`…) on every new error, API doc in the same changeset, repository touching only its own model
+- **Convention compliance** against the repo's written rules (`CLAUDE.md` / `AGENTS.md` / `.cursor/rules`) + the nearest sibling module — a violation of a WRITTEN rule is Important, a sibling deviation no rule covers is Nice-to-have; these are findings, not nits (they are what post-merge lead reviews are made of): layer placement (a Redis read under `services/`?), project validator lib vs hand-rolled guards, feature state appended to a core/hot model vs its own collection, auth middleware tier vs what the handler reads, server-side enforcement of any allow-list returned to the client, error-envelope keys (`localization_code`…) on every new error, API doc in the same changeset, repository touching only its own model
 
 **Stage 3 — Adversarial Review** (load `references/adversarial-review.md`)
 - Runs AFTER Stage 2 passes, subject to scope gate (skip if <=2 files, <=30 lines, no security files)
@@ -209,7 +212,7 @@ TaskCreate: "Verify fixes pass"        → pending, blockedBy: [fix]
 ## Bottom Line
 
 1. Resolve input mode first — know WHAT you're reviewing
-2. Ground before judging — read the repo's CLAUDE.md, then grep every new name until it resolves
+2. Ground before judging — read the repo's written rules (`CLAUDE.md` / `AGENTS.md` / `.cursor/rules`), then grep every new name until it resolves
 3. Technical rigor over social performance
 4. Scout edge cases before review
 5. Adversarial review on EVERY review — no exceptions
