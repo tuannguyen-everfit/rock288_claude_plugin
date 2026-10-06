@@ -76,7 +76,7 @@
   description: Brainstorm solutions with trade-off analysis and brutal honesty. Use
     for ideation, architecture decisions, technical debates, feature exploration,
     feasibility assessment, design discussions.
-  has_references: false
+  has_references: true
   has_scripts: false
   name: brainstorm
   path: brainstorm/SKILL.md
@@ -255,6 +255,19 @@
   has_scripts: false
   name: ef-jira-card
   path: ef-jira-card/SKILL.md
+- argument_hint: '[free text e.g. ''3h UP-79399, 15m standup''] [--date=YYYY-MM-DD]
+    [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]] [--dry-run]'
+  category: utilities
+  description: 'Log Everfit Jira worklogs in the Core Team format ([Activity] – [What]
+    – [Outcome], 15m steps, VN date) from today''s git commits + PR reviews. Suggests
+    cards and descriptions, you type the hours, shows a draft with the daily total
+    vs 7h, then logs on confirm. --audit reports days under 7h, empty days and badly
+    formatted worklogs (read-only). Triggers on: ''logwork'', ''log work'', ''log
+    time'', ''timesheet'', ''log giờ'', ''chấm công'', ''audit worklog''.'
+  has_references: true
+  has_scripts: true
+  name: ef-logwork
+  path: ef-logwork/SKILL.md
 - argument_hint: '[#PR | PR-URL] [--severity=important,critical,niceto]'
   category: other
   description: 'Post selected findings from /rk:code-review as inline PR review comments
