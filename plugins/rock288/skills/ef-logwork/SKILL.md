@@ -4,7 +4,7 @@ description: "Log Everfit Jira worklogs in the Core Team format ([Activity] – 
 argument-hint: "[free text e.g. '3h UP-79399, 15m standup'] [--date=YYYY-MM-DD] [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # EF Logwork

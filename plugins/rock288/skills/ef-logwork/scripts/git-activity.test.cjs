@@ -124,6 +124,15 @@ git(stack, ['branch', '-q', '-D', 'dev_s18_26.feat/UP-100']);
 // Author email differing only in case from user.email.
 commit(stack, 'feat: UP-80004 upper-case email', '2026-10-06T12:00:00+07:00', { email: 'ME@Everfit.io' });
 
+// A stash made in the window: its "WIP on …" / "index on …" commits carry the card of the
+// commit they sit on, but they were never committed work.
+const stashy = makeRepo('stashy');
+fs.writeFileSync(path.join(stashy, 'a.txt'), 'a\n');
+git(stashy, ['add', 'a.txt']);
+commit(stashy, 'feat: UP-90001 add a', '2026-10-06T14:00:00+07:00');
+fs.writeFileSync(path.join(stashy, 'a.txt'), 'changed\n');
+git(stashy, ['stash', 'push', '-q'], { GIT_AUTHOR_DATE: '2026-10-06T15:00:00+07:00', GIT_COMMITTER_DATE: '2026-10-06T15:00:00+07:00' });
+
 fs.mkdirSync(path.join(ROOT, 'not-a-repo'));
 
 function runCli(args) {
@@ -201,6 +210,11 @@ test('stacked branch: subjects only from subject commits; per-commit cardFrom ke
   assertEqual(c.cardFrom, 'subject', 'cardFrom');
   assertEqual(c.subjects, ['child work'], 'subjects');
   assert(c.commits.some(x => x.subject === 'parent groundwork' && x.cardFrom === 'branch'), 'leaked commit tagged branch');
+});
+
+test('git stash entries are not commits', () => {
+  assertEqual(card('UP-90001').commits.map(c => c.subject), ['feat: UP-90001 add a'], 'only the real commit');
+  assert(!allSubjects().some(s => /^(WIP|index|untracked files) on /.test(s)), 'stash subject leaked');
 });
 
 test('author email matched case-insensitively', () => {

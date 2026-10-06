@@ -293,7 +293,8 @@ function collectCommits(repo, opts, errors) {
   let mainline;
   try {
     // --fixed-strings: the email is matched literally, whatever grep.patternType says.
-    out = run('git', ['-C', repo, 'log', '--all', '--source', '--no-merges', '--fixed-strings',
+    // --exclude=refs/stash: stash entries ("WIP on …", "index on …") are not real commits.
+    out = run('git', ['-C', repo, 'log', '--exclude=refs/stash', '--all', '--source', '--no-merges', '--fixed-strings',
       '--regexp-ignore-case', `--author=<${email}>`, `--since=${since}`,
       `--format=%H${FIELD_SEP}%aI${FIELD_SEP}%ae${FIELD_SEP}%s${FIELD_SEP}%D${FIELD_SEP}%S`]);
   } catch (err) {
