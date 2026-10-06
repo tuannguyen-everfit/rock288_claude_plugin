@@ -15,7 +15,7 @@ All shippable content lives under `plugins/rock288/`:
 
 | Dir | What | Count (approx) |
 |---|---|---|
-| `skills/` | Skill folders (each has `SKILL.md` + optional `references/`, `scripts/`, `assets/`) | 77 |
+| `skills/` | Skill folders (each has `SKILL.md` + optional `references/`, `scripts/`, `assets/`) | 86 |
 | `agents/` | Subagent definitions (`*.md` with frontmatter) | 14 |
 | `hooks/` | Node `.cjs` hook scripts wired through `hooks.json` | ~20 |
 | `hooks/lib/` | Shared utilities required by multiple hooks (config, logger, statusline, transcript parser) | — |
@@ -35,6 +35,7 @@ node plugins/rock288/scripts/validate-docs.cjs
 
 # Rebuild skills_data.yaml (skill metadata index used by find-skills, kanban, etc.)
 python3 plugins/rock288/scripts/scan_skills.py
+# Note: script expects .claude/skills → symlink to plugins/rock288/skills and .claude/scripts/. Run from temp dir, then copy skills_data.yaml back to plugins/rock288/scripts/
 
 # Install Python deps for scripts
 pip install -r plugins/rock288/scripts/requirements.txt   # pyyaml
