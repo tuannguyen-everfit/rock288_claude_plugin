@@ -270,10 +270,12 @@
   path: ef-logwork/SKILL.md
 - argument_hint: '[#PR | PR-URL] [--severity=important,critical,niceto]'
   category: other
-  description: 'Post selected findings from /rk:code-review as inline PR review comments
-    anchored to exact file:line locations. Use AFTER a code review when the user wants
-    the Important (or chosen) items pushed to GitHub as inline comments. Triggers
-    on: comment to pr, post review inline, push findings to pr, drop comments on pr.'
+  description: 'Post findings from /rk:code-review as inline PR review comments anchored
+    to exact file:line locations, each labelled [Must fix] (Critical/Important) or
+    [Optional] (Nice-to-have). Use AFTER a code review when the user wants the findings
+    (all buckets by default, or chosen ones) pushed to GitHub as inline comments.
+    Triggers on: comment to pr, post review inline, push findings to pr, drop comments
+    on pr.'
   has_references: false
   has_scripts: false
   name: ef-pr-comment
@@ -670,13 +672,13 @@
   category: utilities
   description: 'Review the PR(s) linked inside a Slack message, then act on the result
     end-to-end. Given a Slack message URL (whose text contains one or more GitHub
-    PR links), run rk:code-review on each; if a PR has Critical/Important findings,
-    post them inline via rk:pr-comment and reply in the Slack thread ''<@author> Please
-    check my comments''; otherwise comment ''LGTM!'' on the PR and reply ''<@author>
-    approved''. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block.
-    Fully automatic — no confirmation gate. Triggers on: ''review pr from slack'',
-    ''review slack pr link'', ''check pr in this slack message'', ''review code từ
-    link slack''.'
+    PR links), run rk:code-review on each; post every finding inline via rk:pr-comment,
+    labelled [Must fix] (Critical/Important) or [Optional] (Nice-to-have); if a PR
+    has any [Must fix], reply in the Slack thread ''<@author> Please check my comments'',
+    otherwise also comment ''LGTM!'' on the PR and reply ''<@author> approved''. Ends
+    with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block. Fully automatic
+    — no confirmation gate. Triggers on: ''review pr from slack'', ''review slack
+    pr link'', ''check pr in this slack message'', ''review code từ link slack''.'
   has_references: false
   has_scripts: false
   name: slack-pr-review

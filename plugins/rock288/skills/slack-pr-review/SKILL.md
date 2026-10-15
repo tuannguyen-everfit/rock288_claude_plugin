@@ -1,10 +1,10 @@
 ---
 name: slack-pr-review
-description: "Review the PR(s) linked inside a Slack message, then act on the result end-to-end. Given a Slack message URL (whose text contains one or more GitHub PR links), run rk:code-review on each; if a PR has Critical/Important findings, post them inline via rk:pr-comment and reply in the Slack thread '<@author> Please check my comments'; otherwise comment 'LGTM!' on the PR and reply '<@author> approved'. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block. Fully automatic — no confirmation gate. Triggers on: 'review pr from slack', 'review slack pr link', 'check pr in this slack message', 'review code từ link slack'."
+description: "Review the PR(s) linked inside a Slack message, then act on the result end-to-end. Given a Slack message URL (whose text contains one or more GitHub PR links), run rk:code-review on each; post every finding inline via rk:pr-comment, labelled [Must fix] (Critical/Important) or [Optional] (Nice-to-have); if a PR has any [Must fix], reply in the Slack thread '<@author> Please check my comments', otherwise also comment 'LGTM!' on the PR and reply '<@author> approved'. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block. Fully automatic — no confirmation gate. Triggers on: 'review pr from slack', 'review slack pr link', 'check pr in this slack message', 'review code từ link slack'."
 argument-hint: "[<slack-message-url>] [--pr=<#N|url>] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Slack → PR Review
@@ -12,11 +12,12 @@ metadata:
 Take a **Slack message URL** whose text contains a **GitHub PR link**, review that PR with
 [`rk:code-review`](../code-review/SKILL.md), and route the outcome automatically:
 
-- **Has blocking findings** (Critical or Important) → post them inline with
-  [`rk:pr-comment`](../ef-pr-comment/SKILL.md), then reply in the Slack thread:
+- **Has blocking findings** (Critical or Important) → post every finding inline with
+  [`rk:pr-comment`](../ef-pr-comment/SKILL.md) — blocking ones labelled `[Must fix]`,
+  Nice-to-have ones `[Optional]` — then reply in the Slack thread:
   `<@author> Please check my comments`
-- **Clean / only Nice-to-have** → comment `LGTM!` on the PR, then reply in the thread:
-  `<@author> approved`
+- **Clean / only Nice-to-have** → post the Nice-to-have ones inline as `[Optional]` (if any),
+  comment `LGTM!` on the PR, then reply in the thread: `<@author> approved`
 
 `<@author>` = the author of the Slack message you were given (the person who shared the PR),
 tagged as a real Slack mention.
@@ -39,10 +40,16 @@ This skill never edits code — it only reviews, comments, and replies.
 
 | Review result | Branch | PR action | Slack reply |
 |---|---|---|---|
-| Any **Critical** or **Important** finding | **Needs fix** | Post Critical + Important inline via `rk:pr-comment` (`--severity=critical,important`) | `<@author> Please check my comments` |
-| Only **Nice-to-have**, or no findings | **LGTM** | `gh pr comment <PR> --body "LGTM!"` | `<@author> approved` |
+| Any **Critical** or **Important** finding | **Needs fix** | Post every finding inline via `rk:pr-comment` (`--severity=critical,important,niceto`): `[Must fix]` + `[Optional]` | `<@author> Please check my comments` |
+| Only **Nice-to-have**, or no findings | **LGTM** | Post the Nice-to-have inline as `[Optional]` (`--severity=niceto`, skipped when there are none), then `gh pr comment <PR> --body "LGTM!"` | `<@author> approved` |
 
-Nice-to-have findings are always ignored for routing and never posted inline.
+Nice-to-have findings never affect routing, but they are always posted, labelled `[Optional]`,
+so the PR author sees the whole review and can tell at a glance what blocks the merge.
+
+| Severity | Label on the PR comment | Counted in |
+|---|---|---|
+| Critical, Important | `**[Must fix]**` | `MUST_FIX` |
+| Nice-to-have | `**[Optional]**` | `OPTIONAL` |
 
 ## Workflow
 
@@ -113,24 +120,28 @@ would post, and the exact Slack reply text. Stop.
 
 ### 5a. Branch: needs fix
 
-1. Post the Critical + Important findings inline by invoking
-   [`rk:pr-comment`](../ef-pr-comment/SKILL.md) with `--severity=critical,important` so it runs
-   **non-interactively** (that flag skips its multi-select prompt and posts all matching
-   findings). The findings from step 3 are already in context, which is `pr-comment`'s
-   precondition. Comment voice rules from `pr-comment` apply — comments must read as if a human
-   wrote them.
+1. Post every finding inline in one review by invoking
+   [`rk:pr-comment`](../ef-pr-comment/SKILL.md) with `--severity=critical,important,niceto` so it
+   runs **non-interactively** (that flag skips its multi-select prompt and posts all matching
+   findings). Critical + Important go out labelled `**[Must fix]**`, Nice-to-have labelled
+   `**[Optional]**`, and the review body carries the counts (`"2 must fix, 5 optional."`). The
+   findings from step 3 are already in context, which is `pr-comment`'s precondition. Its comment
+   voice and severity-label rules apply.
 2. Reply into the Slack thread (see §6) with exactly:
    `<@author_id> Please check my comments`
 
 ### 5b. Branch: LGTM
 
-1. Post a top-level approval comment on the PR:
+1. If there are Nice-to-have findings, post them inline first by invoking
+   [`rk:pr-comment`](../ef-pr-comment/SKILL.md) with `--severity=niceto` — each labelled
+   `**[Optional]**`, review body `"N optional."`.
+2. Post a top-level approval comment on the PR:
    ```bash
    REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)   # or owner/repo parsed from the PR URL
    gh pr comment <PR_NUMBER> --repo "$REPO" --body "LGTM!"
    ```
    (Top-level comment, not an inline review — there's nothing to anchor.)
-2. Reply into the Slack thread (see §6) with exactly:
+3. Reply into the Slack thread (see §6) with exactly:
    `<@author_id> approved`
 
 ### 6. Reply into the Slack thread
@@ -165,8 +176,8 @@ SUMMARY: <one English sentence, max 200 chars>
 
 - `VERDICT` — `APPROVED` = the LGTM branch (5b); `NEEDS_FIX` = blocking findings posted (5a).
   **If the run failed, emit no `VERDICT` line at all** — never guess a branch (see STOP rules).
-- `MUST_FIX` — exactly what you posted inline. `OPTIONAL` — Nice-to-have, never posted, never
-  routes anything.
+- `MUST_FIX` — exactly the `[Must fix]` comments you posted inline. `OPTIONAL` — exactly the
+  `[Optional]` comments you posted inline; they never route anything.
 - `SUMMARY` — the **reason for the verdict**: what is right, plus the single most notable risk.
   Not a description of the PR. One line. Shape to copy:
   `SUMMARY: Correct, tested no-op dirty-check for profile stats; the per-client info trace adds standing Datadog log volume.`
@@ -180,7 +191,8 @@ Before the §7 block, report compactly:
 1. Resolved Slack message → `channel_id`, `thread_ts`, author `<@id>`.
 2. Resolved PR → `REPO#N`.
 3. Review verdict → counts: `Critical=X, Important=Y, Nice-to-have=Z` → branch taken.
-4. What was posted: PR review URL (5a) or `LGTM!` comment URL (5b), and the Slack reply `ts`
+4. What was posted: the inline review URL with its `[Must fix]` / `[Optional]` counts (5a, and 5b
+   when it had Nice-to-have), the `LGTM!` comment URL (5b), and the Slack reply `ts`
    (or "caller owns the reply" when §6 was skipped).
 
 **The §7 block is authoritative** — this prose section is for a human reading the transcript.
@@ -204,6 +216,7 @@ Before the §7 block, report compactly:
 - ✗ No PR link in the message AND no `--pr=` → stop, ask for the PR.
 - ✗ Don't skip the §7 result block, and don't put anything after it.
 - ✗ Don't edit code or push commits — review + comment + reply only.
-- ✗ Don't post Nice-to-have findings inline; they never affect routing.
+- ✗ Don't drop Nice-to-have findings: post them inline as `[Optional]`. They never affect routing.
+- ✗ Don't post a comment without its `[Must fix]` / `[Optional]` label.
 - ✗ Don't change the two literal reply strings.
 - ✗ Don't open a new top-level Slack message — always reply under the given message's thread.
