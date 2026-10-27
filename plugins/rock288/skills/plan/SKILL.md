@@ -1,11 +1,11 @@
 ---
 name: plan
 description: "Plan implementations, design architectures, create technical roadmaps with detailed phases. Use for feature planning, system design, solution architecture, implementation strategy, phase documentation."
-argument-hint: "[task] OR [archive|red-team|validate]"
+argument-hint: "[task] [--recommend] OR [archive|red-team|validate]"
 license: MIT
 metadata:
   author: rock288
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Planning
