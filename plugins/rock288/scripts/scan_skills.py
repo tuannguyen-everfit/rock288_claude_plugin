@@ -47,6 +47,7 @@ EXACT_CATEGORY_MAP = {
     "slack-pr-review": "utilities",
     "test": "utilities",
     "trust-loop": "utilities",
+    "pr-follow-up": "utilities",
     "ef-daily-report": "utilities",
     "ef-logwork": "utilities",
     # Development Tools

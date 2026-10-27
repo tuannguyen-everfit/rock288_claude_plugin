@@ -1,10 +1,10 @@
 ---
 name: trust-loop
-description: "Verified delivery loop for a code change in any repo: intake, pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review, a commit only on a passing receipt, then the hand-off (PR, review request, Jira). Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
+description: "Verified delivery loop for a code change in any repo: intake, pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review, a commit only on a passing receipt, then the hand-off (PR, review request, Jira) and `/rk:pr-follow-up` until the PR runs on dev. Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
 argument-hint: "<task | bug report | Jira card> [--init]"
 metadata:
   author: rock288
-  version: "1.2.1"
+  version: "1.4.0"
 ---
 
 # Trust Loop
@@ -30,7 +30,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
 - E2e tests only where the repo already has an e2e suite (an `e2e/` dir or `*-e2e` project, a `make e2e` / `nx e2e` target, an `e2e` tier). None → do not write or scaffold e2e: prove the change with unit tests plus a runtime call when one is possible, and put `no e2e suite in this repo` under "Not verified".
-- **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it.
+- **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A **required** tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it. An optional tier already failing (e.g. e2e checks red on the base) blocks nothing: write down which checks fail, so step 4 can show the change adds none, and go on.
 - Cross-boundary change (two services, API + client, schema + reader)? Write the contract and the order both sides change in.
 
 ## 2. Design and plan
@@ -80,9 +80,19 @@ node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -
 ## 7. Hand-off
 Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
 1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
-2. **Review request**: the channel and reviewers the human names; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR.
-3. **Jira** (only when the loop implements a card): `/rk:ef-logwork`, then move the card per the team's workflow. Do not close it while acceptance criteria outside this PR are open.
-4. **Report**:
+2. **Review request**: the channel and reviewers settled at intake; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged, deployed) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR.
+3. **Start the follow-up** (`/rk:pr-follow-up`), so review, merge and the dev deploy are not left to memory:
+   ```bash
+   node $SKILL_DIR/../pr-follow-up/scripts/deploy-signal.cjs pick     # pipelines from "deploy" in .claude/trust.json
+   node $SKILL_DIR/../pr-follow-up/scripts/follow-up-state.cjs init --pr <PR url> --ticket <KEY> \
+     --slack-channel <review channel id> --slack-ts <review request ts> --worktree <this checkout> \
+     --deploy-channel <channel> --pipelines <p1,p2> --max-run-min <n> [--dev-check "<command>"]
+   ```
+   - `pick` exits 2 (no `deploy` yet): find the repo's dev pipelines in `#non-prod-ci-cd` (bot lines `<name>-codepipeline *SUCCEEDED*`, `*Application :*`), confirm them with the human once, and add `deploy` to `.claude/trust.json` (`references/trust-config.md`).
+   - `--dev-check`: the runtime check from step 1 when it can run against dev without writing data; otherwise leave it out.
+   - Then `/loop /rk:pr-follow-up <PR url>` (self-paced: 15 min in review, 5 min while waiting for the deploy; it stops itself when done, idle 24 h, or waiting on the human). The loop lives as long as this session; if the session must end, tell the human to run the same line in a new session in this checkout.
+4. **Jira** (only when the loop implements a card), last because it asks the human for the hours: move the card to **In Review**, then `/rk:ef-logwork`. Do not close it while acceptance criteria outside this PR are open.
+5. **Report**:
    ```
    Change: <one line> · Branch: <...> · Commit: <sha>
    Intent: <what was asked, what the diff does>

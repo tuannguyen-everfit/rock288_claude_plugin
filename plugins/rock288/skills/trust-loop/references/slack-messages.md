@@ -6,7 +6,7 @@ Templates for every message the loop posts to a review thread. Slack carries the
 - **Standard markdown**, which the Slack tool converts: `**bold**`, `` `code` ``, `[text](url)`. Single `*x*` renders italic. No tables (they render, but run long and wrap on mobile; the table lives in the PR), no `#` headings.
 - **No receipt hashes, no local paths.** Receipts live under the author's git dir; a reviewer cannot open them. Name the gates instead.
 - One item per line, ~100 chars max. Anything longer belongs in the PR.
-- Line caps: parent ≤ 5 · evidence ≤ 6 · round ≤ 8 · merged ≤ 3. Over the cap → group the tail: `⏭️ 3 more kept, reasons on the PR`.
+- Line caps: parent ≤ 5 · evidence ≤ 6 · round ≤ 8 · merged ≤ 3 · deployed ≤ 3. Over the cap → group the tail: `⏭️ 3 more kept, reasons on the PR`.
 - Emoji, fixed meaning:
 
   | Emoji | Means |
@@ -17,6 +17,7 @@ Templates for every message the loop posts to a review thread. Slack carries the
   | ⏭️ | kept as is (with a reason) |
   | ⏳ | still open (with an owner) |
   | 🚀 | merged |
+  | ❌ | deploy failed / blocked |
 
 - English, same wording as the commit / PR. Short commit SHAs (7 chars) in backticks.
 - The Slack tool appends its own "Sent using" footer; do not add one.
@@ -60,6 +61,15 @@ Review re-requested
 🚀 Merged `<sha>` · approved by <logins>
 <follow-ups, or "no follow-ups"> · <deploy status>
 ```
+
+## 5. Deployed (thread reply, from `/rk:pr-follow-up`)
+```
+✅ On dev by <HH:MM> (+07) · `<merge sha>`
+<dev check: what ran → result, or "no dev check">
+Jira: <CARD> → QA Ready
+```
+- Times in +07: the scripts print UTC, add 7 h once and check it.
+- Deploy failed or timed out: `❌ Dev deploy <failed | not seen within 90 min>: <pipeline>` + `<@author>` instead.
 
 ## Example (CHAL-864)
 ```

@@ -28,6 +28,29 @@ Per-repo verification gates for `/rk:trust-loop`. Committed with the repo, so ev
 
 Tiers run in order, all of them, so one run shows every failure. Put the fast ones first.
 
+## `deploy` (optional, for `/rk:pr-follow-up`)
+How the merged PR reaches dev, so the follow-up can tell when dev runs it. Not used by `verify-change` and not part of the receipt.
+
+```json
+"deploy": {
+  "channel": "C06HA7VQHNZ",
+  "max_run_min": 15,
+  "pipelines": {
+    "apps/notification/": "challenger-notif-dev-ap-se-1-cicd-codepipeline",
+    "apps/challenger/": "challenger-service-dev-ap-se-1-cicd-codepipeline",
+    "*": ["challenger-service-dev-ap-se-1-cicd-codepipeline", "challenger-notif-dev-ap-se-1-cicd-codepipeline"]
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `channel` | Slack channel the AWS CodePipeline bot posts to (default `#non-prod-ci-cd`, `C06HA7VQHNZ`) |
+| `max_run_min` | longest a pipeline run takes, with margin; a success only proves the deploy when it lands this long after the merge (default 35) |
+| `pipelines` | changed-file path prefix → pipeline name(s); the longest prefix wins, `"*"` covers every other file |
+
+`node <pr-follow-up>/scripts/deploy-signal.cjs pick` prints the pipelines for the current branch.
+
 ## Choosing tiers
 - Mirror the repo's own mandatory gates (`CLAUDE.md`, pre-commit hooks, CI). `init-config.cjs` only drafts from the stack; the human confirms.
 - A tier must be deterministic and runnable locally without secrets. Something that needs shared infra or credentials is runtime evidence for the PR, not a tier.

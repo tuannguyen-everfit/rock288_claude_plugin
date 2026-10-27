@@ -260,10 +260,11 @@
   category: utilities
   description: 'Log Everfit Jira worklogs in the Core Team format ([Activity] – [What]
     – [Outcome], 15m steps, VN date) from today''s git commits + PR reviews. Suggests
-    cards and descriptions, you type the hours, shows a draft with the daily total
-    vs 7h, then logs on confirm. --audit reports days under 7h, empty days and badly
-    formatted worklogs (read-only). Triggers on: ''logwork'', ''log work'', ''log
-    time'', ''timesheet'', ''log giờ'', ''chấm công'', ''audit worklog''.'
+    cards and descriptions, you type the hours, asks the remaining of each own card,
+    shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm.
+    --audit reports days under 7h, empty days and badly formatted worklogs (read-only).
+    Triggers on: ''logwork'', ''log work'', ''log time'', ''timesheet'', ''log giờ'',
+    ''chấm công'', ''audit worklog''.'
   has_references: true
   has_scripts: true
   name: ef-logwork
@@ -495,6 +496,21 @@
   has_scripts: true
   name: plans-kanban
   path: plans-kanban/SKILL.md
+- argument_hint: <PR url | owner/repo#n> [slack thread ts] [jira key]
+  category: utilities
+  description: 'Follow a PR after the trust-loop hand-off until it runs on dev: triage
+    review feedback (fix, answer, push back, escalate), re-request review, squash-merge
+    once a reviewer approved the head and required checks pass, wait for the dev deploy
+    in Slack #non-prod-ci-cd, run the dev check, then report to the Slack review thread
+    and move the Jira card to QA Ready. One step per run, self-paced (15 min while
+    in review, 5 min while waiting for the deploy), stops itself when done, idle 24
+    h or waiting on the human; started by /rk:trust-loop as `/loop /rk:pr-follow-up
+    <PR>`. Triggers on: ''follow up PR'', ''watch PR'', ''theo dõi PR'', ''check comment
+    và deploy''.'
+  has_references: false
+  has_scripts: true
+  name: pr-follow-up
+  path: pr-follow-up/SKILL.md
 - argument_hint: <feature description or change proposal> [--files <glob>]
   category: other
   description: 5 expert personas debate proposed changes before implementation. Catches
@@ -751,7 +767,10 @@
     baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new
     tests, programmatic verification that writes a receipt bound to the exact working
     tree, adversarial + intent review, a commit only on a passing receipt, then the
-    hand-off (PR, review request, Jira).'
+    hand-off (PR, review request, Jira) and `/rk:pr-follow-up` until the PR runs on
+    dev. Use for features, bug fixes and refactors when the output must be proven,
+    not just reviewed. Triggers on: ''trust loop'', ''verified change'', ''implement
+    and verify'', ''làm có kiểm chứng''.'
   has_references: true
   has_scripts: true
   name: trust-loop

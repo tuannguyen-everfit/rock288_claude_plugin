@@ -15,7 +15,7 @@ All shippable content lives under `plugins/rock288/`:
 
 | Dir | What | Count (approx) |
 |---|---|---|
-| `skills/` | Skill folders (each has `SKILL.md` + optional `references/`, `scripts/`, `assets/`) | 87 |
+| `skills/` | Skill folders (each has `SKILL.md` + optional `references/`, `scripts/`, `assets/`) | 88 |
 | `agents/` | Subagent definitions (`*.md` with frontmatter) | 14 |
 | `hooks/` | Node `.cjs` hook scripts wired through `hooks.json` | ~20 |
 | `hooks/lib/` | Shared utilities required by multiple hooks (config, logger, statusline, transcript parser) | — |
