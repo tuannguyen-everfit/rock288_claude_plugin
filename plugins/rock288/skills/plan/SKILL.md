@@ -5,7 +5,7 @@ argument-hint: "[task] OR [archive|red-team|validate]"
 license: MIT
 metadata:
   author: rock288
-  version: "1.1.1"
+  version: "1.2.0"
 ---
 
 # Planning
@@ -61,6 +61,8 @@ Default: `--auto` (analyze task complexity and auto-pick mode).
 | `--two` | Two approaches | 2+ researchers | After selection | After selection | (none) |
 
 Add `--no-tasks` to skip task hydration in any mode.
+
+Add `--recommend` (any mode; passed by `/rk:trust-loop --recommend`) to answer every `AskUserQuestion` that has a `(Recommended)` option with that option instead of asking — scope challenge, validation interview, red-team accept/reject, dependency checks. State each pick in chat and record it in `plan.md` under **Decisions taken by recommendation** (question, options, pick, why). Still ask when no option can be recommended (a genuine tie, or a fact only the human knows).
 
 Load: `references/workflow-modes.md` for auto-detection logic, per-mode workflows, context reminders.
 

@@ -2,10 +2,10 @@
 name: brainstorm
 description: "Brainstorm solutions with trade-off analysis and brutal honesty. Use for ideation, architecture decisions, technical debates, feature exploration, feasibility assessment, design discussions."
 license: MIT
-argument-hint: "[topic or problem]"
+argument-hint: "[topic or problem] [--recommend]"
 metadata:
   author: rock288
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
 # Brainstorming Skill
@@ -55,6 +55,13 @@ Non-negotiables:
 - Leverage `rk:ai-multimodal` skill to analyze visual materials and mockups
 - Query `psql` command to understand current database structure and existing data
 - Employ `rk:sequential-thinking` skill for complex problem-solving that requires structured analysis
+
+## `--recommend` (decide without asking)
+Passed by the user or by `/rk:trust-loop --recommend`. Every decision that would go to `AskUserQuestion` with a `(Recommended)` option is taken by that option instead of asked:
+- Still do the scouting and write the context block, then **state** the decision in chat (`Decision 1/3 — <question> → <pick>: <why, one line>`) and move on. No picker.
+- The design approval below and the Finalize "create a plan?" question are answered yes.
+- The report gets a **Decisions taken by recommendation** section: each question, the options, the pick and why, so the human can overturn one later.
+- Still ask when no option can be recommended from the code, docs or request (a genuine tie on product behavior, or a fact only the human knows). One question, then continue.
 
 <HARD-GATE>
 Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it.

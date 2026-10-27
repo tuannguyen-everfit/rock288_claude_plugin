@@ -71,7 +71,7 @@
   has_scripts: false
   name: bootstrap
   path: bootstrap/SKILL.md
-- argument_hint: '[topic or problem]'
+- argument_hint: '[topic or problem] [--recommend]'
   category: utilities
   description: Brainstorm solutions with trade-off analysis and brutal honesty. Use
     for ideation, architecture decisions, technical debates, feature exploration,
@@ -761,7 +761,7 @@
   has_scripts: true
   name: threejs
   path: threejs/SKILL.md
-- argument_hint: <task | bug report | Jira card> [--init]
+- argument_hint: <task | bug report | Jira card> [--init] [--recommend]
   category: utilities
   description: 'Verified delivery loop for a code change in any repo: intake, pre-flight
     baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new

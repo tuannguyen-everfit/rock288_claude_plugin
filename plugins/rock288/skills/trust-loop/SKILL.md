@@ -1,10 +1,10 @@
 ---
 name: trust-loop
 description: "Verified delivery loop for a code change in any repo: intake, pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review, a commit only on a passing receipt, then the hand-off (PR, review request, Jira) and `/rk:pr-follow-up` until the PR runs on dev. Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
-argument-hint: "<task | bug report | Jira card> [--init]"
+argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # Trust Loop
@@ -12,6 +12,8 @@ metadata:
 The human is the **architect**: sets intent, approves constraints, reads intent summaries, approves PRs. The agent locates, builds, verifies and reviews inside the repo's gates. Trust comes from verification evidence, not from a review score.
 
 **`$SKILL_DIR`** = the "Base directory for this skill" path printed when this skill loads.
+
+**`--recommend`**: design choices are taken by recommendation instead of asked. Pass it on to `/rk:brainstorm` and `/rk:plan` in step 2; they state each pick and log it. It does not skip the intake intent check, the human-decision points (a red required baseline tier, `BLOCKED`, hours for the worklog) or `/rk:cook`'s gates.
 
 **Defer first:** if the repo has its own `.claude/skills/trust-loop/` (e.g. core-foundry), stop and run that one: `/trust-loop <task>`. Its tooling is stricter than this generic loop.
 
@@ -35,8 +37,8 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 ## 2. Design and plan
 - Intent clear and single-file with an obvious cause → skip to step 3.
-- Several viable designs or vague requirements → `/rk:brainstorm`; its decision feeds the plan.
-- Multi-file feature → `/rk:plan`. The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1.
+- Several viable designs or vague requirements → `/rk:brainstorm` (`--recommend` when this loop has it); its decision feeds the plan.
+- Multi-file feature → `/rk:plan` (`--recommend` when this loop has it). The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1.
 - Bug → reproduce first: a failing unit test or a runtime call before the fix (`/rk:debug` for hard ones).
 - One concern per loop. A plan that does two things becomes two loops.
 
@@ -98,8 +100,10 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    Intent: <what was asked, what the diff does>
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
+   Decided by recommendation: <each pick, one line; only with --recommend>
    Open questions: <...>
    ```
+   With `--recommend`, the PR description also lists those picks under "Decisions taken by recommendation", so reviewers see them.
 
 ## Credits
 Adapted from the `trust-loop` workflow in core-foundry (Huy Nguyen): receipts bound to a working-tree fingerprint, red-on-old / green-on-new proof, intent review. This version is a generic rewrite driven by `.claude/trust.json`.
