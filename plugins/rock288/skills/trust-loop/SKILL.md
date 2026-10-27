@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init]"
 metadata:
   author: rock288
-  version: "1.1.0"
+  version: "1.1.1"
 ---
 
 # Trust Loop
@@ -28,6 +28,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
+- E2e tests only where the repo already has an e2e suite (an `e2e/` dir or `*-e2e` project, a `make e2e` / `nx e2e` target, an `e2e` tier). None → do not write or scaffold e2e: prove the change with unit tests plus a runtime call when one is possible, and put `no e2e suite in this repo` under "Not verified".
 - **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it.
 - Cross-boundary change (two services, API + client, schema + reader)? Write the contract and the order both sides change in.
 
