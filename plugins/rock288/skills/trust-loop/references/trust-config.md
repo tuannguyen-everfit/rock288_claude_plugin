@@ -21,7 +21,7 @@ Per-repo verification gates for `/rk:trust-loop`. Committed with the repo, so ev
 | Field | Meaning |
 |---|---|
 | `tiers[].name` | kebab-case, unique; also the log file name |
-| `tiers[].cmd` | shell command run from the repo root; exit 0 = pass. Output is captured to a log |
+| `tiers[].cmd` | shell command run from the repo root; exit 0 = pass. Output is captured to a log. May hold scope placeholders (below) |
 | `tiers[].optional` | a failure is recorded but does not block the receipt; can be skipped with `--skip=<name>` |
 | `tiers[].timeout_s` | kill the tier after N seconds (counts as a failure) |
 | `base_branch`, `protected_branches`, `stack` | informational for the loop (branching, hand-off); not used by `verify-change` |
@@ -51,10 +51,39 @@ How the merged PR reaches dev, so the follow-up can tell when dev runs it. Not u
 
 `node <pr-follow-up>/scripts/deploy-signal.cjs pick` prints the pipelines for the current branch.
 
+## Scoped tiers (run only what the change touches)
+A full suite on every verify is slow. Placeholders in `cmd` expand to the change set (every path that differs from HEAD, plus untracked files), shell-quoted:
+
+| Placeholder | Expands to |
+|---|---|
+| `{files}` | every changed file that still exists |
+| `{files:ts,tsx}` | changed files with these extensions |
+| `{go_packages}` | `./<dir>` of each package holding a changed `.go` file |
+
+Nothing in scope (a docs-only change, or `--baseline` on a clean base) → the tier passes without running; the receipt records `scope: "empty"` and the expanded command as `ran`.
+
+```json
+{ "name": "unit", "cmd": "npx jest --findRelatedTests {files:ts,tsx} --maxWorkers=50% --passWithNoTests" },
+{ "name": "unit", "cmd": "go test -race -count=1 {go_packages}" },
+{ "name": "lint", "cmd": "npx eslint {files:ts,tsx}" }
+```
+- `jest --findRelatedTests` runs the changed spec files plus every spec that imports a changed source file, so a regression in an existing test still shows. Prefer it over "new tests only".
+- `{go_packages}` runs the whole package of each changed file, not its importers. A change to a shared lib that other packages import → also list the importers, or keep a full-suite tier.
+- The repo's CI still runs the full suite on the PR; a scoped tier is the local gate, not a replacement. When the repo's `CLAUDE.md` names a full-suite gate as mandatory before commit, keep that tier full (or ask the human).
+
+## Machine load
+Two sessions verifying at once used to run two full suites side by side and freeze the machine. `verify-change` guards against it:
+- One run per machine: lock at `~/.claude/rk-trust/verify.lock` (override with `RK_TRUST_LOCK`). A second run prints `waiting: …` and starts when the first ends. A lock whose owner died is taken over, and the tier it left running is killed.
+- Tier env: `NX_PARALLEL=1` and `GOFLAGS` gets `-p=<half the cores>`, unless the env already sets them.
+- Each tier runs in its own process group; on timeout, on SIGINT/SIGTERM/SIGHUP, and when the tier exits, the whole group is killed, so no `go test`, jest worker or server outlives it.
+
+Runners that pick their own worker count still need a cap in `cmd`: jest via nx → `npx nx affected -t test --maxWorkers=50%`, plain jest → `jest --maxWorkers=50%`, vitest → `--maxWorkers=50%`.
+
 ## Choosing tiers
 - Mirror the repo's own mandatory gates (`CLAUDE.md`, pre-commit hooks, CI). `init-config.cjs` only drafts from the stack; the human confirms.
 - A tier must be deterministic and runnable locally without secrets. Something that needs shared infra or credentials is runtime evidence for the PR, not a tier.
 - Slow but valuable (e2e on containers) → `optional: true` with a `timeout_s`.
+- Test runners that default to every core (jest, vitest) → cap them in `cmd` (see "Machine load").
 - Editing a tier invalidates existing receipts (the receipt stores a hash of the tier list).
 
 ## Where things go

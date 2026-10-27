@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.7.0"
+  version: "1.8.0"
 ---
 
 # Trust Loop
@@ -22,6 +22,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Never weaken a test, a lint rule or a tier in `.claude/trust.json` to get green. A gate you believe is wrong is a question for the human.
 - Never `--no-verify`, never push to a protected branch. Repo rules win when stricter: a repo whose rules say "commit / push only when the human says so" gets the diff and a wait at step 6, unless the task itself asked to commit or ship.
 - The loop runs unattended: `/rk:cook` with `--auto`. The loop's own gates (receipt, red/green, review) hold the change, not approval clicks. Cook's finalize does not commit; the loop commits at step 6.
+- Heavy suites run only through `verify-change`, in the foreground. It allows one run per machine (other sessions wait on its lock), caps parallelism (`NX_PARALLEL=1`, `GOFLAGS -p=<half the cores>`) and kills a tier's whole process group on timeout. A full suite run by hand (`nx run-many`, `--skip-nx-cache`, `go test -race ./...`), or `verify-change` in the background, bypasses that and lets two sessions freeze the machine. For a single test file, run that file only.
 
 ## 0. Intake
 - Restate the task in one sentence. Unclear intent → ask now (one round, specific questions); do not discover it in review. With `--recommend`, a question that has a recommended answer (scope, which part of a card goes first, one loop or two) is decided, not asked.
@@ -33,7 +34,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
 - E2e tests only where the repo already has an e2e suite (an `e2e/` dir or `*-e2e` project, a `make e2e` / `nx e2e` target, an `e2e` tier). None → do not write or scaffold e2e: prove the change with unit tests plus a runtime call when one is possible, and put `no e2e suite in this repo` under "Not verified".
-- **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A **required** tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it. An optional tier already failing (e.g. e2e checks red on the base) blocks nothing: write down which checks fail, so step 4 can show the change adds none, and go on.
+- **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A tier scoped to the change (`{files}` / `{go_packages}` placeholders, `nx affected`, `git diff` lint) runs nothing on a clean base: that is a pass, not a gap — do not run the full suite by hand to make up for it. A **required** tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it. An optional tier already failing (e.g. e2e checks red on the base) blocks nothing: write down which checks fail, so step 4 can show the change adds none, and go on.
 - Cross-boundary change (two services, API + client, schema + reader)? Write the contract and the order both sides change in.
 
 ## 2. Design and plan
@@ -56,8 +57,8 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
   ```
 
 ## 4. Verify and self-correct
-- `node $SKILL_DIR/scripts/verify-change.cjs` runs every tier in `.claude/trust.json` and writes a receipt for the exact working tree (logs under the git dir; the path is printed).
-- A tier fails → fix it in the change's own files and run again, **max 3 iterations**. Still red → `BLOCKED`: stop, report the failing output, change approach or ask the human. Do not push through.
+- `node $SKILL_DIR/scripts/verify-change.cjs` runs every tier in `.claude/trust.json` (scoped tiers only on the changed files: `references/trust-config.md`) and writes a receipt for the exact working tree (logs under the git dir; the path is printed). `waiting: verify-change is running for <repo>` = another session holds the machine lock; let it wait, do not kill it or run the tiers by hand.
+- A tier fails → fix it in the change's own files and run again, **max 3 iterations**. While iterating, `--skip=<slow optional tiers>` (e.g. `coverage,e2e`); the last verify before the commit runs them. Still red → `BLOCKED`: stop, report the failing output, change approach or ask the human. Do not push through.
 - A tier that rewrites files (formatter) leaves no receipt: review its edit, then verify again.
 - Runtime evidence the tiers do not cover (e2e, a smoke against a local server, a real API call): run it yourself and keep the output for the PR. Say plainly what could not be exercised and why.
 - Write reports and notes **before** the final verify: a new untracked file changes the fingerprint.
