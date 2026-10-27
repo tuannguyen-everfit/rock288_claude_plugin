@@ -4,7 +4,7 @@ description: "ALWAYS activate this skill before implementing EVERY feature, plan
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
 metadata:
   author: rock288
-  version: "2.1.2"
+  version: "2.1.3"
 ---
 
 # Cook - Smart Feature Implementation
@@ -130,7 +130,7 @@ Human review required at these checkpoints (skipped with `--auto`):
   1. `project-manager` subagent → run full plan sync-back (all completed tasks/steps across all `phase-XX-*.md`, not only current phase), then update `plan.md` status/progress
   2. `docs-manager` subagent → update `./docs` if changes warrant
   3. `TaskUpdate` → mark all Claude Tasks complete after sync-back verification (skip if Task tools unavailable)
-  4. Ask user if they want to commit via `git-manager` subagent
+  4. Ask user if they want to commit via `git-manager` subagent — skip when called by `/rk:trust-loop`: it commits behind its verification receipt
   5. Run `/rk:journal` to write a concise technical journal entry upon completion
 
 ## Convention Pre-flight (MANDATORY — before Step 3, re-check before Step 5)

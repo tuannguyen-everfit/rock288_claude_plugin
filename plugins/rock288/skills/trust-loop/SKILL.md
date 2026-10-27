@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.5.0"
+  version: "1.6.0"
 ---
 
 # Trust Loop
@@ -13,7 +13,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 **`$SKILL_DIR`** = the "Base directory for this skill" path printed when this skill loads.
 
-**`--recommend`**: design choices are taken by recommendation instead of asked. Pass it on to `/rk:brainstorm` and `/rk:plan` in step 2; they state each pick and log it. It does not skip the intake intent check, the human-decision points (a red required baseline tier, `BLOCKED`, hours for the worklog) or `/rk:cook`'s gates.
+**`--recommend`**: design choices are taken by recommendation instead of asked. Pass it on to `/rk:brainstorm` and `/rk:plan` in step 2; they state each pick and log it. It does not skip the intake intent check or the human-decision points (a red required baseline tier, `BLOCKED`, hours for the worklog).
 
 **Defer first:** if the repo has its own `.claude/skills/trust-loop/` (e.g. core-foundry), stop and run that one: `/trust-loop <task>`. Its tooling is stricter than this generic loop.
 
@@ -21,12 +21,13 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - No commit without `verify-change --status` → `ok: true` for the current content. Any edit after verifying invalidates the receipt.
 - Never weaken a test, a lint rule or a tier in `.claude/trust.json` to get green. A gate you believe is wrong is a question for the human.
 - Never `--no-verify`, never push to a protected branch. Repo rules win when stricter: a repo whose rules say "commit / push only when the human says so" gets the diff and a wait at step 6, unless the task itself asked to commit or ship.
-- `/rk:cook` runs in its default gated mode here, **never `--auto`**: the loop's gates replace self-graded approval, they do not add to it.
+- The loop runs unattended: `/rk:cook` with `--auto`. The loop's own gates (receipt, red/green, review) hold the change, not approval clicks. Cook's finalize does not commit; the loop commits at step 6.
 
 ## 0. Intake
 - Restate the task in one sentence. Unclear intent → ask now (one round, specific questions); do not discover it in review.
 - Jira card → `/rk:ef-branch-name <card>` for the branch. Otherwise branch off the base yourself; never work on a protected branch.
 - No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`.
+- Session artifacts: `plans/` or `docs/journals/` not ignored by the repo → add them to `.git/info/exclude` once, so plans, reports and journals stay out of the commit (`git add -A`) and of the receipt.
 - Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), unless the task already says. Defaults = `/rk:ef-ship`'s: `#backend-review-code`, `@backend-team` + `Quang Pham Minh (BE)`. That answer is the go-ahead for step 7.
 
 ## 1. Pre-flight
@@ -43,7 +44,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - One concern per loop. A plan that does two things becomes two loops.
 
 ## 3. Implement
-- Small change: main session. Plan with phases: `/rk:cook <plan>` (gated mode).
+- Small change: main session. Plan with phases: `/rk:cook <plan> --auto` (all phases in one go; it stops only on critical review issues left after 3 fixes).
 - Follow the repo's `CLAUDE.md` and rule files; new code goes where the feature already lives.
 - Tests ship with the change and each must **fail on the old code and pass on the new**. Prove it once and keep both outputs:
   ```bash
