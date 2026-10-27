@@ -4,7 +4,7 @@ description: "Generate an Everfit daily standup report from Jira worklogs and po
 argument-hint: "[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack] [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]"
 metadata:
   author: rock288
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
 # Daily Report
@@ -45,10 +45,7 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 
 [Product Item Name]
 - [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
-  - Progress: 100%
-- [Task name — not yet done] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
-  - Progress: X%
-  - Remaining: [what is left]
+  - Progress: 100%                ← DONE YESTERDAY holds 100% cards only
 
 **PROGRESS CHANGED**
 
@@ -56,6 +53,7 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 - [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
   - Progress: X% → Y%
   - Reason: [cause]
+  - Remaining: [what is left]     ← only when Y < 100%
 
 **PLAN FOR TODAY**
 
@@ -108,9 +106,12 @@ Follow [`references/derivation.md`](references/derivation.md) exactly:
   keep only entries whose VN date == `--date`. `loggedTarget` = Σ of those.
 - `getJiraIssue` per card → progress % = `timeSpent / (timeSpent + remaining)`; reconstruct the
   `before% → now%` delta from `loggedTarget` (no state file).
+- **100% only from `QA Ready` on** (`QA*` / `Q&A*` statuses, or category Done). Any other
+  status caps at **90%**, even with `remaining == 0`.
+- **DONE YESTERDAY = only cards at 100%.** A card below 100% never goes there.
 - **PROGRESS CHANGED = every card that logged time on the target day**, delta included — even
   cards that hit 100% (they show in BOTH DONE and PROGRESS CHANGED).
-- **PLAN FOR TODAY = my `To Do` cards, max 5** (prioritize the epics of today's work, then
+- **PLAN FOR TODAY = my `In Progress` cards, then my `To Do` cards, max 5** (prioritize the epics of today's work, then
   most recently updated; mention in the draft how many were left out).
 - **Worklog comments are optional** — the delta comes from logged time alone. `Reason` =
   `logged <time>, <status>`; only append a comment if one exists.

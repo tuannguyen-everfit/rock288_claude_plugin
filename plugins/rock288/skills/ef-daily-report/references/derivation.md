@@ -29,8 +29,10 @@ worklogAuthor = currentUser() AND assignee = currentUser()
   AND worklogDate >= "<date-1>" AND worklogDate < "<date+2>"
 ```
 
-**PLAN FOR TODAY** (my To Do queue — the report shows **max 5**, see assembly rules):
+**PLAN FOR TODAY** (unfinished work first, then my To Do queue — the report shows **max 5**,
+see assembly rules):
 ```
+assignee = currentUser() AND status = "In Progress" ORDER BY updated DESC
 assignee = currentUser() AND status = "To Do" ORDER BY updated DESC
 ```
 
@@ -59,7 +61,8 @@ mean "the VN working day" regardless of the Jira account tz.
 Pull:
 - `fields.summary` → **Task name**
 - `fields.parent.fields.summary` (or Epic link summary) → **Product Item Name**
-- `fields.status.name` → done detection (`Done` / `Closed` / `Resolved` → 100%)
+- `fields.status` → 100% gate: `name` starts with `QA` or `Q&A` (QA Ready, QA Completed, Q&A …) or
+  `statusCategory.key == "done"`
 - `fields.timetracking.timeSpentSeconds` → `timeSpent`
 - `fields.timetracking.remainingEstimateSeconds` → `remaining_now`
 - `fields.worklog.worklogs[]` → dated entries `{ started, timeSpentSeconds, comment }`
@@ -72,7 +75,12 @@ Pull:
 ```
 progress% = timeSpent / (timeSpent + remaining_now)
 ```
-- `100%` when status is a done-state OR `remaining_now == 0`.
+- `100%` **only** when the card has reached QA: status name starts with `QA` / `Q&A`
+  (case-insensitive — `QA Ready`, `QA Completed`, `Q&A`) or status category is Done
+  (`Done` / `Closed` / `Resolved`).
+- Any other status (`In Progress`, `In Review`, `Need Review`, `To Do` …) → **capped at 90%**:
+  `min(progress%, 90%)`. `remaining_now == 0` there prints `90%`, never `100%` — dev work is
+  not finished until QA can pick it up. The cap applies to `before%` and `now%` alike.
 - `n/a` only when **both** `timeSpent == 0` and `remaining_now == 0` → print
   `Progress: n/a (no time tracked)` and skip the delta for that card.
 
@@ -98,24 +106,27 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 |---|---|
 | Product Item Name | card Epic/parent `summary` (fallback: card's own summary, or "Unassigned item") |
 | Task name | card `summary` + linked card ID `[UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX)` |
-| Progress 100% | done-state status, or `remaining_now == 0` |
+| Progress 100% | status `QA*` / `Q&A*` or category Done only; every other status caps at 90% |
 | Reason (PROGRESS CHANGED) | `logged <Xh Ym>, <status>` (e.g. `logged 3h30m, moved to QA READY`). Append the worklog comment if present. |
 | Remaining (text) | if not 100%: derive from `remaining_now` (e.g. `~Xh remaining`); append latest worklog comment if present |
 
 ## Section assembly rules
 
-- **DONE YESTERDAY** — group cards by Product Item. Each card: bullet with task name +
-  `Progress: X%`. If not 100%, add `Remaining:` derived from `remaining_now` (+ comment if any).
+- **DONE YESTERDAY** — **only cards at 100%** (QA Ready or later, see Progress %), grouped
+  by Product Item. Each card: bullet with task name + `Progress: 100%`. A card that logged
+  time but is below 100% goes to PROGRESS CHANGED only, with its `Remaining:` line there.
 - **PROGRESS CHANGED** — **every** card where `loggedTarget > 0`, with its `before% → now%`
   delta. This **includes cards that reached 100%**: they appear in BOTH sections (DONE shows
   the final %, PROGRESS CHANGED shows the delta + reason). Never print `None` here while any
   card logged time on the target day.
   - `now% > before%` → `Progress: X% → Y%` + `Reason: logged <time>, <status>` (no comment needed).
+    Below 100% → add `Remaining:` derived from `remaining_now` (+ comment if any).
   - `now% == before%` (logged time but % flat, e.g. remaining grew) → `Progress: Still X%` +
     `Reason: logged <time>, remaining unchanged` (+ comment if present).
-- **PLAN FOR TODAY** — cards from the To Do query, **max 5 in the report**. Selection
-  priority when more than 5: (1) cards whose Epic/parent matches a DONE/PROGRESS card of the
-  target day (current work context), (2) then most recently updated. Skip epic-level /
+- **PLAN FOR TODAY** — **max 5 in the report**. Selection priority: (1) my `In Progress`
+  cards (unfinished work carries over), (2) To Do cards whose Epic/parent matches a
+  DONE/PROGRESS card of the target day (current work context), (3) then most recently
+  updated. Cards in review / QA (`In Review`, `QA*`) are not plan items. Skip epic-level /
   placeholder rows (no real task summary). Tell the user in the chat draft how many To Do
   cards were left out so they can swap picks while editing. Put **each sub-field on its own
   line** (same as DONE YESTERDAY — never inline them). Emit markdown bullets, NOT `•`/`◦`
@@ -136,5 +147,5 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 - No worklogs in window → DONE YESTERDAY and PROGRESS CHANGED both `None`.
 - Card with no Epic/parent → group under its own summary (or "Unassigned item").
 - `--date` crossing a weekend → still a single-day window; user can widen via repeated runs.
-- A card appearing in both DONE-yesterday and the To Do query → list it in DONE/PROGRESS for
-  yesterday and again under PLAN if still `status = To Do`.
+- A card appearing in both PROGRESS CHANGED and the plan queries → list it in PROGRESS for
+  yesterday and again under PLAN if still `In Progress` / `To Do`.

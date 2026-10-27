@@ -1,10 +1,10 @@
 ---
 name: ef-logwork
-description: "Log Everfit Jira worklogs in the Core Team format ([Activity] – [What] – [Outcome], 15m steps, VN date) from today's git commits + PR reviews. Suggests cards and descriptions, you type the hours, shows a draft with the daily total vs 7h, then logs on confirm. --audit reports days under 7h, empty days and badly formatted worklogs (read-only). Triggers on: 'logwork', 'log work', 'log time', 'timesheet', 'log giờ', 'chấm công', 'audit worklog'."
+description: "Log Everfit Jira worklogs in the Core Team format ([Activity] – [What] – [Outcome], 15m steps, VN date) from today's git commits + PR reviews. Suggests cards and descriptions, you type the hours, asks the remaining of each own card, shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm. --audit reports days under 7h, empty days and badly formatted worklogs (read-only). Triggers on: 'logwork', 'log work', 'log time', 'timesheet', 'log giờ', 'chấm công', 'audit worklog'."
 argument-hint: "[free text e.g. '3h UP-79399, 15m standup'] [--date=YYYY-MM-DD] [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.0.1"
+  version: "1.1.0"
 ---
 
 # EF Logwork
@@ -15,8 +15,9 @@ memory. Git commits and PR reviews **suggest** cards + descriptions; **hours alw
 you** (the skill never pads a day up to 7h).
 
 **IMPORTANT:** This skill only **adds** worklogs (and saves its own `memory/logwork.md`:
-missing fields, a new sprint's shared card, `--shared`). It never edits cards, transitions
-them, or touches existing worklogs. `--audit` is read-only. Atlassian MCP has **no
+missing fields, a new sprint's shared card, `--shared`) and sets the **remaining estimate** of
+the cards it logs to (§Remaining). It never edits other card fields, transitions cards, or
+touches existing worklogs. `--audit` is read-only. Atlassian MCP has **no
 delete-worklog tool** — the draft → confirm gate is the safety net, and every created
 `worklogId` is echoed so a mistake can be edited.
 
@@ -46,6 +47,7 @@ delete-worklog tool** — the draft → confirm gate is the safety net, and ever
 | Daily minimum | `daily_min_hours` (7h); guideline standard 8h, ≥ 80%/sprint |
 | Non-ticket work | the sprint's shared card (`shared_card`) — no child cards |
 | Card-specific meeting / review | on **that** card, not the shared one |
+| Remaining estimate | **required** on every own-work card item (§Remaining); `0m` only when the card goes to QA Ready or later |
 
 Full rules, keyword map, regex, examples: [`references/format-rules.md`](references/format-rules.md).
 
@@ -83,7 +85,7 @@ use config + one-line warning.
 - **Ledger** — my existing worklogs of that VN day:
   [`references/worklog-ledger.md`](references/worklog-ledger.md).
 - **Card facts** — one `searchJiraIssuesUsingJql` `key in (<all suggested + typed keys>)`,
-  `fields: ["summary","status","issuetype"]`. Unknown keys are simply absent from the result
+  `fields: ["summary","status","issuetype","assignee","timetracking"]`. Unknown keys are simply absent from the result
   (verified 2026-10-06 — no JQL error) → move them to unmatched.
 
 ### 4. Suggest
@@ -93,7 +95,8 @@ whose `cardFrom` is `branch` with `(card từ branch)`, and ask for the card of 
 ledger rows as `đã log hôm nay: <card> <time> <comment>` + ledger total; then `unmatched`
 subjects (may belong to a card the user names). Free text in args → go straight to step 5.
 Otherwise ask the user to **reply in chat** with hours per row + any extra items (meetings,
-support, standup) — plain reply, not `AskUserQuestion`.
+support, standup) — plain reply, not `AskUserQuestion`. Ask in the same prompt for the
+**remaining** of every own-work card (§Remaining), e.g. `2h UP-79399 còn 3h`.
 
 ### 5. Normalize — per [`format-rules.md`](references/format-rules.md)
 Durations → 15m (`50m→45m` shown) · keywords → Activity + shared card · card items → `Dev` /
@@ -109,13 +112,16 @@ card · user-written descriptions → fixed to the format (en dash, Activity wor
   possible duplicate (e.g. `standup` vs logged `daily meeting` on the shared card) → warned
 - `--date` is Sat/Sun → "weekend — đúng ngày chưa?"
 - meeting about a specific card placed on the shared card → suggest the card
+- remaining `0m` on a card not moving to QA Ready or later → warn: `/rk:ef-daily-report` still shows
+  it at 90% until QA Ready
 
 ### 7. Draft
 Rendered markdown table (never a code block): `#` · card link · time · description ·
-started (`HH:MM`) · warnings, under the `Ngày log:` header. Footer:
+started (`HH:MM`) · remaining · warnings, under the `Ngày log:` header. Footer:
 `Total: new Xh + existing Yh = Zh / 7h`. Wait for OK or edits (apply, re-render).
 `--dry-run` → stop here (even with `--yes`). `--yes` → continue without waiting **only if the
-draft has no ⚠**; otherwise wait like a normal run.
+draft has no ⚠**; otherwise wait like a normal run. **A `?` remaining blocks the write** —
+`--yes` included — until the user gives it (the one hard gate in this skill).
 
 ### 8. Write — sequentially, stop at the first error
 ```
@@ -129,10 +135,32 @@ addWorklogToJiraIssue {
 `visibility`. A 403 / permission error (e.g. review on another squad's card) → stop, report,
 ask where to log it — **never** silently re-route to the shared card.
 
+Then, for an item with a remaining, set it **after** the worklog (Jira auto-subtracts the
+logged time; setting it first would be reduced again):
+```
+editJiraIssue { cloudId, issueIdOrKey: "<card>", fields: { timetracking: { remainingEstimate: "3h" } } }
+```
+Verified 2026-10-27 on CHAL-733 (`mcp__claude_ai_Atlassian_MCP__editJiraIssue`, no error).
+A failed remaining edit → report it next to the written worklog; do not retry the worklog.
+
 ### 9. Echo
-`Ngày log:` header, then table: card · time · description · `worklogId`; then
+`Ngày log:` header, then table: card · time · description · remaining · `worklogId`; then
 `Day total: Zh / 7h` (✅ / ⚠ gap).
 Partial failure → list what was written and what was not.
+
+## Remaining
+
+`/rk:ef-daily-report` computes progress as `timeSpent / (timeSpent + remaining)`. Jira only
+subtracts logged time from the original estimate, so a card with no or a stale estimate
+reads 100% after the first log. The remaining is the user's own "how long until this is done".
+
+- **Required for** each item on a card assigned to me that is not the shared card and not an
+  Epic. **Skipped for** reviews / meetings on someone else's card and the shared card.
+- **Never invented.** The draft shows Jira's current remaining as a hint
+  (`? (Jira: 1h)`); only a value the user typed fills the cell. One reply may cover several
+  cards (`còn 2h hết`, `855 xong`).
+- `xong` / `done` / QA Ready or later → `0m`.
+- Several items on the same card in one run → one remaining, set after the last worklog.
 
 ## Audit (`--audit`)
 
@@ -149,8 +177,8 @@ Procedure + output format: [`references/audit.md`](references/audit.md).
   provided, updates that worklog" (checked 2026-10-06). On the other Atlassian server the same
   edit is `executeWrite addOrEditJiraIssueWorklog` with `comment` (not `commentBody`). There is
   no delete.
-- Logging time lowers the card's remaining estimate (standard Jira) — progress % in
-  `/rk:ef-daily-report` moves accordingly.
+- Logging time lowers the card's remaining estimate (standard Jira); step 8 then overwrites
+  it with the user's remaining, which is what `/rk:ef-daily-report` reads for progress %.
 - Tip outside this skill: set the Jira profile timezone to `Asia/Ho_Chi_Minh` so the Jira UI
   and the PC extension stop showing VN mornings on the previous day.
 - `git-activity.cjs` scans the **direct children** of each `repo_roots` entry; add more roots
