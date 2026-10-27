@@ -4,7 +4,7 @@ description: "Commit + push the current Everfit feature branch and open a PR tar
 argument-hint: "[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.2.1"
+  version: "1.3.0"
 ---
 
 # Ship: commit + push + open PR (Everfit flow)
@@ -39,10 +39,10 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | `--no-assign` | no | off | Skip assignment entirely. Wins over `--assignee`. |
 | `--slack` | no | off | After PR is created, post `<group> <mentor1> [<mentor2> <mentor3>]\n<PR-URL>` (URL on its own line so Slack unfurls it into a PR preview card) to a Slack channel. Default is OFF to avoid accidental notifications. **Auto-enabled** if any of `--slack-mentors`/`--slack-channel`/`--slack-group` is passed — those flags imply the user wants to post. |
 | `--slack-channel=<name>` | no | `C05F65TBB9P` (`#backend-review-code`) | Channel name or ID. Everfit default is the `#backend-review-code` channel (`C05F65TBB9P`) — hard-coded so no first-run lookup is needed. Passing this implies `--slack`. |
-| `--slack-group=<group>` | no | from memory (default `backend`) | Single group mention in Slack syntax (e.g. `<!subteam^S0123ABC>`). For Everfit, this is always the `@backend` user group. Passing this implies `--slack`. |
-| `--slack-mentors=<list>` | no | `default_mentors` from memory, else asked | Comma-separated Slack **display names** (the name shown in chat, e.g. `Long (BE)`). Use quotes if any name contains spaces or commas: `--slack-mentors="Long (BE),Duy Le (BE)"`. 1–3 names accepted. Skill resolves each display name to `<@U…>` via `slack_search_users` + exact display-name match, and caches the lookup in `mentor_roster`. Resolution order: this flag → `default_mentors` in memory → interactive prompt. **Passing this implies `--slack`** — no need for the explicit `--slack` flag. |
+| `--slack-group=<group>` | no | `<!subteam^S01RGABFZMK>` (`@backend-team`) | Single group mention in Slack syntax. Hard-coded default, the group the team tags in `#backend-review-code`. Passing this implies `--slack`. |
+| `--slack-mentors=<list>` | no | `default_mentors` from memory, else `Quang Pham Minh (BE)` | Comma-separated Slack **display names** (the name shown in chat, e.g. `Long (BE)`). Use quotes if any name contains spaces or commas: `--slack-mentors="Long (BE),Duy Le (BE)"`. 1–3 names accepted. Skill resolves each display name to `<@U…>` via `slack_search_users` + exact display-name match, and caches the lookup in `mentor_roster`. Resolution order: this flag → `default_mentors` in memory → built-in default `Quang Pham Minh (BE)` (`<@U0BQ2JFBKGD>`). **Passing this implies `--slack`** — no need for the explicit `--slack` flag. |
 | `--slack-set-default-mentors=<list>` | no | — | Save the comma-separated display names as `default_mentors` in `memory/ef_ship_slack.md`. Subsequent ships will use them automatically when `--slack-mentors` isn't passed. Resolves each name to `<@U…>` immediately and stores the resolved entries so no Slack search is needed on later ships. Setup-only flag; can be combined with a normal ship. |
-| `--slack-clear-default-mentors` | no | off | Remove `default_mentors` from memory. Future ships fall back to interactive prompt. Setup-only flag. |
+| `--slack-clear-default-mentors` | no | off | Remove `default_mentors` from memory. Future ships fall back to the built-in default (`Quang Pham Minh (BE)`). Setup-only flag. |
 | `--yes` | no | off | Skip the final confirmation gate before commit + push. |
 | `--dry-run` | no | off | Print the planned commands without executing. |
 
@@ -199,7 +199,7 @@ With `--no-desc`, the short `<pr-summary>` line stays as the PR body (this is wh
 
 ### 10. Slack notification (opt-in via `--slack` or any `--slack-*` flag)
 
-Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` / `--slack-mentors` is passed (the presence of any Slack-related flag implies the user wants to post). Context: Everfit Slack workspace; channel is `#backend-review-code` (ID `C05F65TBB9P`); group is always `@backend`; mentors vary 1–3 people per ship.
+Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` / `--slack-mentors` is passed (the presence of any Slack-related flag implies the user wants to post). Context: Everfit Slack workspace; channel is `#backend-review-code` (ID `C05F65TBB9P`); group defaults to `@backend-team` (`<!subteam^S01RGABFZMK>`); mentors default to `Quang Pham Minh (BE)` (`<@U0BQ2JFBKGD>`), 1–3 people per ship.
 
 > **MCP backend**: by default the skill uses the bundled `mcp__claude_ai_Slack__slack_send_message`. URLs in bot messages **do not auto-unfurl** (Slack API default for `chat.postMessage` from bot/app is `unfurl_links: false`) — the skill prints the URL prominently in the terminal output so the user can paste it manually for a preview card if needed.
 >
@@ -208,7 +208,7 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
 1. **Channel is hard-coded** to `C05F65TBB9P` (`#backend-review-code`). No memory lookup, no search — just use this ID directly. `--slack-channel=<other>` overrides for a single run.
 
 2. **Load other config** from `memory/ef_ship_slack.md` (per-repo). Expected fields:
-   - `group` — single mention string for the backend user group, e.g. `<!subteam^S0123ABC|@backend>` (saved on first run)
+   - `group` — optional override of the built-in group `<!subteam^S01RGABFZMK>` (`@backend-team`)
    - `default_mentors` — optional ordered list of pre-resolved mentor entries `[{ display_name, id, email }, …]`. Used when `--slack-mentors` is not passed. Max 3 entries.
    - `mentor_roster` — map of `display_name → { id: <@U…>, email: "…" }`. Cache for display-name→ID lookups so the skill doesn't search Slack on every ship. Auto-populated as new names get resolved.
 
@@ -219,9 +219,7 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
    - `--slack-clear-default-mentors` → delete the `default_mentors` field from memory. Print `Default mentors cleared`.
    - These flags can be combined with a normal ship — the update happens before the message is posted, so the new defaults take effect on this same run if `--slack-mentors` is not passed.
 
-3. **First-run setup** for the backend group (only if missing from memory):
-   - Call `mcp__claude_ai_Slack__slack_search_users` with query `backend` to surface the user group's ID; ask user to confirm.
-   - Save as `<!subteam^S…|@backend>` syntax (rendered mention shows `@backend`) to `memory/ef_ship_slack.md`.
+3. **Group**: `--slack-group` → `group` in memory → built-in `<!subteam^S01RGABFZMK>` (`@backend-team`). No first-run lookup.
 
    **Important**: store mention strings verbatim — Slack only notifies on proper `<@U…>` / `<!subteam^S…>` syntax. Plain `@name` text won't ping anyone.
 
@@ -230,9 +228,7 @@ Runs when `--slack` is passed **OR** any of `--slack-channel` / `--slack-group` 
    **Input — resolution order:**
    1. `--slack-mentors=<list>` flag → parse comma-separated names directly (honor quotes for names with spaces/commas).
    2. `default_mentors` in memory → use the pre-resolved entries directly. No Slack search needed (already resolved at set-time). Skip the interactive prompt.
-   3. Interactive prompt via `AskUserQuestion`:
-      - Show quick-pick options from `mentor_roster` (multi-select, max 3) — labels show `display_name (email)`.
-      - Allow free-text input for new display names (one or more, comma-separated).
+   3. Built-in default: `Quang Pham Minh (BE)` → `<@U0BQ2JFBKGD>` (quangphamminh@everfit.io). Already resolved, no Slack search, no prompt.
 
    **Validate count**: 1 ≤ names ≤ 3. Reject 0 and >3.
 

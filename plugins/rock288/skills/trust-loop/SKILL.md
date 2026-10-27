@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init]"
 metadata:
   author: rock288
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Trust Loop
@@ -25,7 +25,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Restate the task in one sentence. Unclear intent → ask now (one round, specific questions); do not discover it in review.
 - Jira card → `/rk:ef-branch-name <card>` for the branch. Otherwise branch off the base yourself; never work on a protected branch.
 - No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`.
-- Settle the hand-off now so the loop runs to the PR without stopping: ask once for the Slack channel and reviewers (or "no Slack"), unless the task already says. That answer is the go-ahead for step 7.
+- Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), unless the task already says. Defaults = `/rk:ef-ship`'s: `#backend-review-code`, `@backend-team` + `Quang Pham Minh (BE)`. That answer is the go-ahead for step 7.
 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
