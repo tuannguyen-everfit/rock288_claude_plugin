@@ -745,6 +745,17 @@
   has_scripts: true
   name: threejs
   path: threejs/SKILL.md
+- argument_hint: <task | bug report | Jira card> [--init]
+  category: utilities
+  description: 'Verified delivery loop for a code change in any repo: intake, pre-flight
+    baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new
+    tests, programmatic verification that writes a receipt bound to the exact working
+    tree, adversarial + intent review, a commit only on a passing receipt, then the
+    hand-off (PR, review request, Jira).'
+  has_references: true
+  has_scripts: true
+  name: trust-loop
+  path: trust-loop/SKILL.md
 - argument_hint: '[component or layout]'
   category: frontend
   description: Style UIs with shadcn/ui components (Radix UI + Tailwind CSS). Use

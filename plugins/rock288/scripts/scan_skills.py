@@ -46,6 +46,7 @@ EXACT_CATEGORY_MAP = {
     "sequential-thinking": "utilities",
     "slack-pr-review": "utilities",
     "test": "utilities",
+    "trust-loop": "utilities",
     "ef-daily-report": "utilities",
     "ef-logwork": "utilities",
     # Development Tools
