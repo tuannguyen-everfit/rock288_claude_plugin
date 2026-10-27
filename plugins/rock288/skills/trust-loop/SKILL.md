@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init]"
 metadata:
   author: rock288
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Trust Loop
@@ -73,7 +73,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 ## 7. Hand-off
 Each step publishes outside the repo: confirm once with the human before the first one.
 1. **PR**: `/rk:ef-ship` (push + PR), then `/rk:ef-pr-description`. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
-2. **Review request**: the channel and reviewers the human names; the evidence goes in the PR or the thread, not only in chat.
+2. **Review request**: the channel and reviewers the human names; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR.
 3. **Jira** (only when the loop implements a card): `/rk:ef-logwork`, then move the card per the team's workflow. Do not close it while acceptance criteria outside this PR are open.
 4. **Report**:
    ```
