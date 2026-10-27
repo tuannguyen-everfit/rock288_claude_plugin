@@ -4,7 +4,7 @@ description: "Commit + push the current Everfit feature branch and open a PR tar
 argument-hint: "[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Ship: commit + push + open PR (Everfit flow)
@@ -53,7 +53,7 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 - `git rev-parse --is-inside-work-tree` — abort if not a git repo.
 - `git rev-parse --abbrev-ref HEAD` — capture current branch.
 - **Refuse on protected branches**: `develop`, `main`, `master`, `staging`, branches matching `release/*`. Abort with a clear error pointing to `rk:ef-branch-name`.
-- `git status --porcelain` — if clean AND there are no unpushed local commits (`git log @{u}.. 2>/dev/null` is empty), abort with "nothing to ship".
+- `git status --porcelain` — if clean AND there are no unpushed local commits (`git log @{u}.. 2>/dev/null` is empty), abort with "nothing to ship". A branch with no upstream yet (`rk:ef-branch-name` creates it with `--no-track`) counts its commits against the base instead: `git log origin/develop..HEAD`.
 - `gh auth status` — verify GitHub CLI is logged in. If not, surface `gh auth login`.
 
 ### 2. Parse current branch
@@ -128,6 +128,8 @@ With `--dry-run`, print the plan and stop here.
 git add -A
 git commit -m "<subject>"
 ```
+
+Clean tree with unpushed commits (preflight let it through, e.g. after `rk:trust-loop` committed): skip this step and the subject check below; go to step 7 and push what is already committed.
 
 If pre-commit hooks fail: surface the error and abort. **Don't `--no-verify`** unless the user explicitly passes the flag.
 

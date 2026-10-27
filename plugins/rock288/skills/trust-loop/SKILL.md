@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init]"
 metadata:
   author: rock288
-  version: "1.1.1"
+  version: "1.2.0"
 ---
 
 # Trust Loop
@@ -18,13 +18,14 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 ## Hard rules
 - No commit without `verify-change --status` → `ok: true` for the current content. Any edit after verifying invalidates the receipt.
 - Never weaken a test, a lint rule or a tier in `.claude/trust.json` to get green. A gate you believe is wrong is a question for the human.
-- Never `--no-verify`, never push to a protected branch, never commit or push without the human's go-ahead (repo rules win when stricter).
+- Never `--no-verify`, never push to a protected branch. Repo rules win when stricter: a repo whose rules say "commit / push only when the human says so" gets the diff and a wait at step 6, unless the task itself asked to commit or ship.
 - `/rk:cook` runs in its default gated mode here, **never `--auto`**: the loop's gates replace self-graded approval, they do not add to it.
 
 ## 0. Intake
 - Restate the task in one sentence. Unclear intent → ask now (one round, specific questions); do not discover it in review.
 - Jira card → `/rk:ef-branch-name <card>` for the branch. Otherwise branch off the base yourself; never work on a protected branch.
 - No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`.
+- Settle the hand-off now so the loop runs to the PR without stopping: ask once for the Slack channel and reviewers (or "no Slack"), unless the task already says. That answer is the go-ahead for step 7.
 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
@@ -68,12 +69,17 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - The same correction a second time → propose turning it into a mechanical check (a lint rule, a test, a tier) as a separate change.
 
 ## 6. Commit
-- `node $SKILL_DIR/scripts/verify-change.cjs --status` → `ok: true`.
-- Show the human the staged diff and the commit message; commit only on their go-ahead. Message format = the repo's rule (e.g. `type(scope): CARD summary`). Body: intent summary + how it was verified (tiers + runtime evidence).
+Commit as soon as the receipt passes; the receipt is the gate, not a human. Check and commit in one command so nothing changes in between:
+```bash
+node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -m "<subject>" -m "<body>"
+```
+- Subject = the repo's rule (e.g. `type(scope): CARD summary`). Body: intent summary + how it was verified (tiers + runtime evidence). Pass the message inline: a message file inside the repo is untracked content and makes the receipt stale.
+- A pre-commit hook fails → fix, back to step 4. Never `--no-verify`.
+- Exception (hard rules): the repo forbids auto-commit and the task did not ask to commit → show the diff and the message, wait.
 
 ## 7. Hand-off
-Each step publishes outside the repo: confirm once with the human before the first one.
-1. **PR**: `/rk:ef-ship` (push + PR), then `/rk:ef-pr-description`. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
+Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
+1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
 2. **Review request**: the channel and reviewers the human names; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR.
 3. **Jira** (only when the loop implements a card): `/rk:ef-logwork`, then move the card per the team's workflow. Do not close it while acceptance criteria outside this PR are open.
 4. **Report**:
