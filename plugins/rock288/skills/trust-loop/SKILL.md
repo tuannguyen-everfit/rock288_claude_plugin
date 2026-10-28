@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.8.2"
+  version: "1.9.0"
 ---
 
 # Trust Loop
@@ -13,7 +13,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 **`$SKILL_DIR`** = the "Base directory for this skill" path printed when this skill loads.
 
-**`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope or split, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It still stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier, hours for the worklog.
+**`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope or split, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It still stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier.
 
 **Defer first:** if the repo has its own `.claude/skills/trust-loop/` (e.g. core-foundry), stop and run that one: `/trust-loop <task>`. Its tooling is stricter than this generic loop.
 
@@ -99,13 +99,14 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    - `pick` exits 2 (no `deploy` yet): find the repo's dev pipelines in `#non-prod-ci-cd` (bot lines `<name>-codepipeline *SUCCEEDED*`, `*Application :*`), confirm them with the human once, and add `deploy` to `.claude/trust.json` (`references/trust-config.md`).
    - `--dev-check`: the runtime check from step 1 when it can run against dev without writing data; otherwise leave it out.
    - Then `/loop /rk:pr-follow-up <PR url>` (self-paced: 15 min in review, 5 min while waiting for the deploy; it stops itself when done, idle 24 h, or waiting on the human). The loop lives as long as this session; if the session must end, tell the human to run the same line in a new session in this checkout.
-4. **Jira** (only when the loop implements a card), last because it asks the human for the hours: move the card to **In Review**, then `/rk:ef-logwork`. Do not close it while acceptance criteria outside this PR are open.
+4. **Jira** (only when the loop implements a card): move the card to **In Review**, then log the work by its points with no question: `/rk:ef-logwork --by-points=<CARD> --outcome="PR #<n> open for review"` (story points × 4h, remaining `0m`). A skip (no points, already logged) or a write error goes in the report's `Worklog` line; the loop never stops on it. Do not close the card while acceptance criteria outside this PR are open.
 5. **Report**:
    ```
    Change: <one line> · Branch: <...> · Commit: <sha>
    Intent: <what was asked, what the diff does>
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
+   Worklog: <card> <time> (<points> pt), remaining 0m · worklogId <id> | skipped: <reason>
    Decided by recommendation: <each pick, one line; only with --recommend>
    Open questions: <...>
    ```

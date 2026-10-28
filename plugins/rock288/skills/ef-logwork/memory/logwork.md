@@ -6,6 +6,7 @@
 - card_projects: UP,CHAL            # only these Jira project keys count as cards in commits/PR titles
 - daily_min_hours: 7                # PC 2026-10-06; guideline std 8h, target ≥80%
 - max_card_hours_per_day: 8
+- hours_per_point: 4                # --by-points: hours per story point (0.5 pt → 2h)
 - day_start: "09:00"
 - report_timezone: Asia/Saigon      # +07:00 — every date in this skill is a VN calendar day
 - jira_timezone: America/Los_Angeles # account tz; JQL worklogDate runs here, `started` comes back in it

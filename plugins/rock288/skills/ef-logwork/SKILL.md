@@ -1,10 +1,10 @@
 ---
 name: ef-logwork
-description: "Log Everfit Jira worklogs in the Core Team format ([Activity] – [What] – [Outcome], 15m steps, VN date) from today's git commits + PR reviews. Suggests cards and descriptions, you type the hours, asks the remaining of each own card, shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm. --audit reports days under 7h, empty days and badly formatted worklogs (read-only). Triggers on: 'logwork', 'log work', 'log time', 'timesheet', 'log giờ', 'chấm công', 'audit worklog'."
-argument-hint: "[free text e.g. '3h UP-79399, 15m standup'] [--date=YYYY-MM-DD] [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]] [--dry-run]"
+description: "Log Everfit Jira worklogs in the Core Team format ([Activity] – [What] – [Outcome], 15m steps, VN date) from today's git commits + PR reviews. Suggests cards and descriptions, you type the hours, asks the remaining of each own card, shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm. --by-points=CARD logs one card with no question: story points × 4h, remaining 0m (used by rk:trust-loop). --audit reports days under 7h, empty days and badly formatted worklogs (read-only). Triggers on: 'logwork', 'log work', 'log time', 'timesheet', 'log giờ', 'chấm công', 'log theo point', 'audit worklog'."
+argument-hint: "[free text e.g. '3h UP-79399, 15m standup'] [--by-points=CARD [--outcome=TEXT]] [--date=YYYY-MM-DD] [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # EF Logwork
@@ -30,6 +30,8 @@ delete-worklog tool** — the draft → confirm gate is the safety net, and ever
 |---|---|---|
 | free text (positional) | — | Items with hours, e.g. `3h UP-79399, 2h UP-79336, 15m standup, 1h sync BE`. Present → skip the "reply with hours" prompt. |
 | `--date=YYYY-MM-DD` | today (VN) | VN calendar day to log on / read. |
+| `--by-points=CARD` | off | Log one card by its story points, **no question at all** — see §By points. Implies `--no-git`; ignores free text. |
+| `--outcome=TEXT` | `done` | With `--by-points`: the `[Outcome]` part of the description, e.g. `PR #271 open for review`. |
 | `--yes` | off | Auto-confirm a draft with **zero ⚠** (still prints it). Any ⚠ → waits for you anyway. |
 | `--shared=UP-XXXXX` | config | Shared card for non-ticket work; saved to config. |
 | `--no-git` | off | Skip git/PR suggestions; free text only. |
@@ -47,7 +49,8 @@ delete-worklog tool** — the draft → confirm gate is the safety net, and ever
 | Daily minimum | `daily_min_hours` (7h); guideline standard 8h, ≥ 80%/sprint |
 | Non-ticket work | the sprint's shared card (`shared_card`) — no child cards |
 | Card-specific meeting / review | on **that** card, not the shared one |
-| Remaining estimate | **required** on every own-work card item (§Remaining); `0m` only when the card goes to QA Ready or later |
+| Remaining estimate | **required** on every own-work card item (§Remaining); `0m` only when the card goes to QA Ready or later — or under `--by-points`, which always sets `0m` |
+| By points | `hours_per_point` (4h) per story point, 15m steps: 0.5 pt → 2h, 1 pt → 4h |
 
 Full rules, keyword map, regex, examples: [`references/format-rules.md`](references/format-rules.md).
 
@@ -113,7 +116,7 @@ card · user-written descriptions → fixed to the format (en dash, Activity wor
 - `--date` is Sat/Sun → "weekend — đúng ngày chưa?"
 - meeting about a specific card placed on the shared card → suggest the card
 - remaining `0m` on a card not moving to QA Ready or later → warn: `/rk:ef-daily-report` still shows
-  it at 90% until QA Ready
+  it at 90% until QA Ready (not under `--by-points`: there `0m` is the rule)
 
 ### 7. Draft
 Rendered markdown table (never a code block): `#` · card link · time · description ·
@@ -158,9 +161,36 @@ reads 100% after the first log. The remaining is the user's own "how long until 
   Epic. **Skipped for** reviews / meetings on someone else's card and the shared card.
 - **Never invented.** The draft shows Jira's current remaining as a hint
   (`? (Jira: 1h)`); only a value the user typed fills the cell. One reply may cover several
-  cards (`còn 2h hết`, `855 xong`).
+  cards (`còn 2h hết`, `855 xong`). Exception: `--by-points` always sets `0m` (the user's rule
+  for point-based logging).
 - `xong` / `done` / QA Ready or later → `0m`.
 - Several items on the same card in one run → one remaining, set after the last worklog.
+
+## By points (`--by-points=CARD`)
+
+One worklog on one card, sized by its story points, written **without any question** — so a
+caller like `/rk:trust-loop` never stops on it. Steps 0, 1 and 3 run as usual (date, config,
+ledger, card facts with `customfield_10014` = Story Points; no git scan); step 2 (shared card),
+step 4's prompt and step 7's wait are skipped.
+
+1. **Skip, never ask**, when one applies — print `Worklog skipped: <reason>` and end:
+   - the card has no story points (or 0) → `log it by hand: /rk:ef-logwork`;
+   - the card already holds a worklog of mine on **any** date (`listJiraIssueWorklogs` without a
+     window, author = me) → never double-log;
+   - the card is not assigned to me.
+2. **Time** = points × `hours_per_point` (config, 4h), rounded to 15m: 0.5 → `2h`, 1 → `4h`,
+   1.5 → `6h`. Above `max_card_hours_per_day` → still one worklog, ⚠ shown.
+3. **Description** = `<Activity> – <What> – <Outcome>`: Activity `Bug fix` for a Bug, else
+   `Dev`; What = the card summary without its leading `[…]` tags; Outcome = `--outcome`, else
+   `done`.
+4. **Started** per [`worklog-ledger.md`](references/worklog-ledger.md) placement (after the
+   day's last block, explicit `+0700`).
+5. Print the draft table, then **write at once** — every ⚠ (short or long day, weekend) is shown,
+   none waits. `--dry-run` still stops after the draft.
+6. Set the remaining to `0m` after the worklog (step 8), then echo (step 9) with the
+   `worklogId`.
+
+A 403 or any write error → report it and end; the caller goes on (it is not a gate).
 
 ## Audit (`--audit`)
 
