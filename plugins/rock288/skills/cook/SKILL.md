@@ -4,7 +4,7 @@ description: "ALWAYS activate this skill before implementing EVERY feature, plan
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
 metadata:
   author: rock288
-  version: "2.2.0"
+  version: "2.2.1"
 ---
 
 # Cook - Smart Feature Implementation
@@ -152,9 +152,11 @@ Plans decide *what*; conventions decide *where it lives, what it reuses, what it
 | API docs | sibling PRs, doc repo (OpenAPI) | endpoint merged, no doc | doc change in the SAME changeset |
 | Module isolation | `CLAUDE.md` isolation rule | repository reads another module's model | own model; other data via that module's service |
 
+4. **Least new code** (after the repo's rules, never against them): take the first that fully works — not needed → already in this repo (helper, service, pattern) → stdlib/platform → an installed dependency → only then new code. No dependency for a few lines. No abstraction, option or config nobody asked for. Don't refactor, rename or reformat code the task doesn't need; keep the structure the repo already has. Finish every caller/test/fixture the change breaks — small diff, not partial diff.
+
 Output: `✓ Pre-flight: [N] rule files read ([names]) - [M] conventions resolved - [placement|validation|state|auth|enforcement|envelope|docs|isolation]`. 0 rule files read when the script listed some = pre-flight not done.
 
-**Delegating code to subagents** (`--parallel`, `fullstack-developer`, any Task that writes code): put the rule-file paths in the subagent prompt and tell it to `Read` them before editing — subagents start with none of them. Full guide + anti-rationalization: `references/convention-preflight.md`.
+**Delegating code to subagents** (`--parallel`, `fullstack-developer`, any Task that writes code): put the rule-file paths in the subagent prompt and tell it to `Read` them before editing — subagents start with none of them. Paste rule 4 (Least new code) into the prompt too. Full guide + anti-rationalization: `references/convention-preflight.md`.
 
 ## Required Subagents (MANDATORY)
 

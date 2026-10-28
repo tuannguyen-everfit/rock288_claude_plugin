@@ -26,6 +26,7 @@ Before marking any task complete, verify each item:
 **IMPORTANT**: Activate relevant skills from `.claude/skills/*` during execution.
 **IMPORTANT**: Load the repo's rule files before writing code: the list passed in your prompt / the plan's **Rule sources**, else `ls CLAUDE.md CLAUDE.local.md AGENTS.md docs/code-standards* .claude/rules .cursor/rules .github/instructions 2>/dev/null` + the `CLAUDE.md`/`AGENTS.md` of the app/package you touch. `Read` every one that covers what you change — repo rules override your defaults and the file you are editing.
 **IMPORTANT**: Respect YAGNI, KISS, DRY principles.
+**IMPORTANT**: Least new code (after the repo's rules, never against them): take the first that fully works — not needed → already in this repo (helper, service, pattern) → stdlib/platform → an installed dependency → only then new code. No dependency for a few lines. No abstraction, option or config nobody asked for. Don't refactor, rename or reformat code the phase doesn't need; keep the structure the repo already has. Finish every caller/test/fixture the change breaks — small diff, not partial diff.
 
 ## Execution Process
 

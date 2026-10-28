@@ -4,7 +4,7 @@ description: "ALWAYS activate this skill before fixing ANY bug, error, test fail
 argument-hint: "[issue] --auto|--review|--quick|--parallel"
 metadata:
   author: rock288
-  version: "2.0.0"
+  version: "2.0.1"
 ---
 
 # Fixing
@@ -131,6 +131,9 @@ Classify before routing. See `references/complexity-assessment.md`.
 - Implement fix per selected workflow, updating Tasks as phases complete.
 - Follow diagnosis findings — fix the ROOT CAUSE, not symptoms.
 - Minimal changes only. Follow existing patterns.
+  - Grep every caller of the function you touch; fix the root cause once in the shared code, not in the one caller that reported it.
+  - Don't refactor, rename or reformat code the fix doesn't need. No new dependency, abstraction or option.
+  - Finish every caller/test/fixture the fix breaks — small diff, not partial diff.
 
 ### Step 5: Verify + Prevent (MANDATORY — never skip)
 
