@@ -85,7 +85,7 @@ When `merge_ready` is true:
    gh pr merge <n> --repo <owner>/<repo> --squash --match-head-commit <head>
    ```
    `--match-head-commit` refuses if someone pushed after the read. GitHub refuses (protection, conflicts) → tell the human the reason, then step 6; never retry with `--admin`.
-3. Slack thread: the **Merged** reply (line 2: "watching the dev deploy", plus open threads if any). Then `set --pr <PR> phase=merged merge_commit=<sha> merged_at=<iso>`.
+3. Slack thread: the one-line **Merged** reply. Then `set --pr <PR> phase=merged merge_commit=<sha> merged_at=<iso>`.
 
 ## 3. Wait for the dev deploy (merged)
 1. Read the state's `deploy_channel` (`#non-prod-ci-cd`, `C06HA7VQHNZ`) with `slack_read_channel`: `oldest` = `merged_at` − 1 h (epoch seconds), `latest` = now, `limit` 100, `response_format` **detailed**. Follow `cursor` to the last page and save each page to a file outside the repo.
@@ -106,7 +106,7 @@ When `merge_ready` is true:
 - A check that writes data on dev needs the human's go-ahead first.
 
 ## 5. Report
-- **Pass**: Slack thread **Deployed** reply. Jira (state `ticket`): a comment with the same lines + the PR link, then transition to **QA Ready** (`getTransitionsForJiraIssue` → `transitionJiraIssue`). Already there → leave it, say so in the comment. No such transition → list the available ones and go to step 6; do not pick another. Then `set phase=done` and stop the loop.
+- **Pass**: Slack thread one-line **Deployed** reply. Jira (state `ticket`): a comment with the deploy time (+07: the scripts print UTC, add 7 h once and check it), the merge SHA, the dev check result (or "no dev check") and the PR link, then transition to **QA Ready** (`getTransitionsForJiraIssue` → `transitionJiraIssue`). Already there → leave it, say so in the comment. No such transition → list the available ones and go to step 6; do not pick another. Then `set phase=done` and stop the loop.
 - **Fail**: reply in the thread with the failing output, tag the PR author, and offer a revert PR from the base (`git revert <merge_commit>` on a new branch, through the trust loop). Jira comment with the evidence, status unchanged. **The human decides** whether to merge the revert. `set phase=done`, stop the loop.
 
 ## 6. Waiting on the human

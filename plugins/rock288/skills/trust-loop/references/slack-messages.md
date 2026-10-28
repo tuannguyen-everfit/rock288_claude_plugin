@@ -6,7 +6,7 @@ Templates for every message the loop posts to a review thread. Slack carries the
 - **Standard markdown**, which the Slack tool converts: `**bold**`, `` `code` ``, `[text](url)`. Single `*x*` renders italic. No tables (they render, but run long and wrap on mobile; the table lives in the PR), no `#` headings.
 - **No receipt hashes, no local paths.** Receipts live under the author's git dir; a reviewer cannot open them. Name the gates instead.
 - One item per line, ~100 chars max. Anything longer belongs in the PR.
-- Line caps: parent ≤ 5 · evidence ≤ 6 · round ≤ 8 · merged ≤ 3 · deployed ≤ 3. Over the cap → group the tail: `⏭️ 3 more kept, reasons on the PR`.
+- Line caps: parent ≤ 5 · evidence = 3 · round ≤ 8 · merged = 1 · deployed = 1. Over the cap → group the tail: `⏭️ 3 more kept, reasons on the PR`.
 - Emoji, fixed meaning:
 
   | Emoji | Means |
@@ -31,18 +31,17 @@ Evidence in thread 🧵
 
 ## 2. Evidence (thread reply)
 ```
-**Evidence** · <CARD> · [PR #<n>](<PR url>)
-✅ Red/green: <N> new tests fail on old code → pass on new
-✅ Gates: <tier names from the receipt> (<unit count if known>)
-⚠️ Not verified: <what, why — one line>
-👀 <behavior change existing callers will notice>
-→ Per-test table in the PR description
+**Evidence** · <CARD> · [PR #<n>](<PR url>) · per-test table in the PR
+✅ <N> tests red on old → green on new · gates: <tier names from the receipt>
+<the one thing the reviewer must know: 👀 | ⏳ | ⚠️>
 ```
-- 👀 is required when existing callers see different behavior; drop it otherwise.
-- ⚠️ drops only when everything was exercised at runtime.
-- A tier that was red on the base and fixed in this change: `✅ Gates: … (fixed a red <tier> on <base>)`.
-- Failures the baseline already showed, unchanged by this change: ✅, not ⚠️ — `✅ e2e: no new failures (5 already red on develop)`. ⚠️ is for what this change could not prove.
-- Something the change needs that is outside the PR (infra, config, another team's deploy): ⏳ with who and before what — `⏳ MSK topic on dev/stg/prd: needs a DevOps request before CHAL-863 deploys`.
+- Exactly 3 lines. Everything else (more risks, baseline failures, unit counts) goes in the PR description.
+- Line 3 takes the first that applies, the rest go in the PR:
+  1. 👀 behavior existing callers will notice.
+  2. ⏳ something outside the PR the change needs, with who and before what — `⏳ MSK topic on dev/stg/prd: DevOps request before deploy`.
+  3. ⚠️ what this change could not prove — `⚠️ Not on dev: no Challenger+WL fixture`.
+  4. Nothing to flag → `✅ Runtime: <what was exercised>`.
+- A tier red on the base and fixed here, or failures the base already had: a short tail on line 2 when it fits (`· fixed red e2e`, `· e2e: 5 red on develop, none new`); otherwise the PR.
 
 ## 3. Review round (thread reply)
 ```
@@ -58,18 +57,16 @@ Review re-requested
 
 ## 4. Merged (thread reply)
 ```
-🚀 Merged `<sha>` · approved by <logins>
-<follow-ups, or "no follow-ups"> · <deploy status>
+🚀 Merged `<merge sha>`
 ```
+- One line, nothing else: approvers, follow-ups and open threads stay on the PR.
 
 ## 5. Deployed (thread reply, from `/rk:pr-follow-up`)
 ```
-✅ On dev by <HH:MM> (+07) · `<merge sha>`
-<dev check: what ran → result, or "no dev check">
-Jira: <CARD> → QA Ready
+✅ Deployed to dev · `<merge sha>`
 ```
-- Times in +07: the scripts print UTC, add 7 h once and check it.
-- Deploy failed or timed out: `❌ Dev deploy <failed | not seen within 90 min>: <pipeline>` + `<@author>` instead.
+- One line, nothing else: deploy time, dev check result and the Jira move go in the Jira comment.
+- Deploy failed or timed out: `❌ Dev deploy <failed | not seen within 90 min>: <pipeline> · <@author>` instead.
 
 ## Example (CHAL-864)
 ```
@@ -79,12 +76,9 @@ New Core profile no longer copies WL data on a Challenger account;
 Evidence in thread 🧵
 ```
 ```
-**Evidence** · CHAL-864 · [PR #20398](<url>)
-✅ Red/green: 5 new tests fail on old code → pass on new
-✅ Gates: guardrails · lint · unit (664) · smoke
-⚠️ Not on dev: no Challenger+WL fixture, no referral code
+**Evidence** · CHAL-864 · [PR #20398](<url>) · per-test table in the PR
+✅ 5 tests red on old → green on new · gates: guardrails · lint · unit · smoke
 👀 /enroll (regular team) now refuses an existing email; WL still links
-→ Per-test table in the PR description
 ```
 ```
 **Round 1** · Robin's review
@@ -96,6 +90,8 @@ Evidence in thread 🧵
 Review re-requested
 ```
 ```
-🚀 Merged `62d48a5` · approved by huyeverfit, quangphamminh
-Follow-up: extra auth call on new sign-ups · watching dev deploy
+🚀 Merged `62d48a5`
+```
+```
+✅ Deployed to dev · `62d48a5`
 ```
