@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.8.0"
+  version: "1.8.1"
 ---
 
 # Trust Loop
@@ -33,6 +33,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
+- **Reach list**: every caller of a function whose signature, return value or behavior will change (grep, including files you would not otherwise touch), plus the tests, fixtures, config and exports that must follow. That list is the scope; anything outside it is extra.
 - E2e tests only where the repo already has an e2e suite (an `e2e/` dir or `*-e2e` project, a `make e2e` / `nx e2e` target, an `e2e` tier). None → do not write or scaffold e2e: prove the change with unit tests plus a runtime call when one is possible, and put `no e2e suite in this repo` under "Not verified".
 - **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A tier scoped to the change (`{files}` / `{go_packages}` placeholders, `nx affected`, `git diff` lint) runs nothing on a clean base: that is a pass, not a gap — do not run the full suite by hand to make up for it. A **required** tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it. An optional tier already failing (e.g. e2e checks red on the base) blocks nothing: write down which checks fail, so step 4 can show the change adds none, and go on.
 - Cross-boundary change (two services, API + client, schema + reader)? Write the contract and the order both sides change in.
@@ -41,12 +42,13 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Intent clear and single-file with an obvious cause → skip to step 3.
 - Several viable designs or vague requirements → `/rk:brainstorm` (`--recommend` when this loop has it); its decision feeds the plan.
 - Multi-file feature → `/rk:plan` (`--recommend` when this loop has it). The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1.
-- Bug → reproduce first: a failing unit test or a runtime call before the fix (`/rk:debug` for hard ones).
+- Bug → reproduce first: a failing unit test or a runtime call before the fix (`/rk:debug` for hard ones). Fix the root cause once in the shared code, not in the one caller that reported it.
 - One concern per loop. A plan that does two things becomes two loops.
 
 ## 3. Implement
 - Small change: main session. Plan with phases: `/rk:cook <plan> --auto` (all phases in one go; it stops only on critical review issues left after 3 fixes).
 - Follow the repo's `CLAUDE.md` and rule files; new code goes where the feature already lives.
+- Least new code: take the first that fully works — not needed at all → already in this repo (a helper, service, pattern) → the standard library or platform → an installed dependency → only then new code. Never add a dependency for a few lines.
 - Tests ship with the change and each must **fail on the old code and pass on the new**. Prove it once and keep both outputs:
   ```bash
   git stash push -m "trust-loop red <ticket>" -- <source files only>   # keep the new tests in place
@@ -68,6 +70,8 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Then the intent check, against the original request (not the plan):
   - Does the diff do exactly what was asked — nothing missing, nothing extra?
   - Is every behavior proven by a test that was red on the old code?
+  - Is every entry of the step 1 reach list updated or proven unaffected?
+  - Does code that was moved or merged keep its validation and error handling?
   - Two concerns in one diff → split into two loops.
 - Any edit from review → back to step 4 (the receipt is now stale).
 - The same correction a second time → propose turning it into a mechanical check (a lint rule, a test, a tier) as a separate change.
@@ -108,4 +112,4 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    With `--recommend`, the PR description also lists those picks under "Decisions taken by recommendation", so reviewers see them.
 
 ## Credits
-Adapted from the `trust-loop` workflow in core-foundry (Huy Nguyen): receipts bound to a working-tree fingerprint, red-on-old / green-on-new proof, intent review. This version is a generic rewrite driven by `.claude/trust.json`.
+Adapted from the `trust-loop` workflow in core-foundry (Huy Nguyen): receipts bound to a working-tree fingerprint, red-on-old / green-on-new proof, intent review. This version is a generic rewrite driven by `.claude/trust.json`. Reach list, least-new-code order and root-cause-in-shared-code from ponytail (Dietrich Gebert).

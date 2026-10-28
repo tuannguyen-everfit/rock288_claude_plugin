@@ -4,7 +4,7 @@ description: "Review code quality with adversarial rigor. Supports input modes: 
 argument-hint: "[#PR | COMMIT | --pending | codebase [parallel]]"
 metadata:
   author: rock288
-  version: "2.0.2"
+  version: "2.0.3"
 ---
 
 # Code Review
@@ -106,6 +106,9 @@ between a review that reads the patch and one that reviews the code:
    names, enum literals, config keys, deep import paths — with a grep against the repo. See
    `references/checklists/base.md` → **Dangling References**. A name that resolves to nothing is
    Critical or Important, never a nit, and is invisible to anyone who only read the new file.
+3. **Reach past the diff.** For every function or export whose signature, return value or behavior
+   changed, grep every caller — including files the diff does not touch. A caller left broken, or a
+   fix applied in one caller while the shared function stays broken, is Critical or Important.
 
 **Stage 1 — Spec Compliance** (load `references/spec-compliance-review.md`)
 - Does code match what was requested?
@@ -116,6 +119,7 @@ between a review that reads the patch and one that reviews the code:
 - Only runs AFTER spec compliance passes
 - Standards, security, performance, edge cases
 - **Convention compliance** against the repo's written rules (`CLAUDE.md` / `AGENTS.md` / `.cursor/rules`) + the nearest sibling module — a violation of a WRITTEN rule is Important, a sibling deviation no rule covers is Nice-to-have; these are findings, not nits (they are what post-merge lead reviews are made of): layer placement (a Redis read under `services/`?), project validator lib vs hand-rolled guards, feature state appended to a core/hot model vs its own collection, auth middleware tier vs what the handler reads, server-side enforcement of any allow-list returned to the client, error-envelope keys (`localization_code`…) on every new error, API doc in the same changeset, repository touching only its own model
+- **Expected load**: find it in the repo (README, deploy config, job schedule), state it in one line, and judge scale against it: check-then-write races, a query per item (N+1), lists/maps/caches that only grow, the same work done by every instance
 
 **Stage 3 — Adversarial Review** (load `references/adversarial-review.md`)
 - Runs AFTER Stage 2 passes, subject to scope gate (skip if <=2 files, <=30 lines, no security files)
@@ -123,6 +127,9 @@ between a review that reads the patch and one that reviews the code:
 - Find: security holes, false assumptions, resource exhaustion, race conditions, supply chain, observability gaps
 - Output: Accept (must fix) / Reject (false positive) / Defer (GitHub issue) verdicts per finding
 - Critical findings block merge; re-reviews use fix-diff-only optimization
+
+**Finding gate** (every stage, before a finding is reported)
+- A bug, risk or scale finding names a concrete input or situation and the wrong result it leads to. No concrete case → drop it, do not downgrade it to a nit. A convention finding cites the written rule or the sibling module instead.
 
 ## Receiving Feedback
 
