@@ -6,7 +6,7 @@ Templates for every message the loop posts to a review thread. Slack carries the
 - **Standard markdown**, which the Slack tool converts: `**bold**`, `` `code` ``, `[text](url)`. Single `*x*` renders italic. No tables (they render, but run long and wrap on mobile; the table lives in the PR), no `#` headings.
 - **No receipt hashes, no local paths.** Receipts live under the author's git dir; a reviewer cannot open them. Name the gates instead.
 - One item per line, ~100 chars max. Anything longer belongs in the PR.
-- Line caps: parent ≤ 5 · evidence = 3 · round ≤ 8 · merged = 1 · deployed = 1. Over the cap → group the tail: `⏭️ 3 more kept, reasons on the PR`.
+- Line caps: parent = 2 · evidence = 4 · round ≤ 8 · merged = 1 · deployed = 1. Over the cap → group the tail: `⏭️ 3 more kept, reasons on the PR`.
 - Emoji, fixed meaning:
 
   | Emoji | Means |
@@ -24,24 +24,25 @@ Templates for every message the loop posts to a review thread. Slack carries the
 
 ## 1. Review request (parent)
 ```
-<@group> <@reviewer> review: <commit subject> · [PR #<n>](<PR url>)
-<1–2 lines: the behavior change as a user or caller sees it>
-Evidence in thread 🧵
+<@group> <@reviewer>
+<PR url>
 ```
+- Exactly these 2 lines: the mentions, then the bare PR URL (no `[PR #n](url)`). No title, no summary, no emoji.
 
 ## 2. Evidence (thread reply)
 ```
-**Evidence** · <CARD> · [PR #<n>](<PR url>) · per-test table in the PR
-✅ <N> tests red on old → green on new · gates: <tier names from the receipt>
+**Evidence**
+✅ <N> tests red on old → green on new
+✅ <tier names from the receipt, joined by ` · `>
 <the one thing the reviewer must know: 👀 | ⏳ | ⚠️>
 ```
-- Exactly 3 lines. Everything else (more risks, baseline failures, unit counts) goes in the PR description.
-- Line 3 takes the first that applies, the rest go in the PR:
+- Exactly 4 short lines, one fact each. Everything else (per-test table, more risks, unit counts) goes in the PR description.
+- Line 4 takes the first that applies, the rest go in the PR:
   1. 👀 behavior existing callers will notice.
   2. ⏳ something outside the PR the change needs, with who and before what — `⏳ MSK topic on dev/stg/prd: DevOps request before deploy`.
   3. ⚠️ what this change could not prove — `⚠️ Not on dev: no Challenger+WL fixture`.
   4. Nothing to flag → `✅ Runtime: <what was exercised>`.
-- A tier red on the base and fixed here, or failures the base already had: a short tail on line 2 when it fits (`· fixed red e2e`, `· e2e: 5 red on develop, none new`); otherwise the PR.
+- A tier red on the base and fixed here, or failures the base already had: a short tail on line 3 when it fits (`· fixed red e2e`, `· e2e: 5 red on develop, none new`); otherwise the PR.
 
 ## 3. Review round (thread reply)
 ```
@@ -70,14 +71,13 @@ Review re-requested
 
 ## Example (CHAL-864)
 ```
-@be-team @Quang review: feat(profile, auth): CHAL-864 · [PR #20398](<url>)
-New Core profile no longer copies WL data on a Challenger account;
-/enroll into a regular team refuses an existing email.
-Evidence in thread 🧵
+@be-team @Quang
+https://github.com/Everfit-io/everfit-api/pull/20398
 ```
 ```
-**Evidence** · CHAL-864 · [PR #20398](<url>) · per-test table in the PR
-✅ 5 tests red on old → green on new · gates: guardrails · lint · unit · smoke
+**Evidence**
+✅ 5 tests red on old → green on new
+✅ guardrails · lint · unit · smoke
 👀 /enroll (regular team) now refuses an existing email; WL still links
 ```
 ```
