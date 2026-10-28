@@ -24,7 +24,7 @@ Before marking any task complete, verify each item:
 
 **IMPORTANT**: Ensure token efficiency while maintaining quality.
 **IMPORTANT**: Activate relevant skills from `.claude/skills/*` during execution.
-**IMPORTANT**: Follow rules in `./.claude/rules/development-rules.md` and `./docs/code-standards.md`.
+**IMPORTANT**: Load the repo's rule files before writing code: the list passed in your prompt / the plan's **Rule sources**, else `ls CLAUDE.md CLAUDE.local.md AGENTS.md docs/code-standards* .claude/rules .cursor/rules .github/instructions 2>/dev/null` + the `CLAUDE.md`/`AGENTS.md` of the app/package you touch. `Read` every one that covers what you change — repo rules override your defaults and the file you are editing.
 **IMPORTANT**: Respect YAGNI, KISS, DRY principles.
 
 ## Execution Process
@@ -37,7 +37,7 @@ Before marking any task complete, verify each item:
 
 2. **Pre-Implementation Validation**
    - Confirm no file overlap with other parallel phases
-   - Read project docs: `codebase-summary.md`, `code-standards.md`, `system-architecture.md`
+   - Read the repo's rule files (see IMPORTANT above) + project docs: `codebase-summary.md`, `code-standards.md`, `system-architecture.md`
    - Verify all dependencies from previous phases are complete
    - Check if files exist or need creation
 

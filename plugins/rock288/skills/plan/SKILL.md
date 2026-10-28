@@ -5,7 +5,7 @@ argument-hint: "[task] [--recommend] OR [archive|red-team|validate]"
 license: MIT
 metadata:
   author: rock288
-  version: "1.2.1"
+  version: "1.3.0"
 ---
 
 # Planning
@@ -86,11 +86,13 @@ Load: `references/scope-challenge.md`
 ### 0.5 Convention Grounding (MANDATORY — never skipped, including `--fast`)
 Load: `references/convention-grounding.md`
 
-`Read` the target repo's `CLAUDE.md` explicitly (a subagent/headless run may not have it injected),
-plus `docs/code-standards*`, plus — **every time, one call** —
-`ls .cursor/rules/ .github/instructions/ .cursorrules .windsurfrules AGENTS.md 2>/dev/null`:
-another tool's agent-rule file is routinely the longest and most current style source in the repo and
-`CLAUDE.md` rarely links it. Also ask for any **team style guide that lives outside the repo**
+**Every time, first call:** `node $SKILL_DIR/scripts/find-repo-rules.cjs [dirs the change touches]` from
+the target repo. It lists every rule source — `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`,
+`.claude/rules/**`, `.cursor/rules/**`, Copilot/Windsurf rules, `docs/code-standards*`, and the
+`apps/<app>/CLAUDE.md` of a monorepo — each with a one-line "when to read". `Read` the root/scoped files
+and every rule file whose "when" matches the change (a subagent/headless run may not have any of them
+injected; `.claude/rules/` and another tool's rule folder are routinely where the real rules live and
+`CLAUDE.md` only links them). Also ask for any **team style guide that lives outside the repo**
 (Slack-shared `coding-style.md`, wiki) when the user mentions a style doc or review thread. Precedence: **documented standard > nearest sibling precedent >
 the file you are editing.** A neighbouring line that disagrees with the standard is evidence the
 neighbour is old, not that the standard is optional.
@@ -148,13 +150,15 @@ flowchart TD
 1b. **Cross-Plan Scan** → Scan unfinished plans, detect `blockedBy`/`blocks` relationships, update both plans
 1c. **Scope Challenge** → Run Step 0 scope questions, select mode (see `references/scope-challenge.md`)
     **Skip if:** `--fast` mode or trivial task
-1d. **Convention Grounding** → Read repo `CLAUDE.md` + code standards + any team style guide the user
-    references; resolve the checklist in `references/convention-grounding.md`. **Never skipped.**
+1d. **Convention Grounding** → Run `scripts/find-repo-rules.cjs`, read the rule files it lists that
+    match the change + any team style guide the user references; resolve the checklist in
+    `references/convention-grounding.md`. **Never skipped.**
 2. **Mode Detection** → Auto-detect or use explicit flag (see `workflow-modes.md`)
 3. **Research Phase** → Spawn researchers (skip in fast mode)
 4. **Codebase Analysis** → Read docs, scout if needed
 5. **Plan Documentation** → Write comprehensive plan via planner subagent, including the mandatory
-   **Convention Compliance** table + **Deliberate deviations** block
+   **Rule sources** list + **Convention Compliance** table + **Deliberate deviations** block. Pass the
+   rule-file list to the planner in its prompt — it does not inherit what you read
 6. **Red Team Review** → Run `/rk:plan red-team {plan-path}` (hard/parallel/two modes)
 7. **Post-Plan Validation** → Run `/rk:plan validate {plan-path}` (hard/parallel/two modes)
 8. **Hydrate Tasks** → Create Claude Tasks from phases (default on, `--no-tasks` to skip)

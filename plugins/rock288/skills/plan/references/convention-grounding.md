@@ -8,6 +8,8 @@ Real miss (everfit-api, UP-78706): the plan decided a user-facing **403 would ca
 
 Two more from the same plan: a `&&` chain where the team standard says `_.get`, and a new helper whose shape (sync vs wrapped) was left unstated in a module that contains **both** shapes.
 
+Same failure, other repos: `challenger-service` keeps 16 rule files (~3k lines: bson casing, cursor pagination, layout, naming, error envelope…) in `.claude/rules/`, and `CLAUDE.md` is only a trigger index pointing at them; `everfit-microservices` keeps its rules in `AGENTS.md`. Reading `CLAUDE.md` alone gives the plan the index, not the rules.
+
 **The part that matters:** both rules were in the repo the whole time — in `.cursor/rules/coding-standards.mdc` (29 KB; 21 hits for `localization_code`, one of them a literal `❌ missing localization_code` / `✅ Do this instead` pair; a whole `Use Lodash for Common Operations` section). The repo's `CLAUDE.md` never mentions `.cursor`, so nothing opened it. **A team's richest style guide usually lives in another tool's agent-rule file, and it is invisible unless you go looking.**
 
 ## Precedence — this is the rule that gets it wrong
@@ -24,11 +26,20 @@ Deviations are fine. **Silent** deviations are not: every one goes in the plan a
 
 ## Grounding sources (read them, don't assume)
 
+**Discover first — one call, every time, from the target repo root:**
+
+```bash
+node $SKILL_DIR/scripts/find-repo-rules.cjs [dirs/files the change touches]
+```
+
+It prints every rule file with its size and a one-line "when to read" (`description` / `paths` / `globs` frontmatter, or the file's own "Read this whenever…" line). Kinds: `root` / `scoped` (the `CLAUDE.md`/`AGENTS.md`/`.claude/rules` of the app or package you touch) → read; `rule` → read every one whose "when" matches the change, and when unsure read it; `nested` → only shown without target paths, re-run with them. Put the files you read in the plan's **Rule sources** list.
+
 | Source | How to get it | Note |
 |--------|---------------|------|
-| Repo `CLAUDE.md` | `Read` it explicitly | A subagent or headless run may not have it injected — never assume it is in context |
-| `docs/code-standards*`, `docs/development-rules.md` | Read if present | |
-| **Agent-rule files from OTHER tools** | `ls .cursor/rules/ .github/instructions/ 2>/dev/null; ls .cursorrules .windsurfrules AGENTS.md CONVENTIONS.md 2>/dev/null` | **Run this every time.** Cursor `.mdc` rules, Copilot instructions and `AGENTS.md` are frequently the LONGEST and most current style source in a repo, and `CLAUDE.md` rarely links them. Grep them for the specific idioms your plan is about to decide (error envelope, utility lib, layer placement) rather than reading 30 KB end to end |
+| Repo `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md` | Listed by the script — `Read` them explicitly | A subagent or headless run may not have them injected — never assume they are in context. In a monorepo the app's own `apps/<app>/CLAUDE.md` adds app-specific rules |
+| **`.claude/rules/**`** | Listed by the script | Claude-Code rule files; often the real rules, with `CLAUDE.md` as a trigger index ("Match a trigger → read the linked doc"). Follow every trigger that matches the change |
+| `docs/code-standards*`, `docs/development-rules.md` | Listed by the script | |
+| **Agent-rule files from OTHER tools** | Listed by the script (`.cursor/rules/`, `.github/instructions/`, `.cursorrules`, `.windsurfrules`, `CONVENTIONS.md`) | Cursor `.mdc` rules, Copilot instructions and `AGENTS.md` are frequently the LONGEST and most current style source in a repo, and `CLAUDE.md` rarely links them. For a 1000-line file, read its headings and then every section the plan is about to decide (error envelope, utility lib, layer placement) rather than reading it end to end |
 | **Team style guide outside the repo** | Ask the user for it if the repo references one, or if the user mentions a style doc / review thread | Often a Slack-shared `coding-style.md` or a wiki page — it is usually **newer than the repo docs** |
 | Nearest sibling module | `ls` the target module and one mature sibling side by side | Every folder the sibling has that you are not using is an unmade placement decision |
 | Recent review threads on the same area | User-supplied PR/Slack links | Reviewer comments are the standard's real enforcement surface |
@@ -54,6 +65,7 @@ Rows 1–8 are the ones plans get wrong; 9–10 overlap `/rk:cook`'s pre-flight 
 
 ## What must land in the plan
 
+0. A **Rule sources** list in `plan.md`: every rule file read, repo-relative (`.claude/rules/mongo.md`, `apps/challenger/CLAUDE.md`). Cook re-reads exactly these before coding, so a missing entry is a rule cook will not see.
 1. A **Convention Compliance** table in `plan.md`: `rule → where it is applied in this plan`. One row per rule that actually bites; do not pad it with rules the change never touches.
 2. A **Deliberate deviations** block: rule · what the plan does instead · why. Empty is a valid answer — say "none" rather than omitting the block.
 3. Convention decisions that changed a design choice get a row in the plan's decisions table (e.g. `D6 | localization_code on the 403 | Yes — style guide §5 beats the older neighbour`), not just a footnote.
@@ -67,5 +79,6 @@ Rows 1–8 are the ones plans get wrong; 9–10 overlap `/rk:cook`'s pre-flight 
 | "It's one line, the idiom doesn't matter" | The idiom is the cheapest review comment to earn and the cheapest to avoid. |
 | "Cook will catch it at implementation" | Cook implements what the plan decided. A wrong decision in the plan reads as intent. |
 | "The style guide is not in the repo, so it isn't binding" | It is binding if the team reviews with it. Ask for it, cite it, date it. |
-| "`CLAUDE.md` didn't mention any style doc, so there isn't one" | `CLAUDE.md` is one tool's entry point, not an index of the repo. `ls .cursor/rules/` costs one call and has already caught two shipped misses. |
+| "`CLAUDE.md` didn't mention any style doc, so there isn't one" | `CLAUDE.md` is one tool's entry point, not an index of the repo. `find-repo-rules.cjs` costs one call and has already caught two shipped misses. |
+| "`CLAUDE.md` links the rule file, I got the gist from the link text" | A trigger line is a pointer, not the rule. Open the linked file — the `❌`/`✅` pairs are inside it. |
 | "I'll note the deviation in the PR description" | The plan is where reviewers look for intent. A deviation discovered in the diff reads as an accident. |

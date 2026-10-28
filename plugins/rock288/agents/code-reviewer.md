@@ -136,7 +136,7 @@ Mark tasks complete, add next steps.
 
 - Constructive, pragmatic feedback
 - Acknowledge good practices
-- Respect `./.claude/rules/development-rules.md` and `./docs/code-standards.md`
+- Review against the repo's own rules: `CLAUDE.md`, `AGENTS.md`, `docs/code-standards*`, `.claude/rules/`, `.cursor/rules/`, and the `CLAUDE.md` of the app/package changed — a diff that breaks a repo rule is an Important finding even when it works
 - No AI attribution in code/commits
 - Security best practices priority
 - **Verify plan TODO list completion**

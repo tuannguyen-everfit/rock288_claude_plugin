@@ -1,6 +1,25 @@
 # Convention Pre-flight
 
-Run BEFORE writing the first line of implementation code (Step 3), and re-run before requesting review (Step 5). Every row below is a real lead-review finding that landed AFTER merge and cost a follow-up fix branch. Resolve each from the project's `CLAUDE.md`, `docs/code-standards*`, and — above all — the **precedent of the nearest sibling feature/module**.
+Run BEFORE writing the first line of implementation code (Step 3), and re-run before requesting review (Step 5). Every row below is a real lead-review finding that landed AFTER merge and cost a follow-up fix branch. Resolve each from the **repo's own rule files** (step 0) and the **precedent of the nearest sibling feature/module**.
+
+## Step 0 — load the repo's rules (never skipped)
+
+Code that ignores the repo's rules is the #1 reason cook output gets rewritten. The rules are rarely all in `CLAUDE.md`:
+
+| Repo | Where the rules actually are |
+|------|------------------------------|
+| `everfit-api` | `CLAUDE.md` + `docs/code-standards.md` + `.cursor/rules/coding-standards.mdc` (1k lines: `localization_code`, lodash, error envelope) + 8 localization `.mdc` rules |
+| `everfit-microservices` | `AGENTS.md` + `.cursor/rules/project-overview.mdc` — no `CLAUDE.md` at all |
+| `challenger-service` | `CLAUDE.md` is a trigger index → 16 files in `.claude/rules/` (mongo, http, layout, naming, testing…) + `apps/<app>/CLAUDE.md` |
+
+1. From the target repo root: `node $SKILL_DIR/../plan/scripts/find-repo-rules.cjs <dirs/files you will touch>`. It lists every rule source with a one-line "when to read".
+2. `Read` — don't recall, don't skim the link text:
+   - the plan's **Rule sources** list (what the plan was grounded on);
+   - every `root` / `scoped` file (`>400` lines: headings first, then every section the change touches);
+   - every `rule` file whose "when" matches a file you will write. Unsure → read it. A Go change that adds a repository method touches at least `mongo.md`, `layout.md`, `naming.md`, `testing.md`.
+3. While coding, before each new file: re-check the rules that file falls under (e.g. a new `_test.go` → `testing.md`). Before Step 5, diff your changes against the same rule files.
+4. Rule vs plan conflict → the plan was wrong or the rule is newer: raise it at the review gate; never resolve it silently.
+5. When delegating code to a subagent, pass the rule-file paths in its prompt and require it to `Read` them first.
 
 ## Why a pre-flight
 
@@ -27,12 +46,14 @@ Plans decide *what* to build. Conventions decide *where it lives, what it reuses
 4. For each new endpoint, fill four cells in the plan table: middleware tier · validator file · error keys · doc location.
 5. Anything you cannot resolve from the repo → ask at the plan review gate, not after merge.
 
-Output line: `✓ Pre-flight: [N] conventions resolved - [placement|validation|state|auth|enforcement|envelope|docs|isolation]`
+Output line: `✓ Pre-flight: [N] rule files read ([names]) - [M] conventions resolved - [placement|validation|state|auth|enforcement|envelope|docs|isolation]`
 
 ## Anti-rationalization
 
 | Thought | Reality |
 |---------|---------|
+| "I already know this stack's conventions" | You know the language's conventions. The repo's rules (bson casing, pagination style, error envelope, helper lib) are local and override them. Read the files. |
+| "The plan already read the rules" | The plan's context is gone. Cook writes the code, so cook reads the rules. |
 | "It's a 20-line service, the folder doesn't matter" | The lead's first comment was the folder. Placement is the cheapest thing to get right and the most visible thing to get wrong. |
 | "A Joi schema for one guard is overkill" | Hand-rolled checks are what reviewers trust least. The schema is three lines. |
 | "Adding fields to the user model is what everyone does" | Check who reads that model unprojected. Hot documents pay for every field on every read, forever. |

@@ -32,7 +32,7 @@ Before finalizing any plan, verify each item:
 - **IMPORTANT**: Ensure token efficiency while maintaining high quality.
 - **IMPORTANT:** Sacrifice grammar for the sake of concision when writing reports.
 - **IMPORTANT:** In reports, list any unresolved questions at the end, if any.
-- **IMPORTANT:** Respect the rules in `./docs/development-rules.md`.
+- **IMPORTANT:** Ground the plan in the repo's rule files: the list passed in your prompt / the plan's **Rule sources**, else `ls CLAUDE.md CLAUDE.local.md AGENTS.md docs/code-standards* .claude/rules .cursor/rules .github/instructions 2>/dev/null` + the `CLAUDE.md`/`AGENTS.md` of the app/package you touch. `Read` every one that covers what you change — repo rules override your defaults and the file you are editing. List every file read under **Rule sources** in `plan.md`.
 
 ## Handling Large Files (>25K tokens)
 

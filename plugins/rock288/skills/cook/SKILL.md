@@ -4,7 +4,7 @@ description: "ALWAYS activate this skill before implementing EVERY feature, plan
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
 metadata:
   author: rock288
-  version: "2.1.3"
+  version: "2.2.0"
 ---
 
 # Cook - Smart Feature Implementation
@@ -135,7 +135,11 @@ Human review required at these checkpoints (skipped with `--auto`):
 
 ## Convention Pre-flight (MANDATORY — before Step 3, re-check before Step 5)
 
-Plans decide *what*; conventions decide *where it lives, what it reuses, what it may touch*. Resolve each row from `CLAUDE.md` + the nearest sibling module BEFORE coding — every row is a real post-merge lead finding that cost a fix branch.
+Plans decide *what*; conventions decide *where it lives, what it reuses, what it may touch*. Cook writes the code, so cook must have the repo's rules **in its own context** before the first edit — the plan's reading does not carry over to a new session or a subagent.
+
+1. **Load the repo's rules.** From the target repo root run `node $SKILL_DIR/../plan/scripts/find-repo-rules.cjs <dirs/files the plan touches>`. `Read` the plan's **Rule sources** list + every `root`/`scoped` file + every `rule` file whose "when" matches the files you will write (unsure → read it). `CLAUDE.md` is often only a trigger index into `.claude/rules/` / `.cursor/rules/` / `AGENTS.md` — open the linked files.
+2. **Apply the plan's Convention Compliance table** verbatim; a repo rule the plan contradicts → stop and raise it at the review gate, don't silently pick one.
+3. **Resolve the table below** from those rules + the nearest sibling module. Precedence: **repo rule > sibling precedent > the file you are editing.** The rows are examples from real post-merge lead findings (Node repo); the repo's own rule files win where they say more.
 
 | Check | Resolve from | Not this | This |
 |-------|--------------|----------|------|
@@ -148,7 +152,9 @@ Plans decide *what*; conventions decide *where it lives, what it reuses, what it
 | API docs | sibling PRs, doc repo (OpenAPI) | endpoint merged, no doc | doc change in the SAME changeset |
 | Module isolation | `CLAUDE.md` isolation rule | repository reads another module's model | own model; other data via that module's service |
 
-Output: `✓ Pre-flight: [N] conventions resolved - [placement|validation|state|auth|enforcement|envelope|docs|isolation]`. Full guide + anti-rationalization: `references/convention-preflight.md`.
+Output: `✓ Pre-flight: [N] rule files read ([names]) - [M] conventions resolved - [placement|validation|state|auth|enforcement|envelope|docs|isolation]`. 0 rule files read when the script listed some = pre-flight not done.
+
+**Delegating code to subagents** (`--parallel`, `fullstack-developer`, any Task that writes code): put the rule-file paths in the subagent prompt and tell it to `Read` them before editing — subagents start with none of them. Full guide + anti-rationalization: `references/convention-preflight.md`.
 
 ## Required Subagents (MANDATORY)
 
@@ -174,4 +180,4 @@ Output: `✓ Pre-flight: [N] conventions resolved - [placement|validation|state|
 - `references/workflow-steps.md` - Detailed step definitions for all modes
 - `references/review-cycle.md` - Interactive and auto review processes
 - `references/subagent-patterns.md` - Subagent invocation patterns
-- `references/convention-preflight.md` - Convention pre-flight: layer placement, validator lib, feature-state location, auth tier, server-side enforcement, error envelope, API docs, module isolation
+- `references/convention-preflight.md` - Convention pre-flight: load repo rules (`../plan/scripts/find-repo-rules.cjs`), layer placement, validator lib, feature-state location, auth tier, server-side enforcement, error envelope, API docs, module isolation

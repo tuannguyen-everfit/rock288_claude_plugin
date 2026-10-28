@@ -67,7 +67,7 @@ All modes share core steps with mode-specific variations.
 4. Tasks can be blocked by other tasks via `addBlockedBy`
 
 **All modes:**
-- **Convention pre-flight FIRST** (`SKILL.md` → `references/convention-preflight.md`): resolve layer placement, validator lib, feature-state location, auth tier, server-side enforcement, error envelope, API-doc location and module isolation from `CLAUDE.md` + the nearest sibling module. Emit `✓ Pre-flight: ...` before the first file is written.
+- **Convention pre-flight FIRST** (`SKILL.md` → `references/convention-preflight.md`): run `find-repo-rules.cjs`, `Read` the plan's Rule sources + every matching repo rule file (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/`, `.cursor/rules/`, `apps/<app>/CLAUDE.md`), then resolve layer placement, validator lib, feature-state location, auth tier, server-side enforcement, error envelope, API-doc location and module isolation from those rules + the nearest sibling module. Emit `✓ Pre-flight: ...` (with rule files read) before the first file is written; pass the rule-file paths to any subagent that writes code.
 - Use `TaskUpdate` to mark tasks as `in_progress` immediately.
 - Execute phase tasks sequentially (Step 3.1, 3.2, etc.)
 - Use `ui-ux-designer` for frontend
