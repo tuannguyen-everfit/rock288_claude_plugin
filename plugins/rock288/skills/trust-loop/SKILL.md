@@ -1,6 +1,6 @@
 ---
 name: trust-loop
-description: "Verified delivery loop for a code change in any repo: intake, pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review, a commit only on a passing receipt, then the hand-off (PR, review request, Jira) and `/rk:pr-follow-up` until the PR runs on dev. Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
+description: "Verified delivery loop for a code change in any repo: intake, pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review, a commit only on a passing receipt, then the hand-off (PR, review request, Jira) and the follow-up state the Slack bot drives until the PR runs on dev. Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
@@ -89,7 +89,7 @@ node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -
 Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
 1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
 2. **Review request**: the channel and reviewers settled at intake; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged, deployed) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR.
-3. **Start the follow-up** (`/rk:pr-follow-up`), so review, merge and the dev deploy are not left to memory:
+3. **Record the follow-up** for the Slack bot, which drives `/rk:pr-follow-up` (review, merge, dev deploy) from this state:
    ```bash
    node $SKILL_DIR/../pr-follow-up/scripts/deploy-signal.cjs pick     # pipelines from "deploy" in .claude/trust.json
    node $SKILL_DIR/../pr-follow-up/scripts/follow-up-state.cjs init --pr <PR url> --ticket <KEY> \
@@ -98,7 +98,7 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    ```
    - `pick` exits 2 (no `deploy` yet): find the repo's dev pipelines in `#non-prod-ci-cd` (bot lines `<name>-codepipeline *SUCCEEDED*`, `*Application :*`), confirm them with the human once, and add `deploy` to `.claude/trust.json` (`references/trust-config.md`).
    - `--dev-check`: the runtime check from step 1 when it can run against dev without writing data; otherwise leave it out.
-   - Then `/loop /rk:pr-follow-up <PR url>` (self-paced: 15 min in review, 5 min while waiting for the deploy; it stops itself when done, idle 24 h, or waiting on the human). The loop lives as long as this session; if the session must end, tell the human to run the same line in a new session in this checkout.
+   - Do not start `/loop /rk:pr-follow-up` from this session: the Slack bot runs the follow-up. The human can still run it by hand.
 4. **Jira** (only when the loop implements a card): move the card to **In Review**, then log the work by its points with no question: `/rk:ef-logwork --by-points=<CARD> --outcome="PR #<n> open for review"` (story points × 4h, remaining `0m`). A skip (no points, already logged) or a write error goes in the report's `Worklog` line; the loop never stops on it. Do not close the card while acceptance criteria outside this PR are open.
 5. **Report**:
    ```

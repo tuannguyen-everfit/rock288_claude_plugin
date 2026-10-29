@@ -1,6 +1,6 @@
 ---
 name: pr-follow-up
-description: "Follow a PR after the trust-loop hand-off until it runs on dev: triage review feedback (fix, answer, push back, escalate), re-request review, squash-merge once a reviewer approved the head and required checks pass, wait for the dev deploy in Slack #non-prod-ci-cd, run the dev check, then report to the Slack review thread and move the Jira card to QA Ready. One step per run, self-paced (15 min while in review, 5 min while waiting for the deploy), stops itself when done, idle 24 h or waiting on the human; started by /rk:trust-loop as `/loop /rk:pr-follow-up <PR>`. Triggers on: 'follow up PR', 'watch PR', 'theo dõi PR', 'check comment và deploy'."
+description: "Follow a PR after the trust-loop hand-off until it runs on dev: triage review feedback (fix, answer, push back, escalate), re-request review, squash-merge once a reviewer approved the head and required checks pass, wait for the dev deploy in Slack #non-prod-ci-cd, run the dev check, then report to the Slack review thread and move the Jira card to QA Ready. One step per run, self-paced (15 min while in review, 5 min while waiting for the deploy), stops itself when done, idle 24 h or waiting on the human; driven by the Slack bot from the state /rk:trust-loop records, or run by hand as `/loop /rk:pr-follow-up <PR>`. Triggers on: 'follow up PR', 'watch PR', 'theo dõi PR', 'check comment và deploy'."
 argument-hint: "<PR url | owner/repo#n> [slack thread ts] [jira key]"
 metadata:
   author: rock288
@@ -9,7 +9,7 @@ metadata:
 
 # PR follow-up
 
-Picks up where `/rk:trust-loop` step 7 stops: the PR is open and the review request is in Slack. Each run reads the state, does the next step, records it, and schedules the next run. Started as `/loop /rk:pr-follow-up <PR>` (self-paced, no interval).
+Picks up where `/rk:trust-loop` step 7 stops: the PR is open and the review request is in Slack. Each run reads the state, does the next step, records it, and schedules the next run. The Slack bot drives it from the state the trust loop records; by hand it runs as `/loop /rk:pr-follow-up <PR>` (self-paced, no interval).
 
 **`$SKILL_DIR`** = the "Base directory for this skill" path printed when this skill loads. **`$TRUST_DIR`** = the sibling `trust-loop` skill directory (`$SKILL_DIR/../trust-loop`).
 
@@ -37,7 +37,7 @@ node $SKILL_DIR/scripts/follow-up-state.cjs start --pr <PR>
 ```
 - It prints `ticket`, `slack_channel` + `slack_thread_ts` (the review thread), `worktree`, `deploy_channel`, `pipelines`, `max_run_min`, `dev_check`, `fix_rounds`, `phase`, `waiting_on`, `since` (the previous run's start) and `idle_hours`.
 - State `phase` `waiting_human` or `idle` (a resumed loop): the human has answered in the session or acted on the PR → `set phase=in_review waiting_on=null` and continue; otherwise stop again without asking or posting.
-- No state (a PR the trust loop did not open): `init` it from the arguments (see trust-loop step 7.4), then `start`.
+- No state (a PR the trust loop did not open): `init` it from the arguments (see trust-loop step 7.3), then `start`.
 - Work in the recorded `worktree`, so the PR's branch and receipts are checked out there.
 - `list` shows the follow-ups still open, to resume them after a restart.
 

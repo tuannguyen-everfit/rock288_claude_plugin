@@ -255,16 +255,19 @@
   has_scripts: false
   name: ef-jira-card
   path: ef-jira-card/SKILL.md
-- argument_hint: '[free text e.g. ''3h UP-79399, 15m standup''] [--date=YYYY-MM-DD]
-    [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]] [--dry-run]'
+- argument_hint: '[free text e.g. ''3h UP-79399, 15m standup''] [--by-points=CARD
+    [--outcome=TEXT]] [--date=YYYY-MM-DD] [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]]
+    [--dry-run]'
   category: utilities
   description: 'Log Everfit Jira worklogs in the Core Team format ([Activity] – [What]
     – [Outcome], 15m steps, VN date) from today''s git commits + PR reviews. Suggests
     cards and descriptions, you type the hours, asks the remaining of each own card,
     shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm.
-    --audit reports days under 7h, empty days and badly formatted worklogs (read-only).
-    Triggers on: ''logwork'', ''log work'', ''log time'', ''timesheet'', ''log giờ'',
-    ''chấm công'', ''audit worklog''.'
+    --by-points=CARD logs one card with no question: story points × 4h, remaining
+    0m (used by rk:trust-loop). --audit reports days under 7h, empty days and badly
+    formatted worklogs (read-only). Triggers on: ''logwork'', ''log work'', ''log
+    time'', ''timesheet'', ''log giờ'', ''chấm công'', ''log theo point'', ''audit
+    worklog''.'
   has_references: true
   has_scripts: true
   name: ef-logwork
@@ -478,13 +481,13 @@
   has_scripts: true
   name: payment-integration
   path: payment-integration/SKILL.md
-- argument_hint: '[task] OR [archive|red-team|validate]'
+- argument_hint: '[task] [--recommend] OR [archive|red-team|validate]'
   category: utilities
   description: Plan implementations, design architectures, create technical roadmaps
     with detailed phases. Use for feature planning, system design, solution architecture,
     implementation strategy, phase documentation.
   has_references: true
-  has_scripts: false
+  has_scripts: true
   name: plan
   path: plan/SKILL.md
 - argument_hint: '[plans-dir]'
@@ -504,9 +507,9 @@
     in Slack #non-prod-ci-cd, run the dev check, then report to the Slack review thread
     and move the Jira card to QA Ready. One step per run, self-paced (15 min while
     in review, 5 min while waiting for the deploy), stops itself when done, idle 24
-    h or waiting on the human; started by /rk:trust-loop as `/loop /rk:pr-follow-up
-    <PR>`. Triggers on: ''follow up PR'', ''watch PR'', ''theo dõi PR'', ''check comment
-    và deploy''.'
+    h or waiting on the human; driven by the Slack bot from the state /rk:trust-loop
+    records, or run by hand as `/loop /rk:pr-follow-up <PR>`. Triggers on: ''follow
+    up PR'', ''watch PR'', ''theo dõi PR'', ''check comment và deploy''.'
   has_references: false
   has_scripts: true
   name: pr-follow-up
@@ -767,10 +770,10 @@
     baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new
     tests, programmatic verification that writes a receipt bound to the exact working
     tree, adversarial + intent review, a commit only on a passing receipt, then the
-    hand-off (PR, review request, Jira) and `/rk:pr-follow-up` until the PR runs on
-    dev. Use for features, bug fixes and refactors when the output must be proven,
-    not just reviewed. Triggers on: ''trust loop'', ''verified change'', ''implement
-    and verify'', ''làm có kiểm chứng''.'
+    hand-off (PR, review request, Jira) and the follow-up state the Slack bot drives
+    until the PR runs on dev. Use for features, bug fixes and refactors when the output
+    must be proven, not just reviewed. Triggers on: ''trust loop'', ''verified change'',
+    ''implement and verify'', ''làm có kiểm chứng''.'
   has_references: true
   has_scripts: true
   name: trust-loop
