@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.9.0"
+  version: "1.9.1"
 ---
 
 # Trust Loop
@@ -27,6 +27,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 ## 0. Intake
 - Restate the task in one sentence. Unclear intent → ask now (one round, specific questions); do not discover it in review. With `--recommend`, a question that has a recommended answer (scope, which part of a card goes first, one loop or two) is decided, not asked.
 - Jira card → `/rk:ef-branch-name <card>` for the branch. Otherwise branch off the base yourself; never work on a protected branch.
+- Jira card → move it to **In Progress** once the branch exists (`getTransitionsForJiraIssue` → `transitionJiraIssue`). Already In Progress or later → leave it. No such transition (e.g. no sprint) → note it for the report and go on; do not pick another.
 - No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`.
 - Session artifacts: `plans/` or `docs/journals/` not ignored by the repo → add them to `.git/info/exclude` once, so plans, reports and journals stay out of the commit (`git add -A`) and of the receipt.
 - Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), unless the task already says. Defaults = `/rk:ef-ship`'s: `#backend-review-code`, `@backend-team` + `Quang Pham Minh (BE)`. With `--recommend`, take the defaults without asking. That answer (or `--recommend`) is the go-ahead for step 7.
