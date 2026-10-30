@@ -114,7 +114,7 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    - The pipelines stay unknown (no answer, not in the channel): `init` without `--deploy-channel` / `--pipelines`. The bot still follows review and merge, then hands the deploy check back to the human.
    - `--dev-check`: the runtime check from step 1 when it can run against dev without writing data; otherwise leave it out.
    - Do not start `/loop /rk:pr-follow-up` from this session: the Slack bot runs the follow-up. The human can still run it by hand.
-4. **Jira** (only when the loop implements a card): move the card to **In Review**, then log the work by its points with no question: `/rk:ef-logwork --by-points=<CARD> --outcome="PR #<n> open for review"` (story points × 4h, remaining `0m`). A skip (no points, already logged) or a write error goes in the report's `Worklog` line; the loop never stops on it. Do not close the card while acceptance criteria outside this PR are open.
+4. **Jira** (only when the loop implements a card): move the card to **In Review**. Do not log work: the human logs it with `/rk:ef-logwork`. Do not close the card while acceptance criteria outside this PR are open.
 5. **Report**:
    ```
    Change: <one line> · Branch: <...> · Commit: <sha>
@@ -122,7 +122,6 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
    Review: <n> rounds · fixed <k> · optional left <m>
-   Worklog: <card> <time> (<points> pt), remaining 0m · worklogId <id> | skipped: <reason>
    Decided by recommendation: <each pick, one line; only with --recommend>
    Open questions: <...>
    ```

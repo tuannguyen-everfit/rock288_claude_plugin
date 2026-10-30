@@ -1,6 +1,6 @@
 ---
 name: ef-logwork
-description: "Log Everfit Jira worklogs in the Core Team format ([Activity] – [What] – [Outcome], 15m steps, VN date) from today's git commits + PR reviews. Suggests cards and descriptions, you type the hours, asks the remaining of each own card, shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm. --by-points=CARD logs one card with no question: story points × 4h, remaining 0m (used by rk:trust-loop). --audit reports days under 7h, empty days and badly formatted worklogs (read-only). Triggers on: 'logwork', 'log work', 'log time', 'timesheet', 'log giờ', 'chấm công', 'log theo point', 'audit worklog'."
+description: "Log Everfit Jira worklogs in the Core Team format ([Activity] – [What] – [Outcome], 15m steps, VN date) from today's git commits + PR reviews. Suggests cards and descriptions, you type the hours, asks the remaining of each own card, shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm. --by-points=CARD logs one card with no question: story points × 4h, remaining 0m. --audit reports days under 7h, empty days and badly formatted worklogs (read-only). Triggers on: 'logwork', 'log work', 'log time', 'timesheet', 'log giờ', 'chấm công', 'log theo point', 'audit worklog'."
 argument-hint: "[free text e.g. '3h UP-79399, 15m standup'] [--by-points=CARD [--outcome=TEXT]] [--date=YYYY-MM-DD] [--yes] [--shared=UP-XXXXX] [--no-git] [--audit[=from..to]] [--dry-run]"
 metadata:
   author: rock288
@@ -168,8 +168,7 @@ reads 100% after the first log. The remaining is the user's own "how long until 
 
 ## By points (`--by-points=CARD`)
 
-One worklog on one card, sized by its story points, written **without any question** — so a
-caller like `/rk:trust-loop` never stops on it. Steps 0, 1 and 3 run as usual (date, config,
+One worklog on one card, sized by its story points, written **without any question**. Steps 0, 1 and 3 run as usual (date, config,
 ledger, card facts with `customfield_10014` = Story Points; no git scan); step 2 (shared card),
 step 4's prompt and step 7's wait are skipped.
 

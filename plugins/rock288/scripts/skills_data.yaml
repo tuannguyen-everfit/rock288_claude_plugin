@@ -264,7 +264,7 @@
     cards and descriptions, you type the hours, asks the remaining of each own card,
     shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm.
     --by-points=CARD logs one card with no question: story points × 4h, remaining
-    0m (used by rk:trust-loop). --audit reports days under 7h, empty days and badly
+    0m. --audit reports days under 7h, empty days and badly
     formatted worklogs (read-only). Triggers on: ''logwork'', ''log work'', ''log
     time'', ''timesheet'', ''log giờ'', ''chấm công'', ''log theo point'', ''audit
     worklog''.'
