@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.9.1"
+  version: "1.10.0"
 ---
 
 # Trust Loop
@@ -13,13 +13,15 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 **`$SKILL_DIR`** = the "Base directory for this skill" path printed when this skill loads.
 
-**`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope or split, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It still stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier.
+**`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope or split, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It still stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier, the env gate (step 2), a review finding that would change the SPEC (step 5).
 
 **Defer first:** if the repo has its own `.claude/skills/trust-loop/` (e.g. core-foundry), stop and run that one: `/trust-loop <task>`. Its tooling is stricter than this generic loop.
 
 ## Hard rules
 - No commit without `verify-change --status` → `ok: true` for the current content. Any edit after verifying invalidates the receipt.
 - Never weaken a test, a lint rule or a tier in `.claude/trust.json` to get green. A gate you believe is wrong is a question for the human.
+- A new env var (a `default.env` key, a config schema entry, a deploy secret) is the human's answer: never invent its name or value, even with `--recommend`.
+- Review fixes never change the SPEC: the original request, the card's acceptance criteria, the approved plan.
 - Never `--no-verify`, never push to a protected branch. Repo rules win when stricter: a repo whose rules say "commit / push only when the human says so" gets the diff and a wait at step 6, unless the task itself asked to commit or ship.
 - The loop runs unattended: `/rk:cook` with `--auto`. The loop's own gates (receipt, red/green, review) hold the change, not approval clicks. Cook's finalize does not commit; the loop commits at step 6.
 - Heavy suites run only through `verify-change`, in the foreground. It allows one run per machine (other sessions wait on its lock), caps parallelism (`NX_PARALLEL=1`, `GOFLAGS -p=<half the cores>`) and kills a tier's whole process group on timeout. A full suite run by hand (`nx run-many`, `--skip-nx-cache`, `go test -race ./...`), or `verify-change` in the background, bypasses that and lets two sessions freeze the machine. For a single test file, run that file only.
@@ -42,6 +44,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 ## 2. Design and plan
 - Intent clear and single-file with an obvious cause → skip to step 3.
 - Several viable designs or vague requirements → `/rk:brainstorm` (`--recommend` when this loop has it); its decision feeds the plan.
+- **Env gate**, after the brainstorm and before `/rk:plan` (step 2 skipped → before step 3): list every new env var the change needs — name, purpose, default, dev / prod value, secret or not — and ask the human in one question. `--recommend` does not answer it. The answers go into the plan. None needed → state `no new env` and go on. An env var not on the approved list that turns up later (step 3, 5) → stop and ask; do not invent it.
 - Multi-file feature → `/rk:plan` (`--recommend` when this loop has it). The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1.
 - Bug → reproduce first: a failing unit test or a runtime call before the fix (`/rk:debug` for hard ones). Fix the root cause once in the shared code, not in the one caller that reported it.
 - One concern per loop. A plan that does two things becomes two loops.
@@ -67,15 +70,24 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Write reports and notes **before** the final verify: a new untracked file changes the fingerprint.
 
 ## 5. Review
-- `/rk:code-review --pending`: adversarial pass + the repo's written conventions.
-- Then the intent check, against the original request (not the plan):
-  - Does the diff do exactly what was asked — nothing missing, nothing extra?
-  - Is every behavior proven by a test that was red on the old code?
-  - Is every entry of the step 1 reach list updated or proven unaffected?
-  - Does code that was moved or merged keep its validation and error handling?
-  - Two concerns in one diff → split into two loops.
-- Any edit from review → back to step 4 (the receipt is now stale).
-- The same correction a second time → propose turning it into a mechanical check (a lint rule, a test, a tier) as a separate change.
+Review → fix → verify → review again, until a round finds only Nice-to-have. **Max 5 rounds.** Each round:
+1. `/rk:code-review --pending` on the **whole** diff against the base (adversarial pass + the repo's written conventions). Every round reviews everything again; no fix-diff-only re-review.
+2. The intent check below.
+3. Sort the findings: Critical / Important (medium and up, `[Must fix]`) must be fixed; Nice-to-have (`[Optional]`) is not fixed by the loop and goes to the PR description and the report.
+4. No must-fix left → step 6.
+5. A must-fix that can only be fixed by changing the SPEC (behavior asked for, acceptance criteria, API contract, response shape) → do not fix it. Stop and show the human the finding, the SPEC line it conflicts with, and what happens if it stays. Also with `--recommend`.
+6. Fix the other must-fix findings in the change's own files → step 4 (the receipt is now stale) → next round.
+
+`BLOCKED` (stop, report the open findings): must-fix still left after round 5, or a finding fixed in an earlier round comes back.
+
+Intent check, against the original request (not the plan); a "no" is a must-fix:
+- Does the diff do exactly what was asked — nothing missing, nothing extra?
+- Is every behavior proven by a test that was red on the old code?
+- Is every entry of the step 1 reach list updated or proven unaffected?
+- Does code that was moved or merged keep its validation and error handling?
+- Two concerns in one diff → split into two loops.
+
+The same correction a second time → propose turning it into a mechanical check (a lint rule, a test, a tier) as a separate change.
 
 ## 6. Commit
 Commit as soon as the receipt passes; the receipt is the gate, not a human. Check and commit in one command so nothing changes in between:
@@ -107,6 +119,7 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    Intent: <what was asked, what the diff does>
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
+   Review: <n> rounds · fixed <k> · optional left <m>
    Worklog: <card> <time> (<points> pt), remaining 0m · worklogId <id> | skipped: <reason>
    Decided by recommendation: <each pick, one line; only with --recommend>
    Open questions: <...>
