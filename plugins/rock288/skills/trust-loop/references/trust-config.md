@@ -51,6 +51,8 @@ How the merged PR reaches dev, so the follow-up can tell when dev runs it. Not u
 
 `node <pr-follow-up>/scripts/deploy-signal.cjs pick` prints the pipelines for the current branch.
 
+Where `pick` looks: `deploy` here first, else the clone's own `<git common dir>/rk-trust/deploy.json` (same three fields, no `deploy` wrapper). Write that file with `deploy-signal.cjs save --pipelines '<json map>' [--channel <id>] [--max-run-min <n>]` when this file is tracked by the repo: adding `deploy` to a tracked `trust.json` would ride along in the PR. It is local to the clone (every worktree of it reads it); another clone of the same repo saves its own.
+
 ## Scoped tiers (run only what the change touches)
 A full suite on every verify is slow. Placeholders in `cmd` expand to the change set (every path that differs from HEAD, plus untracked files), shell-quoted:
 

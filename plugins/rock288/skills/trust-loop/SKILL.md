@@ -4,7 +4,7 @@ description: "Verified delivery loop for a code change in any repo: intake, pre-
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 metadata:
   author: rock288
-  version: "1.10.0"
+  version: "1.10.1"
 ---
 
 # Trust Loop
@@ -30,7 +30,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Restate the task in one sentence. Unclear intent → ask now (one round, specific questions); do not discover it in review. With `--recommend`, a question that has a recommended answer (scope, which part of a card goes first, one loop or two) is decided, not asked.
 - Jira card → `/rk:ef-branch-name <card>` for the branch. Otherwise branch off the base yourself; never work on a protected branch.
 - Jira card → move it to **In Progress** once the branch exists (`getTransitionsForJiraIssue` → `transitionJiraIssue`). Already In Progress or later → leave it. No such transition (e.g. no sprint) → note it for the report and go on; do not pick another.
-- No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`.
+- No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`. Writing it also adds it to `.git/info/exclude` (unless the repo tracks or ignores it): it holds this machine's commands, and step 6's `git add -A` must not ship it in the PR. Committing it for the team is the human's call, in its own commit.
 - Session artifacts: `plans/` or `docs/journals/` not ignored by the repo → add them to `.git/info/exclude` once, so plans, reports and journals stay out of the commit (`git add -A`) and of the receipt.
 - Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), unless the task already says. Defaults = `/rk:ef-ship`'s: `#backend-review-code`, `@backend-team` + `Quang Pham Minh (BE)`. With `--recommend`, take the defaults without asking. That answer (or `--recommend`) is the go-ahead for step 7.
 
@@ -95,6 +95,7 @@ Commit as soon as the receipt passes; the receipt is the gate, not a human. Chec
 node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -m "<subject>" -m "<body>"
 ```
 - Subject = the repo's rule (e.g. `type(scope): CARD summary`). Body: intent summary + how it was verified (tiers + runtime evidence). Pass the message inline: a message file inside the repo is untracked content and makes the receipt stale.
+- `--status` refuses while `.claude/trust.json` is untracked and not ignored (`git add -A` would commit it): add it to the file `git rev-parse --git-path info/exclude` prints, verify again. Never commit it inside the change.
 - A pre-commit hook fails → fix, back to step 4. Never `--no-verify`.
 - Exception (hard rules): the repo forbids auto-commit and the task did not ask to commit → show the diff and the message, wait.
 
@@ -102,14 +103,15 @@ node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -
 Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
 1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
 2. **Review request**: the channel and reviewers settled at intake; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged, deployed) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR.
-3. **Record the follow-up** for the Slack bot, which drives `/rk:pr-follow-up` (review, merge, dev deploy) from this state:
+3. **Record the follow-up** for the Slack bot, which drives `/rk:pr-follow-up` (review, merge, dev deploy) from this state. **Always** — it is not a question: without `init` the bot never sees the PR (challenger-service#280 got no follow-up because the deploy question offered "skip").
    ```bash
-   node $SKILL_DIR/../pr-follow-up/scripts/deploy-signal.cjs pick     # pipelines from "deploy" in .claude/trust.json
+   node $SKILL_DIR/../pr-follow-up/scripts/deploy-signal.cjs pick     # deploy map: .claude/trust.json, else this clone's rk-trust/deploy.json
    node $SKILL_DIR/../pr-follow-up/scripts/follow-up-state.cjs init --pr <PR url> --ticket <KEY> \
      --slack-channel <review channel id> --slack-ts <review request ts> --worktree <this checkout> \
      --deploy-channel <channel> --pipelines <p1,p2> --max-run-min <n> [--dev-check "<command>"]
    ```
-   - `pick` exits 2 (no `deploy` yet): find the repo's dev pipelines in `#non-prod-ci-cd` (bot lines `<name>-codepipeline *SUCCEEDED*`, `*Application :*`), confirm them with the human once, and add `deploy` to `.claude/trust.json` (`references/trust-config.md`).
+   - `pick` exits 2 (no deploy map yet): find the repo's dev pipelines in `#non-prod-ci-cd` (bot lines `<name>-codepipeline *SUCCEEDED*`, `*Application :*`), confirm the names with the human once, save them for this clone with `deploy-signal.cjs save --pipelines '<{"<path prefix>/": "<pipeline>", "*": [...]}>' --max-run-min <n>` (`<git common dir>/rk-trust/deploy.json`, never committed, shared by its worktrees), then `pick` again. Never edit a tracked `.claude/trust.json` for it: that puts an unrelated commit in the PR. The only question is the pipeline names — never offer to skip the follow-up.
+   - The pipelines stay unknown (no answer, not in the channel): `init` without `--deploy-channel` / `--pipelines`. The bot still follows review and merge, then hands the deploy check back to the human.
    - `--dev-check`: the runtime check from step 1 when it can run against dev without writing data; otherwise leave it out.
    - Do not start `/loop /rk:pr-follow-up` from this session: the Slack bot runs the follow-up. The human can still run it by hand.
 4. **Jira** (only when the loop implements a card): move the card to **In Review**, then log the work by its points with no question: `/rk:ef-logwork --by-points=<CARD> --outcome="PR #<n> open for review"` (story points × 4h, remaining `0m`). A skip (no points, already logged) or a write error goes in the report's `Worklog` line; the loop never stops on it. Do not close the card while acceptance criteria outside this PR are open.

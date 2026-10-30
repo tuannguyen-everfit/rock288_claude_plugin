@@ -11,7 +11,7 @@ const path = require('path');
 
 const { parsePrRef, summarizePullRequest } = require('./pr-review-state.cjs');
 const { createStore, MAX_FIX_ROUNDS } = require('./follow-up-state.cjs');
-const { parsePipelineEvents, decideDeploy, pickPipelines } = require('./deploy-signal.cjs');
+const { parsePipelineEvents, decideDeploy, pickPipelines, readDeployConfig, saveDeployConfig } = require('./deploy-signal.cjs');
 
 let passed = 0;
 let failed = 0;
@@ -267,6 +267,37 @@ test('pickPipelines: longest prefix wins, "*" covers the rest, lists merge', () 
   assert.deepStrictEqual(pickPipelines(map, ['apps/notification/x.go', 'apps/challenger/y.go']), [NOTIF, SVC].sort());
   assert.deepStrictEqual(pickPipelines(map, ['libs/platform/z.go']), [NOTIF, SVC].sort());
   assert.deepStrictEqual(pickPipelines({ 'apps/auth/': 'auth-dev' }, ['docs/readme.md']), []);
+});
+
+// ---------- deploy map ----------
+console.log('\ndeploy map');
+
+test('the deploy map comes from trust.json first, else the clone-local deploy.json, else null', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'deploy-map-'));
+  const common = path.join(root, '.git');
+  fs.mkdirSync(path.join(root, '.claude'), { recursive: true });
+  assert.strictEqual(readDeployConfig(root, common), null);
+  fs.writeFileSync(path.join(root, '.claude/trust.json'), JSON.stringify({ tiers: [] }));
+  assert.strictEqual(readDeployConfig(root, common), null, 'trust.json without deploy');
+  const file = saveDeployConfig(common, { pipelines: { 'apps/notification/': 'notif-dev', '*': ['svc-dev', 'notif-dev'] }, maxRunMin: 15 });
+  assert.strictEqual(file, path.join(common, 'rk-trust', 'deploy.json'));
+  const local = readDeployConfig(root, common);
+  assert.deepStrictEqual([local.source, local.channel, local.max_run_min], ['rk-trust/deploy.json', 'C06HA7VQHNZ', 15]);
+  assert.deepStrictEqual(pickPipelines(local.pipelines, ['apps/notification/x.go']), ['notif-dev']);
+  fs.writeFileSync(path.join(root, '.claude/trust.json'), JSON.stringify({ tiers: [], deploy: { channel: 'C0TEAM123', pipelines: { '*': 'team-dev' } } }));
+  assert.deepStrictEqual([readDeployConfig(root, common).source, readDeployConfig(root, common).channel], ['.claude/trust.json', 'C0TEAM123']);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('save refuses a map that is not prefix -> pipeline(s), a bad channel or run time', () => {
+  const common = fs.mkdtempSync(path.join(os.tmpdir(), 'deploy-save-'));
+  for (const bad of [{}, [], { '*': '' }, { '*': [] }, { '*': [1] }, null]) {
+    assert.throws(() => saveDeployConfig(common, { pipelines: bad }), JSON.stringify(bad));
+  }
+  assert.throws(() => saveDeployConfig(common, { pipelines: { '*': 'p' }, channel: '#non-prod' }));
+  assert.throws(() => saveDeployConfig(common, { pipelines: { '*': 'p' }, maxRunMin: 0 }));
+  assert.ok(!fs.existsSync(path.join(common, 'rk-trust', 'deploy.json')), 'nothing written on a refusal');
+  fs.rmSync(common, { recursive: true, force: true });
 });
 
 console.log('\n' + '='.repeat(50));

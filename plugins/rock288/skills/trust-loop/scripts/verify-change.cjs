@@ -309,10 +309,24 @@ function receiptPath(root, fp) {
   return path.join(trustDir(root), 'receipts', `${fp}.json`);
 }
 
+/**
+ * `.claude/trust.json` untracked and not ignored: step 6's `git add -A` would commit this machine's config
+ * (its tier commands, PATH tweaks) into the PR — challenger-service#279 shipped it to develop that way.
+ */
+function strayConfig(files) {
+  return files.some((f) => f.file === CONFIG_PATH && f.status === '?');
+}
+
 function status(root) {
   const config = loadConfig(root);
   const files = changeSet(root);
   if (files.length === 0) return { ok: false, reason: 'no change to verify' };
+  if (strayConfig(files)) {
+    return {
+      ok: false,
+      reason: `${CONFIG_PATH} is untracked and not ignored, so \`git add -A\` would commit it: add it to the file \`git rev-parse --git-path info/exclude\` prints (or commit it on purpose, alone), then run verify-change again`,
+    };
+  }
   const fp = fingerprint(root, files);
   const file = receiptPath(root, fp);
   if (!fs.existsSync(file)) return { ok: false, fingerprint: fp, reason: 'no receipt for the current content; run verify-change (any edit after verifying invalidates the receipt)' };

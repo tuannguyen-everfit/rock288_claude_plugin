@@ -22,8 +22,13 @@
  *   node deploy-signal.cjs pick [--base origin/develop]
  *
  * Which pipelines this branch deploys through: `deploy` in `.claude/trust.json` (see trust-loop
- * references/trust-config.md) mapped over the files changed against the base. Prints { channel, max_run_min,
- * pipelines }; exit 2 when the repo has no `deploy` config yet.
+ * references/trust-config.md), else this clone's own `<git common dir>/rk-trust/deploy.json`, mapped over the files
+ * changed against the base. Prints { channel, max_run_min, pipelines, source }; exit 2 when neither has a map yet.
+ *
+ *   node deploy-signal.cjs save --pipelines '<{"prefix/": "pipeline", "*": [...]}>' [--channel <id>] [--max-run-min <n>]
+ *
+ * Saves the map to `<git common dir>/rk-trust/deploy.json`: shared by every worktree of the clone, never committed.
+ * For a repo whose `.claude/trust.json` is tracked, where adding `deploy` would put an unrelated commit in the PR.
  * Ported from core-foundry tools/post-merge/dev-deploy-signal.mjs (pipeline and run time made per repo).
  */
 
@@ -141,25 +146,95 @@ function pickPipelines(map, files) {
   return [...picked].sort();
 }
 
+const DEFAULT_CHANNEL = 'C06HA7VQHNZ';
+const CHANNEL_RE = /^[CG][A-Z0-9]{6,}$/;
+
+function localDeployFile(commonDir) {
+  return path.join(commonDir, 'rk-trust', 'deploy.json');
+}
+
+/** `{ prefix: name | [names] }` with at least one entry; anything else is not a map. */
+function isPipelineMap(map) {
+  if (!map || typeof map !== 'object' || Array.isArray(map) || Object.keys(map).length === 0) return false;
+  return Object.values(map).every((v) => (typeof v === 'string' && v.trim()) || (Array.isArray(v) && v.length > 0 && v.every((n) => typeof n === 'string' && n.trim())));
+}
+
+/** The deploy map: `deploy` in the repo's `.claude/trust.json` first, else the clone's local one; null when neither. */
+function readDeployConfig(root, commonDir) {
+  const sources = [
+    [path.join(root, '.claude', 'trust.json'), (json) => json.deploy, '.claude/trust.json'],
+    [localDeployFile(commonDir), (json) => json, 'rk-trust/deploy.json'],
+  ];
+  for (const [file, select, source] of sources) {
+    if (!fs.existsSync(file)) continue;
+    const deploy = select(JSON.parse(fs.readFileSync(file, 'utf8')));
+    if (deploy && isPipelineMap(deploy.pipelines)) return { ...deploy, source };
+  }
+  return null;
+}
+
+function saveDeployConfig(commonDir, { pipelines, channel = DEFAULT_CHANNEL, maxRunMin = DEFAULT_MAX_RUN_MIN }) {
+  if (!isPipelineMap(pipelines)) throw new Error('--pipelines must be a JSON object: path prefix (or "*") -> pipeline name or list');
+  if (!CHANNEL_RE.test(channel)) throw new Error(`--channel is not a Slack channel id: ${channel}`);
+  if (!Number.isInteger(maxRunMin) || maxRunMin <= 0) throw new Error(`--max-run-min must be a positive integer: ${maxRunMin}`);
+  const file = localDeployFile(commonDir);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify({ channel, max_run_min: maxRunMin, pipelines }, null, 2)}\n`);
+  return file;
+}
+
+function gitOut(args, cwd) {
+  return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
+}
+
+function commonDirOf(cwd) {
+  return path.resolve(cwd, gitOut(['rev-parse', '--git-common-dir'], cwd));
+}
+
 function pick(base) {
-  const root = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
-  const configFile = path.join(root, '.claude', 'trust.json');
-  const deploy = fs.existsSync(configFile) ? JSON.parse(fs.readFileSync(configFile, 'utf8')).deploy : null;
-  if (!deploy || !deploy.pipelines) {
-    console.error('deploy-signal: no "deploy" in .claude/trust.json; find the pipeline in the channel and add it');
+  const root = gitOut(['rev-parse', '--show-toplevel']);
+  const deploy = readDeployConfig(root, commonDirOf(root));
+  if (!deploy) {
+    console.error('deploy-signal: no deploy map in .claude/trust.json or rk-trust/deploy.json; find the pipelines in the channel and `save` them');
     process.exit(2);
   }
-  const files = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
+  const files = gitOut(['diff', '--name-only', `${base}...HEAD`], root).split('\n').filter(Boolean);
   console.log(JSON.stringify({
-    channel: deploy.channel || 'C06HA7VQHNZ',
+    channel: deploy.channel || DEFAULT_CHANNEL,
     max_run_min: deploy.max_run_min || DEFAULT_MAX_RUN_MIN,
     pipelines: pickPipelines(deploy.pipelines, files),
+    source: deploy.source,
   }, null, 2));
+}
+
+function save(args) {
+  const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
+  try {
+    const raw = opt('--pipelines');
+    if (!raw) throw new Error('--pipelines is required');
+    let pipelines;
+    try {
+      pipelines = JSON.parse(raw);
+    } catch {
+      throw new Error('--pipelines is not valid JSON');
+    }
+    const file = saveDeployConfig(commonDirOf(process.cwd()), {
+      pipelines,
+      channel: opt('--channel'),
+      maxRunMin: opt('--max-run-min') === undefined ? undefined : Number(opt('--max-run-min')),
+    });
+    console.log(`saved ${file}`);
+  } catch (error) {
+    console.error(`deploy-signal save: ${error.message}`);
+    process.exit(64);
+  }
 }
 
 if (require.main === module && process.argv[2] === 'pick') {
   const args = process.argv.slice(3);
   pick(args.includes('--base') ? args[args.indexOf('--base') + 1] : 'origin/develop');
+} else if (require.main === module && process.argv[2] === 'save') {
+  save(process.argv.slice(3));
 } else if (require.main === module) {
   const args = process.argv.slice(2);
   const opt = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
@@ -183,4 +258,4 @@ if (require.main === module && process.argv[2] === 'pick') {
   process.exit({ deployed: 0, waiting: 2 }[decision.state] || 1);
 }
 
-module.exports = { parsePipelineEvents, pipelineTime, decidePipeline, decideDeploy, pickPipelines };
+module.exports = { parsePipelineEvents, pipelineTime, decidePipeline, decideDeploy, pickPipelines, readDeployConfig, saveDeployConfig };

@@ -251,6 +251,19 @@ test('{go_packages} lists the package dir of each changed .go file once', () => 
   assertEqual(lib.expandCmd('go test {go_packages}', lib.changeSet(root), root).cmd, "go test './apps/x' '.'", 'cmd');
 });
 
+test('status refuses an untracked, non-ignored trust.json until it is excluded', () => {
+  const root = makeRepo('stray');
+  fs.writeFileSync(path.join(root, '.claude/trust.json'), JSON.stringify({ version: 1, tiers: PASS }));
+  fs.writeFileSync(path.join(root, 'a.txt'), 'two\n');
+  assertEqual(cli(VERIFY, [], root).code, 0, 'verify');
+  const stray = lib.status(root);
+  assertEqual(stray.ok, false, 'stray config blocks the commit');
+  assert(stray.reason.includes('git add -A'), stray.reason);
+  fs.appendFileSync(path.join(root, '.git/info/exclude'), '.claude/trust.json\n');
+  assertEqual(cli(VERIFY, [], root).code, 0, 'verify again');
+  assertEqual(lib.status(root).ok, true, 'excluded config: ok');
+});
+
 console.log('\n🧪 init-config\n');
 
 test('Go repo uses Makefile targets when present', () => {
@@ -269,6 +282,26 @@ test('Node repo picks scripts and the lockfile runner', () => {
     { name: 'unit', cmd: 'pnpm run test' },
     { name: 'build', cmd: 'pnpm run build', optional: true },
   ], 'tiers');
+});
+
+test('writing the config excludes it from git add -A', () => {
+  const root = makeRepo('init-exclude');
+  fs.writeFileSync(path.join(root, 'go.mod'), 'module x\n');
+  assertEqual(cli(INIT, [], root).code, 0, 'write');
+  assert(fs.readFileSync(path.join(root, '.git/info/exclude'), 'utf8').includes('.claude/trust.json\n'), 'excluded');
+  const status = execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], { cwd: root, encoding: 'utf8' });
+  assert(!status.includes('trust.json'), status);
+  assertEqual(cli(INIT, ['--force'], root).code, 0, 'rewrite');
+  const lines = fs.readFileSync(path.join(root, '.git/info/exclude'), 'utf8').split('\n').filter((l) => l === '.claude/trust.json');
+  assertEqual(lines.length, 1, 'excluded once, not again');
+});
+
+test('a config the repo already tracks is not excluded', () => {
+  const root = makeRepo('init-tracked', PASS);
+  fs.writeFileSync(path.join(root, 'go.mod'), 'module x\n');
+  assertEqual(cli(INIT, ['--force'], root).code, 0, 'rewrite');
+  const exclude = path.join(root, '.git/info/exclude');
+  assert(!fs.existsSync(exclude) || !fs.readFileSync(exclude, 'utf8').includes('trust.json'), 'tracked: left as is');
 });
 
 test('unknown stack exits 2 and does not overwrite an existing config', () => {

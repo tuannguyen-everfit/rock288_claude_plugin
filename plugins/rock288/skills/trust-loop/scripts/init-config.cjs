@@ -8,6 +8,8 @@
  *
  * The draft is a starting point: the repo's own CLAUDE.md / CI decide the real gates, so the
  * human confirms it before trust-loop relies on it.
+ * Writing also adds .claude/trust.json to .git/info/exclude, unless the repo already tracks or ignores it: the
+ * config holds this machine's commands, and trust-loop commits with `git add -A`.
  * Exit: 0 written or printed, 2 usage error / unknown stack / config already exists.
  */
 
@@ -80,6 +82,27 @@ function draftConfig(root) {
   };
 }
 
+/** Keeps the config out of `git add -A`. Returns the exclude file it appended to, or why it did not. */
+function excludeConfig(root) {
+  try {
+    git(['ls-files', '--error-unmatch', '--', CONFIG_PATH], root);
+    return 'tracked by the repo, left as is';
+  } catch {
+    // untracked — go on
+  }
+  try {
+    git(['check-ignore', '-q', '--', CONFIG_PATH], root);
+    return 'already ignored';
+  } catch {
+    // not ignored — go on
+  }
+  const file = path.resolve(root, git(['rev-parse', '--git-path', 'info/exclude'], root).trim());
+  const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.appendFileSync(file, `${current && !current.endsWith('\n') ? '\n' : ''}${CONFIG_PATH}\n`);
+  return `added to ${file}`;
+}
+
 function main() {
   try {
     const args = process.argv.slice(2);
@@ -100,7 +123,7 @@ function main() {
     }
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, json);
-    console.log(`wrote ${file}\n${json}`);
+    console.log(`wrote ${file} (${excludeConfig(root)})\n${json}`);
   } catch (error) {
     if (error instanceof UsageError) {
       console.error(`init-config: ${error.message}`);
@@ -112,4 +135,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { draftConfig };
+module.exports = { draftConfig, excludeConfig };

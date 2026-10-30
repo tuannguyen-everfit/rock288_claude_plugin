@@ -116,4 +116,4 @@ Used by every step that needs a decision (product question, 4th fix round, merge
 - The human answers in the session or acts on the PR, then resumes with `/loop /rk:pr-follow-up <PR>`.
 
 ## Credits
-Adapted from `post-merge-follow-up` in core-foundry (Huy Nguyen): state per PR, review triage table, merge gate, deploy signal by timing. This version is generic: pipelines and run time come from `.claude/trust.json`, only required checks gate the merge, and the dev check is the command the trust loop recorded.
+Adapted from `post-merge-follow-up` in core-foundry (Huy Nguyen): state per PR, review triage table, merge gate, deploy signal by timing. This version is generic: pipelines and run time come from `.claude/trust.json` (or the clone's `rk-trust/deploy.json`), only required checks gate the merge, and the dev check is the command the trust loop recorded.
