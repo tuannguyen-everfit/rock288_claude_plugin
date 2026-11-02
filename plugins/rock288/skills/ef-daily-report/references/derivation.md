@@ -115,12 +115,11 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 - **DONE YESTERDAY** — **only cards at 100%** (QA Ready or later, see Progress %), grouped
   by Product Item. Each card: bullet with task name + `Progress: 100%`. A card that logged
   time but is below 100% goes to PROGRESS CHANGED only, with its `Remaining:` line there.
-- **PROGRESS CHANGED** — **every** card where `loggedTarget > 0`, with its `before% → now%`
-  delta. This **includes cards that reached 100%**: they appear in BOTH sections (DONE shows
-  the final %, PROGRESS CHANGED shows the delta + reason). Never print `None` here while any
-  card logged time on the target day.
-  - `now% > before%` → `Progress: X% → Y%` + `Reason: logged <time>, <status>` (no comment needed).
-    Below 100% → add `Remaining:` derived from `remaining_now` (+ comment if any).
+- **PROGRESS CHANGED** — every card where `loggedTarget > 0` **and `now% < 100%`**, with its
+  `before% → now%` delta. A card that reached 100% is listed in DONE YESTERDAY only, never in
+  both sections. Print `None` only when no card below 100% logged time on the target day.
+  - `now% > before%` → `Progress: X% → Y%` + `Reason: logged <time>, <status>` (no comment needed)
+    + `Remaining:` derived from `remaining_now` (+ comment if any).
   - `now% == before%` (logged time but % flat, e.g. remaining grew) → `Progress: Still X%` +
     `Reason: logged <time>, remaining unchanged` (+ comment if present).
 - **PLAN FOR TODAY** — **max 5 in the report**. Selection priority: (1) my `In Progress`

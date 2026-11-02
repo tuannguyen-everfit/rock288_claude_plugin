@@ -53,7 +53,7 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 - [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
   - Progress: X% → Y%
   - Reason: [cause]
-  - Remaining: [what is left]     ← only when Y < 100%
+  - Remaining: [what is left]     ← PROGRESS CHANGED holds < 100% cards only
 
 **PLAN FOR TODAY**
 
@@ -109,8 +109,8 @@ Follow [`references/derivation.md`](references/derivation.md) exactly:
 - **100% only from `QA Ready` on** (`QA*` / `Q&A*` statuses, or category Done). Any other
   status caps at **90%**, even with `remaining == 0`.
 - **DONE YESTERDAY = only cards at 100%.** A card below 100% never goes there.
-- **PROGRESS CHANGED = every card that logged time on the target day**, delta included — even
-  cards that hit 100% (they show in BOTH DONE and PROGRESS CHANGED).
+- **PROGRESS CHANGED = every card that logged time on the target day and is still below 100%**,
+  delta included. A card at 100% goes to DONE YESTERDAY only — never in both sections.
 - **PLAN FOR TODAY = my `In Progress` cards, then my `To Do` cards, max 5** (prioritize the epics of today's work, then
   most recently updated; mention in the draft how many were left out).
 - **Worklog comments are optional** — the delta comes from logged time alone. `Reason` =
