@@ -37,7 +37,7 @@ node $SKILL_DIR/scripts/follow-up-state.cjs start --pr <PR>
 ```
 - It prints `ticket`, `slack_channel` + `slack_thread_ts` (the review thread), `worktree`, `deploy_channel`, `pipelines`, `max_run_min`, `dev_check`, `fix_rounds`, `phase`, `waiting_on`, `since` (the previous run's start) and `idle_hours`.
 - State `phase` `waiting_human` or `idle` (a resumed loop): the human has answered in the session or acted on the PR → `set phase=in_review waiting_on=null` and continue; otherwise stop again without asking or posting.
-- No state (a PR the trust loop did not open): `init` it from the arguments (see trust-loop step 7.3), then `start`.
+- No state (a PR the trust loop did not open): `init` it from the arguments (see trust-loop step 7.2), then `start`.
 - Work in the recorded `worktree`, so the PR's branch and receipts are checked out there.
 - `list` shows the follow-ups still open, to resume them after a restart.
 
