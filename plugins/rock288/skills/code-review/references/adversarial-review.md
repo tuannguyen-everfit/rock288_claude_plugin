@@ -83,6 +83,8 @@ This is NOT a standard code review. Standard reviews check if code meets require
 
 ### 1. Spawn Adversarial Reviewer
 
+With `--effort=<level>`, pass `effort: "<level>"` on this spawn too.
+
 Dispatch `code-reviewer` subagent with adversarial prompt:
 
 ```

@@ -30,6 +30,7 @@ Load: `references/red-team-personas.md`
 
 ### Step 4: Spawn Reviewers
 Launch reviewers simultaneously via Task tool with `subagent_type: "code-reviewer"`.
+With `--effort=<level>`, pass `effort: "<level>"` on each spawn.
 Each reviewer prompt MUST include override, persona, plan file paths, and hostile instructions.
 Load: `references/red-team-personas.md` for reviewer prompt template.
 

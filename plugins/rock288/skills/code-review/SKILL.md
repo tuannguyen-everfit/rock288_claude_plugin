@@ -1,10 +1,10 @@
 ---
 name: code-review
 description: "Review code quality with adversarial rigor. Supports input modes: pending changes, PR number, commit hash, codebase scan. Always-on red-team analysis finds security holes, false assumptions, and failure modes."
-argument-hint: "[#PR | COMMIT | --pending | codebase [parallel]]"
+argument-hint: "[#PR | COMMIT | --pending | codebase [parallel]] [--effort=<level>]"
 metadata:
   author: rock288
-  version: "2.0.3"
+  version: "2.1.0"
 ---
 
 # Code Review
@@ -25,6 +25,8 @@ Auto-detect from arguments. If ambiguous or no arguments, prompt via `AskUserQue
 | `codebase parallel` | **Codebase+** | Parallel multi-reviewer audit |
 
 **Resolution details:** `references/input-mode-resolution.md`
+
+**Effort:** `--effort=<level>` (`low|medium|high|xhigh|max`; passed by `/rk:trust-loop` as `--effort=high`): every `code-reviewer` subagent this run spawns — Stage 2, Stage 3 adversarial, parallel scopes — gets the Agent tool param `effort: "<level>"`. A spec or intent check given with the invocation goes into the Stage 2 subagent prompt; each unmet requirement or "no" answer comes back as an Important finding. With a spec and `--effort`, skip the inline Stage 1: the Stage 2 subagent checks spec compliance, does not gate Stage 2 and fixes nothing. Without the flag, spawn as before.
 
 ### No Arguments
 

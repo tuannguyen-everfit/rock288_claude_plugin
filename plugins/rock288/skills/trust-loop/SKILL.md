@@ -2,9 +2,10 @@
 name: trust-loop
 description: "Verified delivery loop for a code change in any repo: intake, pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review, a commit only on a passing receipt, then the hand-off (PR, review request, Jira) and the follow-up state the Slack bot drives until the PR runs on dev. Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
+effort: medium
 metadata:
   author: rock288
-  version: "1.10.1"
+  version: "1.11.0"
 ---
 
 # Trust Loop
@@ -14,6 +15,8 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 **`$SKILL_DIR`** = the "Base directory for this skill" path printed when this skill loads.
 
 **`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope or split, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It still stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier, the env gate (step 2), a review finding that would change the SPEC (step 5).
+
+**Effort**: the loop itself runs at `medium` (frontmatter): intake, coding, verify. The frontmatter holds for the current turn only: after a plain-text human reply the session level is back, so ask through `AskUserQuestion` to stay in the turn, or the human runs `/effort medium`. Judgement runs at `high` in subagents: `/rk:plan --effort=high` (planner) and `/rk:code-review --effort=high` (every reviewer, including the intent check).
 
 **Defer first:** if the repo has its own `.claude/skills/trust-loop/` (e.g. core-foundry), stop and run that one: `/trust-loop <task>`. Its tooling is stricter than this generic loop.
 
@@ -45,7 +48,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Intent clear and single-file with an obvious cause → skip to step 3.
 - Several viable designs or vague requirements → `/rk:brainstorm` (`--recommend` when this loop has it); its decision feeds the plan.
 - **Env gate**, after the brainstorm and before `/rk:plan` (step 2 skipped → before step 3): list every new env var the change needs — name, purpose, default, dev / prod value, secret or not — and ask the human in one question. `--recommend` does not answer it. The answers go into the plan. None needed → state `no new env` and go on. An env var not on the approved list that turns up later (step 3, 5) → stop and ask; do not invent it.
-- Multi-file feature → `/rk:plan` (`--recommend` when this loop has it). The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1.
+- Multi-file feature → `/rk:plan` (`--effort=high`; `--recommend` when this loop has it). The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1.
 - Bug → reproduce first: a failing unit test or a runtime call before the fix (`/rk:debug` for hard ones). Fix the root cause once in the shared code, not in the one caller that reported it.
 - One concern per loop. A plan that does two things becomes two loops.
 
@@ -71,21 +74,20 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 ## 5. Review
 Review → fix → verify → review again, until a round finds only Nice-to-have. **Max 5 rounds.** Each round:
-1. `/rk:code-review --pending` on the **whole** diff against the base (adversarial pass + the repo's written conventions). Every round reviews everything again; no fix-diff-only re-review.
-2. The intent check below.
-3. Sort the findings: Critical / Important (medium and up, `[Must fix]`) must be fixed; Nice-to-have (`[Optional]`) is not fixed by the loop and goes to the PR description and the report.
-4. No must-fix left → step 6.
-5. A must-fix that can only be fixed by changing the SPEC (behavior asked for, acceptance criteria, API contract, response shape) → do not fix it. Stop and show the human the finding, the SPEC line it conflicts with, and what happens if it stays. Also with `--recommend`.
-6. Fix the other must-fix findings in the change's own files → step 4 (the receipt is now stale) → next round.
+1. `/rk:code-review --pending --effort=high` on the **whole** diff against the base (adversarial pass + the repo's written conventions), with the original request, the step 1 reach list, the step 3 red / green test outputs and the intent check below as its spec (the reviewer reads them; it does not stash or re-run the old code) — the high-effort reviewer answers the intent check, not the main session. Every round reviews everything again; no fix-diff-only re-review.
+2. Sort the findings: Critical / Important (medium and up, `[Must fix]`) must be fixed; Nice-to-have (`[Optional]`) is not fixed by the loop and goes to the PR description and the report.
+3. No must-fix left → step 6.
+4. A must-fix that can only be fixed by changing the SPEC (behavior asked for, acceptance criteria, API contract, response shape) → do not fix it. Stop and show the human the finding, the SPEC line it conflicts with, and what happens if it stays. Also with `--recommend`.
+5. Fix the other must-fix findings in the change's own files → step 4 (the receipt is now stale) → next round.
 
 `BLOCKED` (stop, report the open findings): must-fix still left after round 5, or a finding fixed in an earlier round comes back.
 
-Intent check, against the original request (not the plan); a "no" is a must-fix:
+Intent check, answered by the reviewer against the original request (not the plan); a "no" is a must-fix:
 - Does the diff do exactly what was asked — nothing missing, nothing extra?
 - Is every behavior proven by a test that was red on the old code?
 - Is every entry of the step 1 reach list updated or proven unaffected?
 - Does code that was moved or merged keep its validation and error handling?
-- Two concerns in one diff → split into two loops.
+- Two concerns in one diff → split into two loops (a "no" here → stop as in item 4).
 
 The same correction a second time → propose turning it into a mechanical check (a lint rule, a test, a tier) as a separate change.
 
