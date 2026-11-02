@@ -1,10 +1,10 @@
 ---
 name: ef-pr-description
 description: "Generate full PR descriptions in English (default) from code changes + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed, Test plan, Rollout). Pass --lang=vi for Vietnamese. Triggers on: 'pr description', 'tạo description PR', 'write PR body', 'generate PR description', 'commit description from jira'."
-argument-hint: "<jira-link-or-card-id> [--scope=<scope>] [--lang=en|vi] [--draft]"
+argument-hint: "<jira-link-or-card-id> [--spec=<url>] [--sd=<url>] [--scope=<scope>] [--lang=en|vi] [--draft]"
 metadata:
   author: rock288
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # PR Description Generator
@@ -12,13 +12,15 @@ metadata:
 Produce a full PR description in the team's house style (see [`references/template.md`](references/template.md)) given:
 
 1. **Code changes** — the actual diff in the working tree (or a specific commit range)
-2. **Jira card link** — to extract ticket ID, title, type, parent epic
+2. **Jira card link** — to extract ticket ID, title, type, parent epic, and the SPEC + Solution design links
 
 ## Inputs
 
 | Arg | Required | Default | Notes |
 |---|---|---|---|
 | `<jira-link-or-card-id>` | yes | — | Full URL (`https://everfit.atlassian.net/browse/UP-71331`) or just the ID (`UP-71331`) |
+| `--spec=<url>` | no | resolved in step 1b | SPEC (PRD / requirements) link. Skips the lookup for this link. |
+| `--sd=<url>` | no | resolved in step 1b | Solution design link. Skips the lookup for this link. |
 | `--scope=<scope>` | no | inferred from changed paths | Conventional-commit scope, e.g. `video-workout`, `assignment`, `payment` |
 | `--lang=<en\|vi>` | no | `en` | Output language for the PR body. `en` matches the team default (see §Language); `vi` for VN-only reviewer audiences. |
 | `--draft` | no | off | Skip the "you must run tests" gate — produce a draft body even if no test results are available |
@@ -36,6 +38,18 @@ Try, in order:
    - `parent epic key` (optional)
 
 Save the resolved fields into local memory for the session so later skills (e.g. `rk:ef-branch-name`) can reuse without re-fetching.
+
+### 1b. Resolve the SPEC and Solution design links (always required)
+
+Every PR body carries both links. For each one still missing, try in order:
+
+1. The `--spec` / `--sd` flag.
+2. The card: links in its description, plus `mcp__claude_ai_Atlassian__getJiraIssueRemoteIssueLinks` (Confluence pages). Classify by title / URL: SPEC = spec, PRD, requirement, BRD; Solution design = solution design, SD, technical design, TDD.
+3. The parent epic, same lookup.
+4. The repo: a doc under `docs/` that names the card ID.
+5. Ask the human once, one `AskUserQuestion` for both missing links. Answer "none" → write `none (<reason>)` on that line.
+
+Never guess or fabricate a URL. A link found on the epic or in the repo, not on the card → mark it `⚠️` in the trailing summary.
 
 ### 2. Gather code change context
 
@@ -65,6 +79,7 @@ Use [`references/template.md`](references/template.md) verbatim as structure. Fi
 
 - **Title:** `<type>(<scope>): <CARD-ID> <one-line summary>` where `<type>` comes from the issue-type map below
 - **Ticket line:** `**Ticket:** <CARD-ID>` (add `(parent epic: <PARENT>)` if a parent epic was resolved)
+- **SPEC / Solution design lines:** always present, with the links from step 1b.
 - **Summary:** 1–3 sentences. Lead with the verb (Replaces / Adds / Fixes / Removes). State what *changes* about behavior, not what files moved.
 - **What changed:** group by subsystem (Schema / Helpers / Services / Endpoints / Middleware). Use bullet lists, link files with `` `path/to/file` `` (backticks, not raw paths). For multi-file changes use a Markdown table like the PR-16944 endpoints table.
 - **Test plan:** checkbox list. `[x]` for verified, `[ ]` for deferred. Pull test counts from the commits' messages if mentioned (e.g. "523 passing").

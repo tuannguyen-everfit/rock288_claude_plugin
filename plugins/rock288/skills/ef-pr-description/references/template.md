@@ -27,8 +27,9 @@ feat(video-workout): UP-71331 read-time library-item overlay
 Reference the new pattern vs. the old one when applicable.>
 
 **Ticket:** <CARD-ID>[ (parent epic: <PARENT-CARD-ID>)]
+**SPEC:** [<spec-title>](<spec-url>)
+**Solution design:** [<sd-title>](<sd-url>)
 **Plan:** [`<plan-doc-path>`](<plan-doc-url>)
-**Solution design:** [`<sd-path>`](<sd-url>)
 
 ## <Optional invariant / scope-guard section>
 
@@ -88,7 +89,8 @@ that verifies it.>
 ## Section rules
 
 - **Summary**: verb-first, present tense. State the *behavior change* in user/system terms, not "added file X".
-- **Ticket / Plan / Solution design**: only include lines for artifacts that actually exist. Don't fabricate a plan link.
+- **Ticket / SPEC / Solution design**: always present. A link nobody has → `none (<reason>)`, never a made-up URL.
+- **Plan**: only when a plan doc exists. Don't fabricate a plan link.
 - **Iron-law / scope-guard**: include only when the PR introduces a contract the reviewer must check (e.g. "applies only when type === 'video'"). Quote the contract in a blockquote, then explain how every entry point honours it.
 - **What changed**: group by *kind of change* (schema vs helpers vs services vs endpoints), not by file. Inside each subsection, lead each bullet with the symbol name in backticks.
 - **Tables**: prefer for endpoint lists ≥ 4 rows. Otherwise use bullets.

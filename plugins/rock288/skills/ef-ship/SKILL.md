@@ -1,10 +1,10 @@
 ---
 name: ef-ship
 description: "Commit + push the current Everfit feature branch and open a PR targeting develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>) to build the commit subject `<type>(<feature>): <CARD-ID> <subtitle>`, asks for the feature scope and a short subtitle (prompts for one when the branch has no slug so the commit + PR always carry a descriptor), pushes with upstream tracking, opens the PR, then auto-chains rk:ef-pr-description to fill the body. Triggers on: 'ship', 'commit and push', 'create PR', 'tạo PR', 'commit + PR', 'push and PR'."
-argument-hint: "[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft] [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
+argument-hint: "[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft] [--no-desc] [--spec=<url>] [--sd=<url>] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes] [--dry-run]"
 metadata:
   author: rock288
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # Ship: commit + push + open PR (Everfit flow)
@@ -35,6 +35,7 @@ All fields except `<feature>` come from the current branch name (produced by [[r
 | `--pr-summary=<text>` | no | auto-derived | One-line human-readable description of the PR, used as the initial PR body so the PR is never opened empty. If omitted, auto-derived from the resolved `<subtitle>` (`<CARD-ID> — <humanized subtitle>`). See step 8a. |
 | `--draft` | no | off | Create the PR as draft. |
 | `--no-desc` | no | off | Skip the auto-chain to `rk:ef-pr-description`. PR body left empty. |
+| `--spec=<url>` / `--sd=<url>` | no | — | SPEC and Solution design links, passed on to `rk:ef-pr-description` (which asks for any it cannot find). |
 | `--assignee=<user>` | no | `@me` | GitHub username to assign on the PR. Default assigns the current authenticated user. Pass a username to assign someone else. |
 | `--no-assign` | no | off | Skip assignment entirely. Wins over `--assignee`. |
 | `--slack` | no | off | After PR is created, post `<group> <mentor1> [<mentor2> <mentor3>]\n<PR-URL>` (URL on its own line so Slack unfurls it into a PR preview card) to a Slack channel. Default is OFF to avoid accidental notifications. **Auto-enabled** if any of `--slack-mentors`/`--slack-channel`/`--slack-group` is passed — those flags imply the user wants to post. |
@@ -192,6 +193,7 @@ gh pr edit <pr-number> --add-assignee <user>
 Unless `--no-desc` is set, invoke [[rk:ef-pr-description]] with:
 - the Jira card ID parsed in step 2
 - the PR URL captured in step 8
+- `--spec` / `--sd` when given
 
 The downstream skill handles fetching Jira context, generating the body, and updating the PR description — it expands the short `<pr-summary>` line from step 8a into the full body. If the PR already has a non-empty body, the downstream skill is responsible for the update-vs-replace decision — this skill does not gate it.
 

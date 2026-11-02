@@ -5,7 +5,7 @@ argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.11.0"
+  version: "1.12.0"
 ---
 
 # Trust Loop
@@ -35,7 +35,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Jira card → move it to **In Progress** once the branch exists (`getTransitionsForJiraIssue` → `transitionJiraIssue`). Already In Progress or later → leave it. No such transition (e.g. no sprint) → note it for the report and go on; do not pick another.
 - No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`. Writing it also adds it to `.git/info/exclude` (unless the repo tracks or ignores it): it holds this machine's commands, and step 6's `git add -A` must not ship it in the PR. Committing it for the team is the human's call, in its own commit.
 - Session artifacts: `plans/` or `docs/journals/` not ignored by the repo → add them to `.git/info/exclude` once, so plans, reports and journals stay out of the commit (`git add -A`) and of the receipt.
-- Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), unless the task already says. Defaults = `/rk:ef-ship`'s: `#backend-review-code`, `@backend-team` + `Quang Pham Minh (BE)`. With `--recommend`, take the defaults without asking. That answer (or `--recommend`) is the go-ahead for step 7.
+- Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), and the SPEC and Solution design links the PR body needs (from the card first; ask only for the missing ones, "none" is an answer), unless the task already says. Defaults = `/rk:ef-ship`'s: `#backend-review-code`, `@backend-team` + `Quang Pham Minh (BE)`. With `--recommend`, take the defaults without asking. That answer (or `--recommend`) is the go-ahead for step 7.
 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
@@ -103,7 +103,7 @@ node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -
 
 ## 7. Hand-off
 Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
-1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 3 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
+1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --spec=<url> --sd=<url> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 3 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
 2. **Record the follow-up — BEFORE anyone is asked to review.** The Slack bot drives `/rk:pr-follow-up` (review, merge, dev deploy) from this state and treats feedback older than `created_at` as already handled — a review that lands before `init` is skipped (challenger-service#297: a review bot answered 26 s before `init` and the PR sat idle). **Always** — it is not a question: without `init` the bot never sees the PR (challenger-service#280 got no follow-up because the deploy question offered "skip").
    ```bash
    node $SKILL_DIR/../pr-follow-up/scripts/deploy-signal.cjs pick     # deploy map: .claude/trust.json, else this clone's rk-trust/deploy.json
