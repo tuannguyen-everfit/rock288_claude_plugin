@@ -24,10 +24,10 @@ Templates for every message the loop posts to a review thread. Slack carries the
 
 ## 1. Review request (parent)
 ```
-<@group> <@reviewer>
+<@reviewer> <@reviewer>
 <PR url>
 ```
-- Exactly these 2 lines: the mentions, then the bare PR URL (no `[PR #n](url)`). No title, no summary, no emoji.
+- Exactly these 2 lines: the reviewers settled at intake (a group only when the human named one), then the bare PR URL (no `[PR #n](url)`). No title, no summary, no emoji.
 
 ## 2. Evidence (thread reply)
 ```
