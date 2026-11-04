@@ -6,7 +6,7 @@ priority: P2
 effort: 1h
 branch: main
 tags: [trust-loop, plan, code-review, effort]
-blockedBy: []
+blockedBy: [261103-1424-trust-loop-fresh-context-review]
 blocks: []
 created: 2026-11-02
 ---

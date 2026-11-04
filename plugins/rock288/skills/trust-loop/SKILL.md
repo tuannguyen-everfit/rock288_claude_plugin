@@ -5,7 +5,7 @@ argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.12.1"
+  version: "1.13.0"
 ---
 
 # Trust Loop
@@ -16,7 +16,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 **`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope or split, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It still stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier, the env gate (step 2), a review finding that would change the SPEC (step 5).
 
-**Effort**: the loop itself runs at `medium` (frontmatter): intake, coding, verify. The frontmatter holds for the current turn only: after a plain-text human reply the session level is back, so ask through `AskUserQuestion` to stay in the turn, or the human runs `/effort medium`. Judgement runs at `high` in subagents: `/rk:plan --effort=high` (planner) and `/rk:code-review --effort=high` (every reviewer, including the intent check).
+**Effort**: the loop itself runs at `medium` (frontmatter): intake, coding, verify. The frontmatter holds for the current turn only: after a plain-text human reply the session level is back, so ask through `AskUserQuestion` to stay in the turn, or the human runs `/effort medium`. Judgement runs at `high` in subagents: `/rk:plan --effort=high` (planner) and the review rounds, which spawn `rk:code-reviewer` agents with `effort: "high"` (step 5).
 
 **Defer first:** if the repo has its own `.claude/skills/trust-loop/` (e.g. core-foundry), stop and run that one: `/trust-loop <task>`. Its tooling is stricter than this generic loop.
 
@@ -34,7 +34,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Jira card → `/rk:ef-branch-name <card>` for the branch. Otherwise branch off the base yourself; never work on a protected branch.
 - Jira card → move it to **In Progress** once the branch exists (`getTransitionsForJiraIssue` → `transitionJiraIssue`). Already In Progress or later → leave it. No such transition (e.g. no sprint) → note it for the report and go on; do not pick another.
 - No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`. Writing it also adds it to `.git/info/exclude` (unless the repo tracks or ignores it): it holds this machine's commands, and step 6's `git add -A` must not ship it in the PR. Committing it for the team is the human's call, in its own commit.
-- Session artifacts: `plans/` or `docs/journals/` not ignored by the repo → add them to `.git/info/exclude` once, so plans, reports and journals stay out of the commit (`git add -A`) and of the receipt.
+- Session artifacts: `plans/`, `docs/journals/` or `.claude/agent-memory/` (subagent memory) not ignored by the repo → add them to `.git/info/exclude` once, so plans, reports, journals and agent memory stay out of the commit (`git add -A`) and of the receipt.
 - Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), and the SPEC and Solution design links the PR body needs (from the card first; ask only for the missing ones, "none" is an answer), unless the task already says. Defaults: `#backend-review-code`, `Quang Pham Minh (BE)` (`<@U0BQ2JFBKGD>`) + `Huy (BE)` (`<@U0142122SJD>`). With `--recommend`, take the defaults without asking. That answer (or `--recommend`) is the go-ahead for step 7.
 
 ## 1. Pre-flight
@@ -73,21 +73,19 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Write reports and notes **before** the final verify: a new untracked file changes the fingerprint.
 
 ## 5. Review
-Review → fix → verify → review again, until a round finds only Nice-to-have. **Max 5 rounds.** Each round:
-1. `/rk:code-review --pending --effort=high` on the **whole** diff against the base (adversarial pass + the repo's written conventions), with the original request, the step 1 reach list, the step 3 red / green test outputs and the intent check below as its spec (the reviewer reads them; it does not stash or re-run the old code) — the high-effort reviewer answers the intent check, not the main session. Every round reviews everything again; no fix-diff-only re-review.
-2. Sort the findings: Critical / Important (medium and up, `[Must fix]`) must be fixed; Nice-to-have (`[Optional]`) is not fixed by the loop and goes to the PR description and the report.
-3. No must-fix left → step 6.
-4. A must-fix that can only be fixed by changing the SPEC (behavior asked for, acceptance criteria, API contract, response shape) → do not fix it. Stop and show the human the finding, the SPEC line it conflicts with, and what happens if it stays. Also with `--recommend`.
-5. Fix the other must-fix findings in the change's own files → step 4 (the receipt is now stale) → next round.
+Each round runs in fresh subagents that never see this session: they get the frozen brief and the diff, nothing else. Review → fix → verify → review again, until a round finds only Nice-to-have. **Max 5 rounds.** The brief, the prompts, the intent check and the finding format: `references/review-round.md`. Do not call `/rk:code-review` here: its Stage 0 and adjudication would run in this session.
 
-`BLOCKED` (stop, report the open findings): must-fix still left after round 5, or a finding fixed in an earlier round comes back.
+Before round 1 (after the step 4 receipt passes): write the brief to `git rev-parse --path-format=absolute --git-path rk-trust/review-brief.md`, with Bash, not Write / Edit (`.git/` paths can prompt even in bypass mode) — the original request verbatim, the card's AC and SPEC / SD links, the step 1 reach list, the step 3 red / green outputs, the base as a merge-base SHA, the branch. A new run writes it fresh and deletes the round log; a resume (after `BLOCKED` or a human answer) or a `/rk:pr-follow-up` fix keeps both, records the human's answer or the new request, and recomputes the base (`references/review-round.md` §1, entries). After this only the follow-up requests, `## Red / green` (a test added by a fix), `## Disputed` and `## Settled` grow. Both files sit in the git dir: the receipt stays valid and nothing gets committed.
 
-Intent check, answered by the reviewer against the original request (not the plan); a "no" is a must-fix:
-- Does the diff do exactly what was asked — nothing missing, nothing extra?
-- Is every behavior proven by a test that was red on the old code?
-- Is every entry of the step 1 reach list updated or proven unaffected?
-- Does code that was moved or merged keep its validation and error handling?
-- Two concerns in one diff → split into two loops (a "no" here → stop as in item 4).
+Each round:
+1. In one message, spawn two new `rk:code-reviewer` agents with `effort: "high"`: **quality** (Stage 0, conventions, the intent check) and **adversarial**. Prompts from `references/review-round.md`, only the placeholders filled: no line about this round, earlier rounds or what was fixed. Both review the whole diff against the base, every round; no fix-diff-only re-review.
+2. Merge the two lanes by `file:line` + defect and append them to the round log `rk-trust/review-rounds.md` in the git dir (only this session reads it); the dispositions follow once items 5–6 are done.
+3. A disputed finding ruled `UPHELD`, or a finding the round log shows fixed comes back as `[Must fix]` → `BLOCKED`: stop; do not fix it to keep the loop going.
+4. No `[Must fix]` and `## Disputed` empty (a withdrawn dispute moves to `## Settled`; one no lane ruled stays open) → step 6. `[Optional]` and the settled disputes go to the PR description and the report; the loop does not fix them.
+5. A `[Must fix]` marked `spec-conflict: yes` → do not fix it. Stop and show the human the finding, the SPEC line it conflicts with, and what happens if it stays. Also with `--recommend`. "Keep it" goes into the brief's `## Settled` verbatim, so the next round does not raise it again; an answer that changes the behavior goes under `## Request` as a follow-up.
+6. Every other `[Must fix]` is fixed in the change's own files; a test added for it goes into the brief's `## Red / green`. Believe one is wrong? Never drop it: append it to the brief's `## Disputed` with the evidence (`file:line`, test output). Code changed → step 4 (the receipt is now stale) → next round; only disputes → next round.
+
+`BLOCKED` (stop, report the open findings): item 3; round 5 ends with a `[Must fix]` or an open dispute (a fix after round 5 would ship unreviewed). The cap counts rounds since the last entry (a new run, a resume, a follow-up fix); a step 4 → step 5 return is not an entry.
 
 The same correction a second time → propose turning it into a mechanical check (a lint rule, a test, a tier) as a separate change.
 
@@ -125,7 +123,7 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    Intent: <what was asked, what the diff does>
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
-   Review: <n> rounds · fixed <k> · optional left <m>
+   Review: <n> rounds · fixed <k> · disputes settled <d> · optional left <m>
    Decided by recommendation: <each pick, one line; only with --recommend>
    Open questions: <...>
    ```
