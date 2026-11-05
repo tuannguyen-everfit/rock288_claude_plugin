@@ -5,7 +5,7 @@ argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.14.0"
+  version: "1.14.1"
 ---
 
 # Trust Loop
@@ -102,7 +102,7 @@ node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -
 ## 7. Hand-off
 Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
 1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --spec=<url> --sd=<url> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
-2. **Review request**: the channel and reviewers settled at intake; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged, deployed) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR. No follow-up state is recorded: review, merge and the dev deploy stay with the human, who can run `/rk:pr-follow-up` by hand.
+2. **Review request**: the channel and reviewers settled at intake; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged, deployed) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR. The follow-up is not set up here: the Slack bot sees the review thread, records the follow-up state itself and runs `/rk:pr-follow-up` (review, merge, dev deploy). Do not run `follow-up-state.cjs`, ask for deploy pipelines or start `/loop` from this session.
 3. **Jira** (only when the loop implements a card): move the card to **In Review**. Do not log work: the human logs it with `/rk:ef-logwork`. Do not close the card while acceptance criteria outside this PR are open.
 4. **Report**:
    ```
