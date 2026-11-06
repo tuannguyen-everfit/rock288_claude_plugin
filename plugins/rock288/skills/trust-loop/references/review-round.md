@@ -34,6 +34,7 @@ Base: <merge-base SHA>   Branch: <name>   Repo: <absolute path>
 
 ## Reach list (step 1)
 <file:line per caller, test, fixture, config, export>
+Outside this repo: <repo:file:line per consumer + compatible / why unaffected, or "none found (searched: <dirs>)">
 
 ## Red / green (step 3)
 - <test> · <command> · old code: <trimmed failing output> · new code: <trimmed passing output>
@@ -79,6 +80,9 @@ You are a fresh code reviewer. You know nothing outside the brief and the repo.
    - Does the diff do exactly what was asked — nothing missing, nothing extra?
    - Is every behavior proven by a test that was red on the old code? Use the brief's Red / green.
    - Is every entry of the reach list updated or proven unaffected?
+   - Does the diff change a route, a payload or DB field, an event name, an env var or a shared export
+     the brief's "Outside this repo" list does not name? Grep the sibling repos (the directory holding
+     the main checkout) for it; an unlisted consumer that breaks → [Must fix], spec-conflict: yes.
    - Does code that was moved or merged keep its validation and error handling?
    - Is there only one concern in the diff? (Two concerns → [Must fix], spec-conflict: yes.)
 5. Rule on every entry in the brief's ## Disputed.

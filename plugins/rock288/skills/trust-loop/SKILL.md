@@ -5,7 +5,7 @@ argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.14.1"
+  version: "1.15.0"
 ---
 
 # Trust Loop
@@ -40,6 +40,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
 - **Reach list**: every caller of a function whose signature, return value or behavior will change (grep, including files you would not otherwise touch), plus the tests, fixtures, config and exports that must follow. That list is the scope; anything outside it is extra.
+- **Reach outside the repo**: the names this change alters that another repo can depend on — an HTTP route and its request / response fields, an event / queue / topic name and its payload fields, a DB collection and its fields, an env var name, an export of a shared package. Grep each (fixed string, the qualified form first: route path, `collection.field`, event name) in the sibling repos: the git repos in the directory that holds the MAIN checkout (`git rev-parse --path-format=absolute --git-common-dir` → its parent is the main checkout → that one's parent; a linked worktree's own parent is not it), skipping `node_modules`, `dist`, `.git` and vendored code. Read only: never edit there. Record `repo:file:line` per consumer, or `none found (searched: <dirs>)`; a bare name too generic to grep (`status`, `id`) → say so instead of listing the flood. A consumer that would **break** (a field removed, renamed or retyped, its meaning changed, a new required input) → `BLOCKED` with the list, also with `--recommend`: the other repo is its own loop. Compatible (additive, optional) → keep the list for the brief and the PR, and go on.
 - E2e tests only where the repo already has an e2e suite (an `e2e/` dir or `*-e2e` project, a `make e2e` / `nx e2e` target, an `e2e` tier). None → do not write or scaffold e2e: prove the change with unit tests plus a runtime call when one is possible, and put `no e2e suite in this repo` under "Not verified".
 - **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A tier scoped to the change (`{files}` / `{go_packages}` placeholders, `nx affected`, `git diff` lint) runs nothing on a clean base: that is a pass, not a gap — do not run the full suite by hand to make up for it. A **required** tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it. An optional tier already failing (e.g. e2e checks red on the base) blocks nothing: write down which checks fail, so step 4 can show the change adds none, and go on.
 - Cross-boundary change (two services, API + client, schema + reader)? Write the contract and the order both sides change in.
@@ -101,7 +102,7 @@ node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -
 
 ## 7. Hand-off
 Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
-1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --spec=<url> --sd=<url> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, and what is not in this PR.
+1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --spec=<url> --sd=<url> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, an **Impact** section (the consumers outside the repo from step 1 and why each still works, or `no consumer outside this repo (searched: <dirs>)`), and what is not in this PR.
 2. **Review request**: the channel and reviewers settled at intake; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence, review round, merged, deployed) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR. The follow-up is not set up here: the Slack bot sees the review thread, records the follow-up state itself and runs `/rk:pr-follow-up` (review, merge, dev deploy). Do not run `follow-up-state.cjs`, ask for deploy pipelines or start `/loop` from this session.
 3. **Jira** (only when the loop implements a card): move the card to **In Review**. Do not log work: the human logs it with `/rk:ef-logwork`. Do not close the card while acceptance criteria outside this PR are open.
 4. **Report**:
@@ -110,6 +111,7 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    Intent: <what was asked, what the diff does>
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
+   Impact: <n> consumers outside the repo · <repos>, or none (searched: <dirs>)
    Review: <n> rounds · fixed <k> · disputes settled <d> · optional left <m>
    Decided by recommendation: <each pick, one line; only with --recommend>
    Open questions: <...>
