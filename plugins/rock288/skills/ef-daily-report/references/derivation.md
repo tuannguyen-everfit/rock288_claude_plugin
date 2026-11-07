@@ -21,9 +21,18 @@ account timezone. `--date=<YYYY-MM-DD>` overrides (default = yesterday VN); the 
 
 ## JQL queries
 
-**DONE + PROGRESS CHANGED** — coarse pre-filter, widened ±1 day to cover the tz skew, then
-bucket precisely (below). **Must also be assigned to me** — a card I logged work on (or
-created) but that is assigned to someone else is excluded:
+Both are coarse pre-filters, widened to cover the tz skew, then bucketed precisely (below).
+**Both must be assigned to me** — a card I logged work on (or created) but that is assigned to
+someone else is excluded.
+
+**DONE YESTERDAY** — cards that entered QA Ready around the target day:
+```
+assignee = currentUser() AND status CHANGED TO ("QA Ready") DURING ("<date-1>", "<date+2>")
+```
+`fields: ["summary","status","parent"]`. Verified 2026-11-05: returns the cards moved in the
+window (the DURING dates run in the account tz, hence the widening).
+
+**PROGRESS CHANGED** — cards I logged time on around the target day:
 ```
 worklogAuthor = currentUser() AND assignee = currentUser()
   AND worklogDate >= "<date-1>" AND worklogDate < "<date+2>"
@@ -46,23 +55,40 @@ Use `currentUser()` by default. Only pass an explicit `accountId` (from config
 
 ## Precise VN-day bucketing (the accuracy step)
 
-The widened JQL returns *candidate* cards. For each candidate, fetch its worklog
+### QA Ready moves → DONE YESTERDAY
+
+For each DONE candidate: `getJiraIssue { fields: ["status","summary","parent"], expand:
+"changelog" }` (verified 2026-11-05 on CHAL-1003). In `changelog.histories[]` keep the
+histories that hold an item `field == "status"` with `toString == "QA Ready"`; convert each
+history `created` (e.g. `2026-11-05T00:58:17.445-0800`) to Asia/Saigon. The card is **DONE**
+when any of them falls on `--date` (`movedTarget = true`). If `changelog.total >
+changelog.maxResults`, the inline list is truncated — read the rest before deciding (discover
+the issue-changelog read on the Atlassian server).
+
+Only the move matters: the card is DONE even with no worklog that day, and even if it left QA
+Ready afterwards (that is the next day's report).
+
+### Worklogs → PROGRESS CHANGED
+
+The widened worklog JQL returns *candidate* cards. For each candidate, fetch its worklog
 (`getJiraIssue` with `worklog` field), then for every worklog entry authored by the user:
 1. Read `started` (carries a tz offset, e.g. `2026-05-31T16:20:06-0700`).
 2. Convert to Asia/Saigon (UTC+7).
 3. Keep the entry only if its VN calendar date == target `--date`.
 
 `loggedTarget` (per card) = Σ `timeSpentSeconds` of the kept entries. A card belongs in
-DONE/PROGRESS **only if `loggedTarget > 0`** after this filter. This is what makes `--date`
-mean "the VN working day" regardless of the Jira account tz.
+PROGRESS CHANGED **only if `loggedTarget > 0` and `movedTarget` is false** (a card moved to QA
+Ready on `--date` is DONE only). `loggedAfter` (per card) = Σ `timeSpentSeconds` of worklogs by
+**any** author started after the window — it only matters for a past `--date`; read it with
+`executeRead listJiraIssueWorklogs { issueIdOrKey, startedAfter: <window end ms> }` (the
+inline `worklog` list caps at 20). This is what
+makes `--date` mean "the VN working day" regardless of the Jira account tz.
 
 ## Per-card fetch (`getJiraIssue`)
 
 Pull:
 - `fields.summary` → **Task name**
 - `fields.parent.fields.summary` (or Epic link summary) → **Product Item Name**
-- `fields.status` → 100% gate: `name` starts with `QA` or `Q&A` (QA Ready, QA Completed, Q&A …) or
-  `statusCategory.key == "done"`
 - `fields.timetracking.timeSpentSeconds` → `timeSpent`
 - `fields.timetracking.remainingEstimateSeconds` → `remaining_now`
 - `fields.worklog.worklogs[]` → dated entries `{ started, timeSpentSeconds, comment }`
@@ -72,25 +98,21 @@ Pull:
 
 ## Progress %
 
-```
-progress% = timeSpent / (timeSpent + remaining_now)
-```
-- `100%` **only** when the card has reached QA: status name starts with `QA` / `Q&A`
-  (case-insensitive — `QA Ready`, `QA Completed`, `Q&A`) or status category is Done
-  (`Done` / `Closed` / `Resolved`).
-- Any other status (`In Progress`, `In Review`, `Need Review`, `To Do` …) → **capped at 90%**:
-  `min(progress%, 90%)`. `remaining_now == 0` there prints `90%`, never `100%` — dev work is
-  not finished until QA can pick it up. The cap applies to `before%` and `now%` alike.
+- **DONE YESTERDAY** → always `100%` (the card reached QA Ready that day). No time math.
+- **PROGRESS CHANGED** → from time tracking, **capped at 90%**: the card was not finished on
+  `--date`, whatever its status is now (it may have reached QA Ready later). `remaining_now == 0`
+  prints `90%`, never `100%`. The cap applies to `before%` and `now%` alike.
 - `n/a` only when **both** `timeSpent == 0` and `remaining_now == 0` → print
   `Progress: n/a (no time tracked)` and skip the delta for that card.
 
 ## Delta (no state file — reconstruct from dated worklogs)
 
 ```
-loggedTarget = Σ timeSpentSeconds of worklog entries bucketed into the VN target day
-before% = (timeSpent_total − loggedTarget) / (timeSpent_total + remaining_now)
-now%    =  timeSpent_total                 / (timeSpent_total + remaining_now)
-delta   =  loggedTarget / (timeSpent_total + remaining_now)
+loggedTarget = Σ timeSpentSeconds of my worklog entries bucketed into the VN target day
+spentAtEnd   = timeSpent_total − loggedAfter          (time spent by the end of --date)
+denominator  = timeSpent_total + remaining_now
+before% = min((spentAtEnd − loggedTarget) / denominator, 90%)
+now%    = min( spentAtEnd                 / denominator, 90%)
 ```
 
 Denominator is constant because logging time is assumed to decrement remaining 1:1
@@ -106,18 +128,18 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 |---|---|
 | Product Item Name | card Epic/parent `summary` (fallback: card's own summary, or "Unassigned item") |
 | Task name | card `summary` + linked card ID `[UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX)` |
-| Progress 100% | status `QA*` / `Q&A*` or category Done only; every other status caps at 90% |
-| Reason (PROGRESS CHANGED) | `logged <Xh Ym>, <status>` (e.g. `logged 3h30m, moved to QA READY`). Append the worklog comment if present. |
+| Progress 100% | DONE YESTERDAY only (moved to QA Ready on `--date`); PROGRESS CHANGED caps at 90% |
+| Reason (PROGRESS CHANGED) | `logged <Xh Ym>, <status>` (e.g. `logged 3h30m, In Review`). Append the worklog comment if present. |
 | Remaining (text) | if not 100%: derive from `remaining_now` (e.g. `~Xh remaining`); append latest worklog comment if present |
 
 ## Section assembly rules
 
-- **DONE YESTERDAY** — **only cards at 100%** (QA Ready or later, see Progress %), grouped
-  by Product Item. Each card: bullet with task name + `Progress: 100%`. A card that logged
-  time but is below 100% goes to PROGRESS CHANGED only, with its `Remaining:` line there.
-- **PROGRESS CHANGED** — every card where `loggedTarget > 0` **and `now% < 100%`**, with its
-  `before% → now%` delta. A card that reached 100% is listed in DONE YESTERDAY only, never in
-  both sections. Print `None` only when no card below 100% logged time on the target day.
+- **DONE YESTERDAY** — **cards moved to QA Ready on `--date`** (`movedTarget`), grouped by
+  Product Item. Each card: bullet with task name + `Progress: 100%`. Logged time is not
+  required.
+- **PROGRESS CHANGED** — every card where `loggedTarget > 0` **and not `movedTarget`**, with
+  its `before% → now%` delta. A card that logged time and moved to QA Ready the same day is in
+  DONE YESTERDAY only, never in both sections. Print `None` only when no such card exists.
   - `now% > before%` → `Progress: X% → Y%` + `Reason: logged <time>, <status>` (no comment needed)
     + `Remaining:` derived from `remaining_now` (+ comment if any).
   - `now% == before%` (logged time but % flat, e.g. remaining grew) → `Progress: Still X%` +
@@ -143,7 +165,11 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 
 ## Edge cases
 
-- No worklogs in window → DONE YESTERDAY and PROGRESS CHANGED both `None`.
+- No QA Ready move on `--date` → DONE YESTERDAY `None`; no worklog on `--date` → PROGRESS
+  CHANGED `None`.
+- Card moved to QA Ready twice on `--date` (QA Failed and back) → listed once.
+- Card already in QA Ready before `--date` that logged time on `--date` (a fix after QA) → not
+  moved that day → PROGRESS CHANGED, capped at 90%.
 - Card with no Epic/parent → group under its own summary (or "Unassigned item").
 - `--date` crossing a weekend → still a single-day window; user can widen via repeated runs.
 - A card appearing in both PROGRESS CHANGED and the plan queries → list it in PROGRESS for

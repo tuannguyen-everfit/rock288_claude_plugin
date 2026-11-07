@@ -1,10 +1,10 @@
 ---
 name: ef-daily-report
-description: "Generate an Everfit daily standup report from Jira worklogs and post it as a reply into a Slack thread you provide. Pulls cards you logged work on the target date (DONE / PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY, max 5), derives progress % from time tracking, then drafts the report for your review before replying into the thread. Triggers on: 'daily report', 'standup', 'daily', 'EOD report', 'báo cáo ngày', 'wrap up'."
+description: "Generate an Everfit daily standup report from Jira worklogs and post it as a reply into a Slack thread you provide. Pulls cards you moved to QA Ready on the target date (DONE) and cards you logged work on that day but did not finish (PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY, max 5), derives progress % from time tracking, then drafts the report for your review before replying into the thread. Triggers on: 'daily report', 'standup', 'daily', 'EOD report', 'báo cáo ngày', 'wrap up'."
 argument-hint: "[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack] [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]"
 metadata:
   author: rock288
-  version: "2.3.0"
+  version: "2.4.0"
 ---
 
 # Daily Report
@@ -22,7 +22,7 @@ report, and posts to Slack.
 | Flag | Default | Effect |
 |---|---|---|
 | `<slack-thread-url>` (positional) or `--thread=<url>` | — | The Slack message/thread URL to reply into. Channel + thread_ts are parsed from the URL. Required to post (omit only with `--no-slack`/`--dry-run`). |
-| `--date=<YYYY-MM-DD>` | yesterday | The day to pull worklogs for (the "yesterday" anchor). |
+| `--date=<YYYY-MM-DD>` | yesterday | The VN day the report covers (the "yesterday" anchor): its QA Ready moves feed DONE, its worklogs feed PROGRESS CHANGED. |
 | `--no-slack` | off | Print the report, do not post to Slack. |
 | `--platform=<...>` | config | Override the Platform line (`Backend / Web / Android / iOS / QA / BA`). |
 | `--blocker=<text>` | None | Fill the Blocker field without prompting. |
@@ -45,7 +45,7 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 
 [Product Item Name]
 - [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
-  - Progress: 100%                ← DONE YESTERDAY holds 100% cards only
+  - Progress: 100%                ← DONE YESTERDAY = cards moved to QA Ready on --date
 
 **PROGRESS CHANGED**
 
@@ -53,7 +53,7 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 - [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
   - Progress: X% → Y%
   - Reason: [cause]
-  - Remaining: [what is left]     ← PROGRESS CHANGED holds < 100% cards only
+  - Remaining: [what is left]     ← PROGRESS CHANGED = worked on --date, not moved to QA Ready that day
 
 **PLAN FOR TODAY**
 
@@ -73,8 +73,8 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 > (step 4) and the Slack post (step 5). The `**bold**` headers convert to Slack `*bold*` via the
 > `content_type: text/markdown` backend, and degrade gracefully on manual paste.
 
-**Header date = today** (posting day, Asia/Saigon). `--date` only selects which day's worklogs
-feed DONE / PROGRESS CHANGED — it does NOT change the header.
+**Header date = today** (posting day, Asia/Saigon). `--date` only selects which day's status
+moves and worklogs feed DONE / PROGRESS CHANGED — it does NOT change the header.
 
 Empty section → print `None`. If a PROGRESS CHANGED card logged time but the % didn't move,
 use a 2-space-indented `- Progress: Still X%` with a **mandatory** `- Reason:` (blocker/slowdown).
@@ -100,17 +100,19 @@ for `name` + `platform`, write the file, continue. Subsequent runs load silently
 Follow [`references/derivation.md`](references/derivation.md) exactly:
 - **Only cards assigned to me** — both queries require `assignee = currentUser()`. A card I
   logged work on (or created) but that is assigned to someone else is excluded.
-- **`--date` is a Vietnam (Asia/Saigon) calendar day.** JQL `worklogDate` runs in the Jira
-  account tz (LA, ~14h behind), so query a **widened** window (`worklogDate >= date-1 AND <
-  date+2`) as a coarse pre-filter, then **bucket each worklog `started` converted to VN** and
-  keep only entries whose VN date == `--date`. `loggedTarget` = Σ of those.
-- `getJiraIssue` per card → progress % = `timeSpent / (timeSpent + remaining)`; reconstruct the
-  `before% → now%` delta from `loggedTarget` (no state file).
-- **100% only from `QA Ready` on** (`QA*` / `Q&A*` statuses, or category Done). Any other
-  status caps at **90%**, even with `remaining == 0`.
-- **DONE YESTERDAY = only cards at 100%.** A card below 100% never goes there.
-- **PROGRESS CHANGED = every card that logged time on the target day and is still below 100%**,
-  delta included. A card at 100% goes to DONE YESTERDAY only — never in both sections.
+- **`--date` is a Vietnam (Asia/Saigon) calendar day.** JQL dates run in the Jira account tz
+  (LA, ~14h behind), so every JQL is a **widened** coarse pre-filter (`date-1 .. date+2`); the
+  precise filter converts each timestamp to VN and keeps only those whose VN date == `--date`.
+- **DONE YESTERDAY = cards moved to `QA Ready` on `--date`** — a status-changelog entry
+  `→ QA Ready` whose `created` (VN) falls on `--date`. Worklogs play no part: a card moved
+  that day with no time logged that day is still DONE. Always `Progress: 100%`.
+- **PROGRESS CHANGED = cards with a worklog on `--date` that were NOT moved to QA Ready that
+  day** — work done, not finished. Never in both sections: a card that logged time and moved to
+  QA Ready the same day is DONE only. A card moved to QA Ready **after** `--date` is still
+  PROGRESS CHANGED for `--date`.
+- Progress % (PROGRESS CHANGED only) = `spentAtEnd / (timeSpent + remaining)`, where
+  `spentAtEnd` drops worklogs started after `--date`; delta from `loggedTarget` (no state file).
+  Capped at **90%** — the card was not finished that day.
 - **PLAN FOR TODAY = my `In Progress` cards, then my `To Do` cards, max 5** (prioritize the epics of today's work, then
   most recently updated; mention in the draft how many were left out).
 - **Worklog comments are optional** — the delta comes from logged time alone. `Reason` =
