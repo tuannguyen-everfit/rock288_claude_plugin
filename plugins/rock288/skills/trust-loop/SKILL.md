@@ -75,7 +75,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Write reports and notes **before** the final verify: a new untracked file changes the fingerprint.
 
 ## 5. Review
-Each round runs in fresh subagents that never see this session: they get the frozen brief and the diff, nothing else. Review → fix → verify → review again, until a round finds only Nice-to-have. **Max 5 rounds.** The brief, the prompts, the intent check and the finding format: `references/review-round.md`. Do not call `/rk:code-review` here: its Stage 0 and adjudication would run in this session.
+Each round runs in fresh subagents that never see this session: they get the frozen brief and the diff, nothing else. Review → fix → verify → review again, until a round leaves nothing to fix: no `[Must fix]`, and every `[Optional]` kept with a reason (`references/optional-triage.md`). **Max 5 rounds.** The brief, the prompts, the intent check and the finding format: `references/review-round.md`. Do not call `/rk:code-review` here: its Stage 0 and adjudication would run in this session.
 
 Before round 1 (after the step 4 receipt passes): write the brief to `git rev-parse --path-format=absolute --git-path rk-trust/review-brief.md`, with Bash, not Write / Edit (`.git/` paths can prompt even in bypass mode) — the original request verbatim, the card's AC and SPEC / SD links, the step 1 reach list, the step 3 red / green outputs, the base as a merge-base SHA, the branch. A new run writes it fresh and deletes the round log; a resume (after `BLOCKED` or a human answer) or a `/rk:pr-follow-up` fix keeps both, records the human's answer or the new request, and recomputes the base (`references/review-round.md` §1, entries). After this only the follow-up requests, `## Red / green` (a test added by a fix), `## Disputed` and `## Settled` grow. Both files sit in the git dir: the receipt stays valid and nothing gets committed.
 
@@ -83,9 +83,9 @@ Each round:
 1. In one message, spawn two new `rk:code-reviewer` agents with `effort: "high"`: **quality** (Stage 0, conventions, the intent check) and **adversarial**. Prompts from `references/review-round.md`, only the placeholders filled: no line about this round, earlier rounds or what was fixed. Both review the whole diff against the base, every round; no fix-diff-only re-review.
 2. Merge the two lanes by `file:line` + defect and append them to the round log `rk-trust/review-rounds.md` in the git dir (only this session reads it); the dispositions follow once items 5–6 are done.
 3. A disputed finding ruled `UPHELD`, or a finding the round log shows fixed comes back as `[Must fix]` → `BLOCKED`: stop; do not fix it to keep the loop going.
-4. No `[Must fix]` and `## Disputed` empty (a withdrawn dispute moves to `## Settled`; one no lane ruled stays open) → step 6. `[Optional]` and the settled disputes go to the PR description and the report; the loop does not fix them.
+4. Triage every `[Optional]` by `references/optional-triage.md`: **fix** or **keep** with a reason. No `[Must fix]`, no optional marked fix, and `## Disputed` empty (a withdrawn dispute moves to `## Settled`; one no lane ruled stays open) → step 6. The kept optionals with their reasons and the settled disputes go to the PR description and the report.
 5. A `[Must fix]` marked `spec-conflict: yes` → do not fix it. Stop and show the human the finding, the SPEC line it conflicts with, and what happens if it stays. Also with `--recommend`. "Keep it" goes into the brief's `## Settled` verbatim, so the next round does not raise it again; an answer that changes the behavior goes under `## Request` as a follow-up.
-6. Every other `[Must fix]` is fixed in the change's own files; a test added for it goes into the brief's `## Red / green`. Believe one is wrong? Never drop it: append it to the brief's `## Disputed` with the evidence (`file:line`, test output). Code changed → step 4 (the receipt is now stale) → next round; only disputes → next round.
+6. Every other `[Must fix]`, and every `[Optional]` the triage marks fix, is fixed in the change's own files; a test added for it goes into the brief's `## Red / green`. Believe one is wrong? Never drop it: append it to the brief's `## Disputed` with the evidence (`file:line`, test output). Code changed → step 4 (the receipt is now stale) → next round; only disputes → next round.
 
 `BLOCKED` (stop, report the open findings): item 3; round 5 ends with a `[Must fix]` or an open dispute (a fix after round 5 would ship unreviewed). The cap counts rounds since the last entry (a new run, a resume, a follow-up fix); a step 4 → step 5 return is not an entry.
 
@@ -113,7 +113,7 @@ Runs right after the commit when the hand-off was settled at intake; otherwise c
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
    Impact: <n> consumers outside the repo · <repos>, or none (searched: <dirs>)
-   Review: <n> rounds · fixed <k> · disputes settled <d> · optional left <m>
+   Review: <n> rounds · fixed <k> (optional <o>) · disputes settled <d> · optional kept <m>, each with its reason
    Decided by recommendation: <each pick, one line; only with --recommend>
    Open questions: <...>
    ```

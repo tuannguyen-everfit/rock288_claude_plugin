@@ -159,6 +159,6 @@ Round log: `$(git rev-parse --git-path rk-trust/review-rounds.md)`, written with
 ## Entry — new|resume|follow-up
 ## Round <n>
 <the merged finding and DISPUTE lines>
-- path:line — defect → fixed | fixed (human) | disputed | withdrawn
+- path:line — defect → fixed | fixed (human) | disputed | withdrawn | kept (<optional-triage reason>)
 ```
-Round `n` counts from the last `## Entry`; the 5-round cap is per entry. Main uses the log to catch a finding marked `fixed` that a later round reports again as `[Must fix]` (same defect at the same or the moved line; `-` lines match by defect) → `BLOCKED`. The `withdrawn` lines (settled disputes) go to the report and the PR description.
+Round `n` counts from the last `## Entry`; the 5-round cap is per entry. Main uses the log to catch a finding marked `fixed` that a later round reports again as `[Must fix]` (same defect at the same or the moved line; `-` lines match by defect) → `BLOCKED`. The `withdrawn` lines (settled disputes) and the `kept` lines go to the report and the PR description.

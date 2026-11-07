@@ -47,7 +47,7 @@ node $SKILL_DIR/scripts/pr-review-state.cjs <PR> --since <since, if not null>
 | `phase` | Next |
 | --- | --- |
 | `in_review`, no `new_feedback` | Nothing to do (idle ≥ 24 h → the idle rule). Schedule the next run. |
-| `approved` (approval on the current head) | Step 2, even with open threads: merge first, answer them after |
+| `approved` (approval on the current head) | Step 1 when an open thread holds an `[Optional]` that `../trust-loop/references/optional-triage.md` marks fix; otherwise step 2, even with open threads: merge first, answer them after |
 | `changes_requested`, or `new_feedback` / `open_threads` awaiting our reply | Step 1 |
 | `merged` | Step 3 (state `phase` still `in_review`/`approved` → record the merge first, as in step 2.3) |
 | `closed` | Report it, `set phase=done`, stop the loop. |
@@ -60,6 +60,7 @@ One action per new item, at most one reply per thread per run.
 | Kind | Action | Reply |
 | --- | --- | --- |
 | Valid code change | Fix on the PR branch through trust-loop steps 3–6 (implement, verify → receipt, review, commit), then `git push`. One concern per commit. | "Fixed in `<sha>`" + the test that covers it |
+| `[Optional]` / suggestion | Triage it by `../trust-loop/references/optional-triage.md`: **fix** → as a valid code change (before the merge, even on an approved PR); **keep** → no code change. | Fix: "Fixed in `<sha>`". Keep: the reason from the triage. |
 | Question | No code change. | The answer, with `file:line` or test evidence |
 | Wrong or out of scope | No code change; a valid point outside this PR → suggest a follow-up ticket. | The reason. Leave the thread open. |
 | Reverses a decision tests or runtime evidence prove | Keep it unless the reviewer brings new evidence. | The evidence |
@@ -76,7 +77,7 @@ One action per new item, at most one reply per thread per run.
 - `up_to_date`: behind the base → merge the base in, verify again (the receipt is stale), push.
 - `ci_green`: a **required** check is red or still running → wait (running) or step 1 (red). Non-required checks are listed but do not block (e.g. challenger-service's stg CodeBuild triggers fail on every PR).
 - `no_changes_requested`: step 1.
-- Open threads do not hold the merge: once the current head is approved, merge, and answer the threads waiting on us afterwards (a code change then goes in a follow-up PR).
+- Open threads do not hold the merge, except an `[Optional]` the triage marks fix: fix it first (the push needs a new approval). Otherwise, once the current head is approved, merge, and answer the threads waiting on us afterwards (a code change then goes in a follow-up PR).
 
 When `merge_ready` is true:
 1. The PR head is the commit you verified: the worktree's branch is at `head` with a clean tree.
