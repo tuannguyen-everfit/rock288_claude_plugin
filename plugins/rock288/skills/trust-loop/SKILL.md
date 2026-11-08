@@ -5,7 +5,7 @@ argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.15.2"
+  version: "1.15.3"
 ---
 
 # Trust Loop
@@ -66,6 +66,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
   git stash apply <sha> && git stash drop <its stash@{n}>
   <run the new tests>   # must PASS
   ```
+- **Self-check** before step 4, also in a `/rk:pr-follow-up` fix round: run `$SKILL_DIR/../cook/references/pre-review-self-check.md` on the diff against step 1's reach list and the plan's Reach & Contracts when there is one. `/rk:cook` already ran it → skip. Any fix → re-run the new tests.
 
 ## 4. Verify and self-correct
 - `node $SKILL_DIR/scripts/verify-change.cjs` runs every tier in `.claude/trust.json` (scoped tiers only on the changed files: `references/trust-config.md`) and writes a receipt for the exact working tree (logs under the git dir; the path is printed). `waiting: verify-change is running for <repo>` = another session holds the machine lock; let it wait, do not kill it or run the tiers by hand.
