@@ -5,7 +5,7 @@ argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.15.1"
+  version: "1.15.2"
 ---
 
 # Trust Loop
@@ -40,7 +40,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
-- **Reach list**: every caller of a function whose signature, return value or behavior will change (grep, including files you would not otherwise touch), plus the tests, fixtures, config and exports that must follow. That list is the scope; anything outside it is extra.
+- **Reach list**: per `../plan/references/reach-and-contracts.md` block 2 — every caller of changed behavior (grep, including files you would not otherwise touch), producers/consumers, other entry points, and the tests, fixtures, config and exports that must follow. That list is the scope; anything outside it is extra. Step 2's `/rk:plan` reuses this list as its block 2 (pass it in the prompt) and adds what its greps find.
 - **Reach outside the repo**: the names this change alters that another repo can depend on — an HTTP route and its request / response fields, an event / queue / topic name and its payload fields, a DB collection and its fields, an env var name, an export of a shared package. Grep each (fixed string, the qualified form first: route path, `collection.field`, event name) in the sibling repos: the git repos in the directory that holds the MAIN checkout (`git rev-parse --path-format=absolute --git-common-dir` → its parent is the main checkout → that one's parent; a linked worktree's own parent is not it), skipping `node_modules`, `dist`, `.git` and vendored code. Read only: never edit there. Record `repo:file:line` per consumer, or `none found (searched: <dirs>)`; a bare name too generic to grep (`status`, `id`) → say so instead of listing the flood. A consumer that would **break** (a field removed, renamed or retyped, its meaning changed, a new required input) → `BLOCKED` with the list, also with `--recommend`: the other repo is its own loop. Compatible (additive, optional) → keep the list for the brief and the PR, and go on.
 - E2e tests only where the repo already has an e2e suite (an `e2e/` dir or `*-e2e` project, a `make e2e` / `nx e2e` target, an `e2e` tier). None → do not write or scaffold e2e: prove the change with unit tests plus a runtime call when one is possible, and put `no e2e suite in this repo` under "Not verified".
 - **Baseline** on the clean base before any edit: `node $SKILL_DIR/scripts/verify-change.cjs --baseline`. A tier scoped to the change (`{files}` / `{go_packages}` placeholders, `nx affected`, `git diff` lint) runs nothing on a clean base: that is a pass, not a gap — do not run the full suite by hand to make up for it. A **required** tier already failing would block the receipt later: write it down and decide with the human — fix it first in its own commit, or keep this change away from it. An optional tier already failing (e.g. e2e checks red on the base) blocks nothing: write down which checks fail, so step 4 can show the change adds none, and go on.
@@ -55,7 +55,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - One concern per loop. A plan that does two things becomes two loops.
 
 ## 3. Implement
-- Small change: main session. Plan with phases: `/rk:cook <plan> --auto` (all phases in one go; it stops only on critical review issues left after 3 fixes).
+- Small change: main session. Plan with phases: `/rk:cook <plan> --auto` (all phases in one go; it stops only on Critical or Important review findings left after 3 fixes).
 - Follow the repo's `CLAUDE.md` and rule files; new code goes where the feature already lives.
 - Least new code: take the first that fully works — not needed at all → already in this repo (a helper, service, pattern) → the standard library or platform → an installed dependency → only then new code. Never add a dependency for a few lines.
 - Tests ship with the change and each must **fail on the old code and pass on the new**. Prove it once and keep both outputs:

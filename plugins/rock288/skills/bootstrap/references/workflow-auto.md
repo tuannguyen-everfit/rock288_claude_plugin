@@ -48,5 +48,5 @@ Load `references/shared-phases.md` for remaining phases.
 
 Activate **rk:cook** skill: `/rk:cook --auto <plan-path>`
 - Skips all review gates
-- Auto-approves if score≥9.5 and 0 critical issues
+- Auto-approves at 0 Critical + 0 Important review findings
 - Continues through all phases without stopping

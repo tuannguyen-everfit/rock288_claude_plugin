@@ -28,9 +28,10 @@ Scope challenge is skipped when `--fast` is explicitly set or task is trivial.
 No research. Analyze → Plan → Hydrate Tasks.
 
 1. Read codebase docs (`codebase-summary.md`, `code-standards.md`, `system-architecture.md`)
-2. Use `planner` subagent to create plan
-3. Hydrate tasks (unless `--no-tasks`)
-4. **Context reminder:** `/rk:cook --auto {absolute-plan-path}/plan.md`
+2. Reach & Contracts per `references/reach-and-contracts.md` (never skipped)
+3. Use `planner` subagent to create plan
+4. Hydrate tasks (unless `--no-tasks`)
+5. **Context reminder:** `/rk:cook --auto {absolute-plan-path}/plan.md`
 
 **Why `--auto` cook flag?** Fast planning pairs with fast execution — skip review gates.
 

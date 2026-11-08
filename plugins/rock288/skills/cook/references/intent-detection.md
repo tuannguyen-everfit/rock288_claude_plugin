@@ -54,7 +54,7 @@ Detect multiple features from natural language:
 | Mode | Skip Research | Skip Test | Review Gates | Auto-Approve | Parallel Exec |
 |------|---------------|-----------|--------------|--------------|---------------|
 | interactive | ✗ | ✗ | **Yes (stops)** | ✗ | ✗ |
-| auto | ✗ | ✗ | **No (skips)** | ✓ (score≥9.5) | ✓ (all phases) |
+| auto | ✗ | ✗ | **No (skips)** | ✓ (0 Critical + 0 Important) | ✓ (all phases) |
 | fast | ✓ | ✗ | Yes (stops) | ✗ | ✗ |
 | parallel | Optional | ✗ | Yes (stops) | ✗ | ✓ |
 | no-test | ✗ | ✓ | Yes (stops) | ✗ | ✗ |

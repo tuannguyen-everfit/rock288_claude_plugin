@@ -47,7 +47,7 @@ The skill automatically detects your intent and routes to the appropriate workfl
 | Mode | Research | Testing | Review | Use Case |
 |------|----------|---------|--------|----------|
 | interactive | ✓ | ✓ | User approval | Default, full control |
-| auto | ✓ | ✓ | Auto if score≥9.5 | Trusted, hands-off |
+| auto | ✓ | ✓ | Auto if 0 Critical + 0 Important | Trusted, hands-off |
 | fast | ✗ | ✓ | Simplified | Quick fixes |
 | parallel | Optional | ✓ | User approval | Multi-feature work |
 | no-test | ✓ | ✗ | User approval | Speed priority |
@@ -64,7 +64,7 @@ The skill detects mode from:
 ## Workflow
 
 ```
-[Intent Detection] → [Research?] → [Plan] → [Implement] → [Test?] → [Review] → [Finalize]
+[Intent Detection] → [Research?] → [Plan] → [Implement] → [Test?] → [Self-check] → [Review] → [Finalize]
 ```
 
 ## Files

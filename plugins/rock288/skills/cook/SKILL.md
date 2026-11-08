@@ -4,7 +4,7 @@ description: "ALWAYS activate this skill before implementing EVERY feature, plan
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
 metadata:
   author: rock288
-  version: "2.2.1"
+  version: "2.3.0"
 ---
 
 # Cook - Smart Feature Implementation
@@ -52,6 +52,7 @@ User override: If user explicitly says "just code it" or "skip planning", respec
 | "I'll plan as I go" | That's not planning, that's hoping. |
 | "Just this once" | Every skip is "just this once." No exceptions. |
 | "The plan covers it, conventions can wait" | Lead reviews reject placement, validation, model-widening and auth tier even when behaviour is right. Run the Convention Pre-flight. |
+| "Tests pass, the reviewer will catch the rest" | Callers, contracts, write order and swallowed errors are greps. Run the self-check; let review find what greps can't. |
 
 ## Smart Intent Detection
 
@@ -83,8 +84,10 @@ flowchart TD
     H --> I[Review Gate]
     I -->|approved| J{--no-test?}
     J -->|No| K[Test]
-    J -->|Yes| L[Finalize]
-    K --> L
+    J -->|Yes| SC[Pre-review Self-check]
+    K --> SC
+    SC --> CR[Code Review<br/>0 Critical + 0 Important]
+    CR --> L[Finalize]
     L --> M[Report + Journal]
 ```
 
@@ -93,7 +96,7 @@ flowchart TD
 ## Workflow Overview
 
 ```
-[Intent Detection] → [Research?] → [Review] → [Plan] → [Review] → [Implement] → [Review] → [Test?] → [Review] → [Finalize]
+[Intent Detection] → [Research?] → [Review] → [Plan] → [Review] → [Implement] → [Review] → [Test?] → [Self-check] → [Review] → [Finalize]
 ```
 
 **Default (non-auto):** Stops at `[Review]` gates for human approval before each major step.
@@ -103,7 +106,7 @@ flowchart TD
 | Mode | Research | Testing | Review Gates | Phase Progression |
 |------|----------|---------|--------------|-------------------|
 | interactive | ✓ | ✓ | **User approval at each step** | One at a time |
-| auto | ✓ | ✓ | Auto if score≥9.5 | All at once (no stops) |
+| auto | ✓ | ✓ | Auto if 0 Critical + 0 Important | All at once (no stops) |
 | fast | ✗ | ✓ | **User approval at each step** | One at a time |
 | parallel | Optional | ✓ | **User approval at each step** | Parallel groups |
 | no-test | ✓ | ✗ | **User approval at each step** | One at a time |
@@ -125,7 +128,7 @@ Human review required at these checkpoints (skipped with `--auto`):
 
 **Always enforced (all modes):**
 - **Testing:** 100% pass required (unless no-test mode)
-- **Code Review:** User approval OR auto-approve (score≥9.5, 0 critical)
+- **Code Review:** User approval OR auto-approve (0 Critical + 0 Important; findings per /rk:code-review buckets and finding gate)
 - **Finalize (MANDATORY - never skip):**
   1. `project-manager` subagent → run full plan sync-back (all completed tasks/steps across all `phase-XX-*.md`, not only current phase), then update `plan.md` status/progress
   2. `docs-manager` subagent → update `./docs` if changes warrant
@@ -158,6 +161,10 @@ Output: `✓ Pre-flight: [N] rule files read ([names]) - [M] conventions resolve
 
 **Delegating code to subagents** (`--parallel`, `fullstack-developer`, any Task that writes code): put the rule-file paths in the subagent prompt and tell it to `Read` them before editing — subagents start with none of them. Paste rule 4 (Least new code) into the prompt too. Full guide + anti-rationalization: `references/convention-preflight.md`.
 
+## Pre-review Self-check (MANDATORY — before Step 5)
+
+Mechanical pass against the plan's **Reach & Contracts**: new names resolve, reach list done, mirrored rules match the quote, contracts honored, write order matches the failure table, external input guarded, no swallowed errors, negative tests for risky rows, every AC mapped to `file:line`. No section in the plan → build the reach list and failure table first. Output `✓ Step 4.5: Self-check 9/9 - …`. Full table: `references/pre-review-self-check.md` — paste it into any code-writing subagent's prompt.
+
 ## Required Subagents (MANDATORY)
 
 | Phase | Subagent | Requirement |
@@ -183,3 +190,4 @@ Output: `✓ Pre-flight: [N] rule files read ([names]) - [M] conventions resolve
 - `references/review-cycle.md` - Interactive and auto review processes
 - `references/subagent-patterns.md` - Subagent invocation patterns
 - `references/convention-preflight.md` - Convention pre-flight: load repo rules (`../plan/scripts/find-repo-rules.cjs`), layer placement, validator lib, feature-state location, auth tier, server-side enforcement, error envelope, API docs, module isolation
+- `references/pre-review-self-check.md` - Pre-review self-check against the plan's Reach & Contracts

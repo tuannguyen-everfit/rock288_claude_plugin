@@ -5,7 +5,7 @@ argument-hint: "[task] [--recommend] [--effort=<level>] OR [archive|red-team|val
 license: MIT
 metadata:
   author: rock288
-  version: "1.4.0"
+  version: "1.5.0"
 ---
 
 # Planning
@@ -111,6 +111,11 @@ Load: `references/research-phase.md`
 Load: `references/codebase-understanding.md`
 **Skip if:** Provided with scout reports
 
+### 2.5 Reach & Contracts (MANDATORY — never skipped, including `--fast`)
+Load: `references/reach-and-contracts.md`
+
+Mirrored rules quoted with `file:line`, reach list (callers, producers/consumers, other entry points), verified external contracts, failure table for multi-write operations, config defaults — each row with evidence, or `n/a — why`. A third of real review findings came from code or contracts outside the diff that the plan never read; this section is where they get read.
+
 ### 3. Solution Design
 Load: `references/solution-design.md`
 
@@ -132,7 +137,8 @@ flowchart TD
     D -->|hard/parallel/two| F[Spawn Researchers]
     E --> G[Codebase Analysis]
     F --> G
-    G --> H[Write Plan via Planner<br/>+ Convention Compliance table]
+    G --> G2[Reach & Contracts]
+    G2 --> H[Write Plan via Planner<br/>+ Convention Compliance + Reach & Contracts]
     H --> I{Red Team?}
     I -->|Yes| J[Red Team Review]
     I -->|No| K{Validate?}
@@ -158,9 +164,11 @@ flowchart TD
 2. **Mode Detection** → Auto-detect or use explicit flag (see `workflow-modes.md`)
 3. **Research Phase** → Spawn researchers (skip in fast mode)
 4. **Codebase Analysis** → Read docs, scout if needed
+4b. **Reach & Contracts** → grep and read per `references/reach-and-contracts.md`. **Never skipped.**
 5. **Plan Documentation** → Write comprehensive plan via planner subagent, including the mandatory
-   **Rule sources** list + **Convention Compliance** table + **Deliberate deviations** block. Pass the
-   rule-file list to the planner in its prompt — it does not inherit what you read
+   **Rule sources** list + **Convention Compliance** table + **Deliberate deviations** block +
+   **Reach & Contracts** section. Pass the rule-file list **and the Reach & Contracts rows** to the
+   planner in its prompt — it does not inherit what you read
 6. **Red Team Review** → Run `/rk:plan red-team {plan-path}` (hard/parallel/two modes)
 7. **Post-Plan Validation** → Run `/rk:plan validate {plan-path}` (hard/parallel/two modes)
 8. **Hydrate Tasks** → Create Claude Tasks from phases (default on, `--no-tasks` to skip)
@@ -223,5 +231,6 @@ Reports: Active plans → plan-specific path. Suggested → default path.
 - Detailed enough for junior developers
 - Validate against existing codebase patterns
 - Conventions resolved BEFORE the first plan file; deviations recorded, never silent
+- Every "mirrors X", caller, external contract and multi-write path backed by file:line or a probe
 
 **Remember:** Plan quality determines implementation success. Be comprehensive and consider all solution aspects.

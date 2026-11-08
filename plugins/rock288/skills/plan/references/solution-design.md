@@ -36,6 +36,7 @@ Follow these fundamental principles:
 - Consider asynchronous processing where appropriate
 
 ### Edge Cases & Failure Modes
+Record the outcome in plan.md → Reach & Contracts (blocks 4–5, references/reach-and-contracts.md); a bullet here with no row there is not a design.
 - Think through error scenarios
 - Plan for network failures
 - Consider partial failure handling

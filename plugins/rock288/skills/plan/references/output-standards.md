@@ -81,6 +81,10 @@ Rules:
 - A convention that changed a design choice also gets a row in the plan's decisions table, not just here.
 - Cite the guide's identity + date when it lives outside the repo.
 
+## Reach & Contracts (REQUIRED section in `plan.md`)
+
+Template and rules: `references/reach-and-contracts.md`. Placed before the phases.
+
 ## Task Breakdown
 
 - Transform complex requirements into manageable, actionable tasks
@@ -89,6 +93,7 @@ Rules:
 - Eliminate ambiguity in instructions
 - Include specific file paths for all modifications
 - Provide clear acceptance criteria per task
+- Name the test for each failure-table row, each mirrored rule and each auth/security branch — negative path included
 
 ### File Management
 
@@ -138,7 +143,7 @@ Revise the plan and phases based on the answers.
 
 ### Thoroughness
 - Thorough and specific in research/planning
-- Consider edge cases, failure modes
+- Edge cases and failure modes as rows in Reach & Contracts (failure table, config defaults), not prose
 - Think through entire user journey
 - Document all assumptions
 

@@ -49,7 +49,7 @@ Task(subagent_type="debugger", prompt="Analyze failures: [details]", description
 
 ## Code Review
 ```
-Task(subagent_type="code-reviewer", prompt="Review changes for [phase]. Check security, performance, YAGNI/KISS/DRY. Return score (X/10), critical, warnings, suggestions.", description="Review [phase]")
+Task(subagent_type="code-reviewer", prompt="Review changes for [phase] per /rk:code-review. Report findings as Critical / Important / Nice-to-have; each bug/risk finding names a concrete input and the wrong result (finding gate). Plan: [plan-path] — check its Reach & Contracts rows.", description="Review [phase]")
 ```
 
 ## Project Management

@@ -103,10 +103,16 @@ All modes share core steps with mode-specific variations.
 - Use `AskUserQuestion` to ask: "Proceed to code review?" / "Request test fixes" / "Abort"
 - **Auto mode:** Skip this gate
 
+## Step 4.5: Pre-review Self-check
+
+**All modes:** run `references/pre-review-self-check.md` against the plan's Reach & Contracts. With `--no-test`: runs after Step 3.
+
+**Output:** `✓ Step 4.5: Self-check 9/9 - [N] names resolved - [M] reach rows verified - [K] fixes`
+
 ## Step 5: Code Review
 
 **All modes - MANDATORY subagent:**
-- **MUST** spawn `code-reviewer` subagent: `Task(subagent_type="code-reviewer", prompt="Review changes. Return score, critical issues, warnings.", description="Code review")`
+- **MUST** spawn `code-reviewer` subagent: `Task(subagent_type="code-reviewer", prompt="Review changes per /rk:code-review. Report findings as Critical / Important / Nice-to-have; each bug/risk finding names a concrete input and the wrong result (finding gate). Plan: [plan-path] — check its Reach & Contracts rows.", description="Code review")`
 - **DO NOT** review code yourself - delegate to subagent
 
 **Interactive/Parallel/Code/No-test:**
@@ -114,15 +120,15 @@ All modes share core steps with mode-specific variations.
 - Requires user approval
 
 **Auto:**
-- Auto-approve if score≥9.5 AND 0 critical
-- Auto-fix critical (max 3 cycles)
+- Auto-approve if 0 Critical AND 0 Important
+- Auto-fix Critical + Important (max 3 cycles)
 - Escalate to user after 3 failed cycles
 
 **Fast:**
 - Simplified review, no fix loop
 - User approves or aborts
 
-**Output:** `✓ Step 5: Review [score]/10 - [Approved|Auto-approved] - code-reviewer subagent invoked`
+**Output:** `✓ Step 5: Review [C] Critical / [I] Important / [N] Nice-to-have - [Approved|Auto-approved] - code-reviewer subagent invoked`
 
 ## Step 6: Finalize
 
@@ -169,12 +175,12 @@ only change the Status column cell, preserve table structure.
 Legend: `[R]` = Review Gate (human approval required)
 
 ```
-interactive: 0 → 1 → [R] → 2 → [R] → 3 → [R] → 4 → [R] → 5(user) → 6
-auto:        0 → 1 → 2 → 3 → 4 → 5(auto) → 6 → next phase (NO stops)
-fast:        0 → skip → 2(fast) → [R] → 3 → [R] → 4 → [R] → 5(simple) → 6
-parallel:    0 → 1? → [R] → 2(parallel) → [R] → 3(multi-agent) → [R] → 4 → [R] → 5(user) → 6
-no-test:     0 → 1 → [R] → 2 → [R] → 3 → [R] → skip → 5(user) → 6
-code:        0 → skip → skip → 3 → [R] → 4 → [R] → 5(user) → 6
+interactive: 0 → 1 → [R] → 2 → [R] → 3 → [R] → 4 → [R] → 4.5 → 5(user) → 6
+auto:        0 → 1 → 2 → 3 → 4 → 4.5 → 5(auto) → 6 → next phase (NO stops)
+fast:        0 → skip → 2(fast) → [R] → 3 → [R] → 4 → [R] → 4.5 → 5(simple) → 6
+parallel:    0 → 1? → [R] → 2(parallel) → [R] → 3(multi-agent) → [R] → 4 → [R] → 4.5 → 5(user) → 6
+no-test:     0 → 1 → [R] → 2 → [R] → 3 → [R] → skip → 4.5 → 5(user) → 6
+code:        0 → skip → skip → 3 → [R] → 4 → [R] → 4.5 → 5(user) → 6
 ```
 
 **Key difference:** `auto` mode is the ONLY mode that skips all review gates.

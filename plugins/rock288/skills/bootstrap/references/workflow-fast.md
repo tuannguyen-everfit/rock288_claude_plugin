@@ -44,7 +44,7 @@ Load `references/shared-phases.md` for remaining phases.
 
 Activate **rk:cook** skill: `/rk:cook --auto <plan-path>`
 - Skips all review gates (fast planning pairs with fast execution)
-- Auto-approves if score≥9.5 and 0 critical issues
+- Auto-approves at 0 Critical + 0 Important review findings
 - Continues through all phases without stopping
 
 **Note:** Fast mode uses `git-manager` to auto-commit (no push) at the end.
