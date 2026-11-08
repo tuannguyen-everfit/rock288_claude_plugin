@@ -4,7 +4,7 @@ description: "ALWAYS activate this skill before fixing ANY bug, error, test fail
 argument-hint: "[issue] --auto|--review|--quick|--parallel"
 metadata:
   author: rock288
-  version: "2.0.1"
+  version: "2.1.0"
 ---
 
 # Fixing
@@ -72,7 +72,7 @@ flowchart TD
 
 | Option | Recommend When | Behavior |
 |--------|----------------|----------|
-| **Autonomous** (default) | Simple/moderate issues | Auto-approve if score >= 9.5 & 0 critical |
+| **Autonomous** (default) | Simple/moderate issues | Auto-approve at 0 Critical + 0 Important |
 | **Human-in-the-loop Review** | Critical/production code | Pause for approval at each step |
 | **Quick** | Type errors, lint, trivial bugs | Fast scout → diagnose → fix → review cycle |
 

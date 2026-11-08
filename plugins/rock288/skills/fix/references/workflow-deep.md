@@ -122,7 +122,7 @@ Use `code-reviewer` subagent.
 See `references/review-cycle.md` for mode-specific handling.
 
 `TaskUpdate(T8, status="completed")`
-**Output:** `✓ Step 8: Review [score]/10 - [status]`
+**Output:** `✓ Step 8: Review [C] Critical / [I] Important / [N] Nice-to-have - [status]`
 
 ### Step 9: Finalize
 `TaskUpdate(T9, status="in_progress")`

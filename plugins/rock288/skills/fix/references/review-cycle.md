@@ -2,57 +2,57 @@
 
 Mode-aware review handling for code-reviewer results.
 
+Reviewer prompt: "Review the fix for [issue] per /rk:code-review. Report findings as Critical / Important / Nice-to-have; each bug/risk finding names a concrete input and the wrong result (finding gate)."
+
+Reviewer returns `critical[]`, `important[]`, `nice[]`. `must_fix = critical + important`. Reviewer used High / Medium / Low instead (`agents/code-reviewer.md` template) → High = Important; Medium = Important if it names a concrete case, else Nice-to-have; Low = Nice-to-have.
+
 ## Autonomous Mode
 
 ```
 cycle = 0
 LOOP:
-  1. Run code-reviewer → score, critical_count, warnings, suggestions
+  1. Run code-reviewer → critical[], important[], nice[]
 
-  2. IF score >= 9.5 AND critical_count == 0:
-     → Output: "✓ Review [score]/10 - Auto-approved"
-     → PROCEED to next step
+  2. IF must_fix == 0:
+     → Output: "✓ Review 0 Critical / 0 Important / [N] Nice-to-have - Auto-approved"
+     → PROCEED to next step (nice-to-have logged, not blocking)
 
-  3. ELSE IF critical_count > 0 AND cycle < 3:
-     → Output: "⚙ Auto-fixing [N] critical issues (cycle [cycle+1]/3)"
-     → Fix critical issues
+  3. ELSE IF cycle < 3:
+     → Output: "⚙ Auto-fixing [N] must-fix findings (cycle [cycle+1]/3)"
+     → Fix Critical + Important
      → Re-run tests
      → cycle++, GOTO LOOP
 
-  4. ELSE IF cycle >= 3:
+  4. ELSE:
      → ESCALATE to user via AskUserQuestion
      → Display findings
      → Options: "Fix manually" / "Approve anyway" / "Abort"
-
-  5. ELSE (score < 9.5, no critical):
-     → Output: "✓ Review [score]/10 - Approved with [N] warnings"
-     → PROCEED (warnings logged, not blocking)
 ```
 
 ## Human-in-the-Loop Mode
 
 ```
 ALWAYS:
-  1. Run code-reviewer → score, critical_count, warnings, suggestions
+  1. Run code-reviewer → critical[], important[], nice[]
 
   2. Display findings:
      ┌─────────────────────────────────────┐
-     │ Review: [score]/10                  │
+     │ Review                              │
      ├─────────────────────────────────────┤
-     │ Critical ([N]): [list]              │
-     │ Warnings ([N]): [list]              │
-     │ Suggestions ([N]): [list]           │
+     │ Critical ([N]): MUST FIX            │
+     │ Important ([N]): MUST FIX           │
+     │ Nice-to-have ([N]): [list]          │
      └─────────────────────────────────────┘
 
   3. Use AskUserQuestion:
-     IF critical_count > 0:
-       - "Fix critical issues"
-       - "Fix all issues"
+     IF must_fix > 0:
+       - "Fix must-fix findings"
+       - "Fix all findings"
        - "Approve anyway"
        - "Abort"
      ELSE:
        - "Approve"
-       - "Fix warnings/suggestions"
+       - "Fix nice-to-have"
        - "Abort"
 
   4. Handle response:
@@ -64,14 +64,14 @@ ALWAYS:
 ## Quick Mode Review
 
 Uses same logic as Autonomous but:
-- Lower threshold: score >= 8.5 acceptable
+- Same gate: 0 Critical + 0 Important
 - Only 1 auto-fix cycle before escalate
 - Focus on: correctness, security, no regressions
 
-## Critical Issues (Always Block)
+## Severity
 
-- Security vulnerabilities (XSS, SQL injection, OWASP)
-- Performance bottlenecks (O(n²) when O(n) possible)
-- Architectural violations
-- Data loss risks
-- Breaking changes without migration
+- **Critical:** breaks or is exploitable on a shipped path (crash, data loss, auth bypass, breaking change without migration, dangling name that throws).
+- **Important:** wrong result for a concrete input, written-rule violation, a caller of the fixed code not updated, the fixed scenario or a risky branch untested.
+- **Nice-to-have:** everything else.
+
+A finding without a concrete case is dropped, not downgraded.

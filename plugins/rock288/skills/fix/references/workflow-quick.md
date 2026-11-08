@@ -43,7 +43,7 @@ See `references/parallel-exploration.md` for patterns.
 ### Step 4: Review + Prevent
 Use `code-reviewer` subagent for quick review.
 
-Prompt: "Quick review of fix for [issue]. Check: correctness, security, no regressions. Score X/10."
+Prompt: "Quick review of fix for [issue] per /rk:code-review. Check: correctness, security, no regressions. Report findings as Critical / Important / Nice-to-have; each names a concrete input and the wrong result."
 
 **Prevention (abbreviated for Quick):**
 - Type errors/lint: type system IS the test → regression test optional
@@ -52,12 +52,12 @@ Prompt: "Quick review of fix for [issue]. Check: correctness, security, no regre
 
 **Review handling:** See `references/review-cycle.md`
 
-**Output:** `✓ Step 4: Review [score]/10 - [prevention measures]`
+**Output:** `✓ Step 4: Review [C] Critical / [I] Important / [N] Nice-to-have - [prevention measures]`
 
 ### Step 5: Complete
 Report summary to user.
 
-**If autonomous mode:** Ask to commit via `git-manager` subagent if score >= 9.0
+**If autonomous mode:** Ask to commit via `git-manager` subagent if review approved (0 Critical + 0 Important)
 **If HITL mode:** Ask user next action
 
 **Output:** `✓ Step 5: Complete - [action]`
