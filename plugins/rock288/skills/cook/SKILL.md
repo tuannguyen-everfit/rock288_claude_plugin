@@ -2,14 +2,17 @@
 name: cook
 description: "ALWAYS activate this skill before implementing EVERY feature, plan, or fix."
 argument-hint: "[task|plan-path] [--interactive|--fast|--parallel|--auto|--no-test]"
+effort: medium
 metadata:
   author: rock288
-  version: "2.3.0"
+  version: "2.3.1"
 ---
 
 # Cook - Smart Feature Implementation
 
 End-to-end implementation with automatic workflow detection.
+
+**Effort**: coding runs at `medium` (frontmatter); the Step 5 `code-reviewer` is spawned with `effort: "high"`.
 
 **Principles:** YAGNI, KISS, DRY | Token efficiency | Concise reports
 

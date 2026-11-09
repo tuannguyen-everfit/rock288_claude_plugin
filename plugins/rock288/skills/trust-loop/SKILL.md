@@ -5,7 +5,7 @@ argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.15.3"
+  version: "1.15.4"
 ---
 
 # Trust Loop
@@ -16,7 +16,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 **`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It also stops for a split of the task into several PRs (step 0), even when the split has a recommendation. Otherwise it stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier, the env gate (step 2), a review finding that would change the SPEC (step 5).
 
-**Effort**: the loop itself runs at `medium` (frontmatter): intake, coding, verify. The frontmatter holds for the current turn only: after a plain-text human reply the session level is back, so ask through `AskUserQuestion` to stay in the turn, or the human runs `/effort medium`. Judgement runs at `high` in subagents: `/rk:plan --effort=high` (planner) and the review rounds, which spawn `rk:code-reviewer` agents with `effort: "high"` (step 5).
+**Effort**: the loop itself runs at `medium` (frontmatter): intake, coding, verify. The frontmatter holds for the current turn only: after a plain-text human reply the session level is back, so ask through `AskUserQuestion` to stay in the turn, or the human runs `/effort medium`. `/rk:cook` codes at `medium` too (its own frontmatter). Judgement runs at `high` in subagents: `/rk:plan --effort=high` (planner), cook's Step 5 reviewer and the review rounds, which spawn `rk:code-reviewer` agents with `effort: "high"` (step 5).
 
 **Defer first:** if the repo has its own `.claude/skills/trust-loop/` (e.g. core-foundry), stop and run that one: `/trust-loop <task>`. Its tooling is stricter than this generic loop.
 

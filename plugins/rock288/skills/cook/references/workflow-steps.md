@@ -112,7 +112,7 @@ All modes share core steps with mode-specific variations.
 ## Step 5: Code Review
 
 **All modes - MANDATORY subagent:**
-- **MUST** spawn `code-reviewer` subagent: `Task(subagent_type="code-reviewer", prompt="Review changes per /rk:code-review. Report findings as Critical / Important / Nice-to-have; each bug/risk finding names a concrete input and the wrong result (finding gate). Plan: [plan-path] — check its Reach & Contracts rows.", description="Code review")`
+- **MUST** spawn `code-reviewer` subagent with `effort: "high"`: `Task(subagent_type="code-reviewer", effort="high", prompt="Review changes per /rk:code-review. Report findings as Critical / Important / Nice-to-have; each bug/risk finding names a concrete input and the wrong result (finding gate). Plan: [plan-path] — check its Reach & Contracts rows.", description="Code review")`
 - **DO NOT** review code yourself - delegate to subagent
 
 **Interactive/Parallel/Code/No-test:**
