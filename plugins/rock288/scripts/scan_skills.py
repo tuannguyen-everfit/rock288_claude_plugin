@@ -48,6 +48,7 @@ EXACT_CATEGORY_MAP = {
     "test": "utilities",
     "trust-loop": "utilities",
     "pr-follow-up": "utilities",
+    "ef-cards": "utilities",
     "ef-daily-report": "utilities",
     "ef-logwork": "utilities",
     # Development Tools

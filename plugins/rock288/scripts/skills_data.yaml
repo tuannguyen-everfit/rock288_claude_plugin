@@ -226,6 +226,18 @@
   has_scripts: false
   name: ef-branch-name
   path: ef-branch-name/SKILL.md
+- argument_hint: '[--project=CHAL] [--all-statuses] [--jql="..."]'
+  category: utilities
+  description: 'List the Everfit Jira cards you have right now, grouped by epic: open
+    cards assigned to you, the ones still on you listed by epic (priority first),
+    the ones waiting on QA (QA Ready, Q&A, In Test, QA Completed) only counted unless
+    --all-statuses. Fetches through Atlassian MCP. Read-only. Triggers on: ''my cards'',
+    ''card của tôi'', ''đang có card gì'', ''card todo'', ''list card theo epic'',
+    ''xem card''.'
+  has_references: false
+  has_scripts: true
+  name: ef-cards
+  path: ef-cards/SKILL.md
 - argument_hint: '[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack]
     [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...]
     [--dry-run]'
