@@ -1,11 +1,11 @@
 ---
 name: trust-loop
-description: "Verified delivery loop for a code change in any repo: intake, pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review, a commit only on a passing receipt, then the hand-off (PR, review request, Jira). Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
+description: "Verified delivery loop for a code change in any repo: intake with a SPEC checklist (the SPEC read, numbered, open points asked), pre-flight baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new tests, programmatic verification that writes a receipt bound to the exact working tree, adversarial + intent review against the SPEC items, a commit only on a passing receipt, then the hand-off (PR, review request, Jira). Use for features, bug fixes and refactors when the output must be proven, not just reviewed. Triggers on: 'trust loop', 'verified change', 'implement and verify', 'làm có kiểm chứng'."
 argument-hint: "<task | bug report | Jira card> [--init] [--recommend]"
 effort: medium
 metadata:
   author: rock288
-  version: "1.15.4"
+  version: "1.16.0"
 ---
 
 # Trust Loop
@@ -14,7 +14,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 
 **`$SKILL_DIR`** = the "Base directory for this skill" path printed when this skill loads.
 
-**`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It also stops for a split of the task into several PRs (step 0), even when the split has a recommendation. Otherwise it stops only for what has no recommendation: a fact only the human knows, `BLOCKED`, a red required baseline tier, the env gate (step 2), a review finding that would change the SPEC (step 5).
+**`--recommend`**: no picker for the whole loop. Every question this loop or a skill it calls would ask with a `(Recommended)` option is taken by that option: the intake scope, the hand-off (the defaults), and the design choices (pass `--recommend` on to `/rk:brainstorm` and `/rk:plan` in step 2). State each pick in chat (`Decision <n> — <question> → <pick>: <why, one line>`), go on, and list it in the report and the PR. It also stops for a split of the task into several PRs (step 0), even when the split has a recommendation. Otherwise it stops only for what has no recommendation: a fact only the human knows, a SPEC that cannot be read or that conflicts / is ambiguous (step 0), `BLOCKED`, a red required baseline tier, the env gate (step 2), a review finding that would change the SPEC (step 5).
 
 **Effort**: the loop itself runs at `medium` (frontmatter): intake, coding, verify. The frontmatter holds for the current turn only: after a plain-text human reply the session level is back, so ask through `AskUserQuestion` to stay in the turn, or the human runs `/effort medium`. `/rk:cook` codes at `medium` too (its own frontmatter). Judgement runs at `high` in subagents: `/rk:plan --effort=high` (planner), cook's Step 5 reviewer and the review rounds, which spawn `rk:code-reviewer` agents with `effort: "high"` (step 5).
 
@@ -24,7 +24,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - No commit without `verify-change --status` → `ok: true` for the current content. Any edit after verifying invalidates the receipt.
 - Never weaken a test, a lint rule or a tier in `.claude/trust.json` to get green. A gate you believe is wrong is a question for the human.
 - A new env var (a `default.env` key, a config schema entry, a deploy secret) is the human's answer: never invent its name or value, even with `--recommend`.
-- Review fixes never change the SPEC: the original request, the card's acceptance criteria, the approved plan.
+- The SPEC is the contract: the original request, the card's acceptance criteria, the SPEC and SD pages, the human's answers, the approved plan — read and numbered at intake as the SPEC checklist (`references/spec-checklist.md`). Every `in` item is built, proven and reviewed; nothing ships against an item. Never change an item yourself — not to fit the code, a review fix, a failing test or `--recommend`: a needed change is the human's answer.
 - Never `--no-verify`, never push to a protected branch. Repo rules win when stricter: a repo whose rules say "commit / push only when the human says so" gets the diff and a wait at step 6, unless the task itself asked to commit or ship.
 - The loop runs unattended: `/rk:cook` with `--auto`. The loop's own gates (receipt, red/green, review) hold the change, not approval clicks. Cook's finalize does not commit; the loop commits at step 6.
 - Heavy suites run only through `verify-change`, in the foreground. It allows one run per machine (other sessions wait on its lock), caps parallelism (`NX_PARALLEL=1`, `GOFLAGS -p=<half the cores>`) and kills a tier's whole process group on timeout. A full suite run by hand (`nx run-many`, `--skip-nx-cache`, `go test -race ./...`), or `verify-change` in the background, bypasses that and lets two sessions freeze the machine. For a single test file, run that file only.
@@ -37,6 +37,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - No `.claude/trust.json` (or `--init`): draft it with `node $SKILL_DIR/scripts/init-config.cjs --print`, cross-check it against the repo's `CLAUDE.md` / CI gates, show it to the human, then write it (drop `--print`). Format: `references/trust-config.md`. Writing it also adds it to `.git/info/exclude` (unless the repo tracks or ignores it): it holds this machine's commands, and step 6's `git add -A` must not ship it in the PR. Committing it for the team is the human's call, in its own commit.
 - Session artifacts: `plans/`, `docs/journals/` or `.claude/agent-memory/` (subagent memory) not ignored by the repo → add them to `.git/info/exclude` once, so plans, reports, journals and agent memory stay out of the commit (`git add -A`) and of the receipt.
 - Settle the hand-off now so the loop runs to the PR without stopping: confirm once the Slack channel and reviewers (or "no Slack"), and the SPEC and Solution design links the PR body needs (from the card first; ask only for the missing ones, "none" is an answer), unless the task already says. Defaults: `#backend-review-code`, `Quang Pham Minh (BE)` (`<@U0BQ2JFBKGD>`) + `Huy (BE)` (`<@U0142122SJD>`). With `--recommend`, take the defaults without asking. That answer (or `--recommend`) is the go-ahead for step 7.
+- **SPEC checklist** (`references/spec-checklist.md`), once the SPEC / SD links are settled (previous bullet): read the request, the card, the SPEC and the SD in full; write every checkable behavior as a numbered item with its verbatim quote, `in` (this PR) or `out: <why>`; ask in one round what conflicts, is ambiguous or cannot be read (also with `--recommend`). Saved to `rk-trust/spec.md` in the git dir. Steps 2–7 answer to these items.
 
 ## 1. Pre-flight
 - Locate the change: the call chain as `file:line`, where its unit test lives, async boundaries, and **the runtime check that will prove the change** (an e2e test, a smoke script, a real call). `/rk:scout` for wide searches.
@@ -50,7 +51,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Intent clear and single-file with an obvious cause → skip to step 3.
 - Several viable designs or vague requirements → `/rk:brainstorm` (`--recommend` when this loop has it); its decision feeds the plan.
 - **Env gate**, after the brainstorm and before `/rk:plan` (step 2 skipped → before step 3): list every new env var the change needs — name, purpose, default, dev / prod value, secret or not — and ask the human in one question. `--recommend` does not answer it. The answers go into the plan. None needed → state `no new env` and go on. An env var not on the approved list that turns up later (step 3, 5) → stop and ask; do not invent it.
-- Multi-file feature → `/rk:plan` (`--effort=high`; `--recommend` when this loop has it). The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1.
+- Multi-file feature → `/rk:plan` (`--effort=high`; `--recommend` when this loop has it), with the SPEC checklist in the prompt. The plan must name the files, **the test that proves each behavior**, and the runtime check from step 1, and map every `in` item to them. A design or plan that drops or bends an item → ask the human.
 - Bug → reproduce first: a failing unit test or a runtime call before the fix (`/rk:debug` for hard ones). Fix the root cause once in the shared code, not in the one caller that reported it.
 - One concern per loop. A plan that does two things becomes two loops.
 
@@ -58,6 +59,7 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
 - Small change: main session. Plan with phases: `/rk:cook <plan> --auto` (all phases in one go; it stops only on Critical or Important review findings left after 3 fixes).
 - Follow the repo's `CLAUDE.md` and rule files; new code goes where the feature already lives.
 - Least new code: take the first that fully works — not needed at all → already in this repo (a helper, service, pattern) → the standard library or platform → an installed dependency → only then new code. Never add a dependency for a few lines.
+- Every `in` SPEC item gets its proof: a test named with its id (`S2: ...`), or a runtime check when no test reaches it.
 - Tests ship with the change and each must **fail on the old code and pass on the new**. Prove it once and keep both outputs:
   ```bash
   git stash push -m "trust-loop red <ticket>" -- <source files only>   # keep the new tests in place
@@ -66,19 +68,20 @@ The human is the **architect**: sets intent, approves constraints, reads intent 
   git stash apply <sha> && git stash drop <its stash@{n}>
   <run the new tests>   # must PASS
   ```
-- **Self-check** before step 4, also in a `/rk:pr-follow-up` fix round: run `$SKILL_DIR/../cook/references/pre-review-self-check.md` on the diff against step 1's reach list and the plan's Reach & Contracts when there is one. `/rk:cook` already ran it → skip. Any fix → re-run the new tests.
+- **Self-check** before step 4, also in a `/rk:pr-follow-up` fix round: run `$SKILL_DIR/../cook/references/pre-review-self-check.md` on the diff against step 1's reach list and the plan's Reach & Contracts when there is one; its row 9 (Spec) runs against the `in` items. `/rk:cook` already ran it → skip. Any fix → re-run the new tests.
 
 ## 4. Verify and self-correct
 - `node $SKILL_DIR/scripts/verify-change.cjs` runs every tier in `.claude/trust.json` (scoped tiers only on the changed files: `references/trust-config.md`) and writes a receipt for the exact working tree (logs under the git dir; the path is printed). `waiting: verify-change is running for <repo>` = another session holds the machine lock; let it wait, do not kill it or run the tiers by hand.
 - A tier fails → fix it in the change's own files and run again, **max 3 iterations**. While iterating, `--skip=<slow optional tiers>` (e.g. `coverage,e2e`); the last verify before the commit runs them. Still red → `BLOCKED`: stop, report the failing output, change approach or ask the human. Do not push through.
 - A tier that rewrites files (formatter) leaves no receipt: review its edit, then verify again.
 - Runtime evidence the tiers do not cover (e2e, a smoke against a local server, a real API call): run it yourself and keep the output for the PR. Say plainly what could not be exercised and why.
+- **SPEC coverage**, before the last verify: fill `proof:` on every `in` item in `rk-trust/spec.md`. `pending` left → back to step 3. Cannot be proven here → `Not verified` with the reason. Evidence that the SPEC itself is wrong or impossible → stop and ask; never bend the item.
 - Write reports and notes **before** the final verify: a new untracked file changes the fingerprint.
 
 ## 5. Review
 Each round runs in fresh subagents that never see this session: they get the frozen brief and the diff, nothing else. Review → fix → verify → review again, until a round leaves nothing to fix: no `[Must fix]`, and every `[Optional]` kept with a reason (`references/optional-triage.md`). **Max 5 rounds.** The brief, the prompts, the intent check and the finding format: `references/review-round.md`. Do not call `/rk:code-review` here: its Stage 0 and adjudication would run in this session.
 
-Before round 1 (after the step 4 receipt passes): write the brief to `git rev-parse --path-format=absolute --git-path rk-trust/review-brief.md`, with Bash, not Write / Edit (`.git/` paths can prompt even in bypass mode) — the original request verbatim, the card's AC and SPEC / SD links, the step 1 reach list, the step 3 red / green outputs, the base as a merge-base SHA, the branch. A new run writes it fresh and deletes the round log; a resume (after `BLOCKED` or a human answer) or a `/rk:pr-follow-up` fix keeps both, records the human's answer or the new request, and recomputes the base (`references/review-round.md` §1, entries). After this only the follow-up requests, `## Red / green` (a test added by a fix), `## Disputed` and `## Settled` grow. Both files sit in the git dir: the receipt stays valid and nothing gets committed.
+Before round 1 (after the step 4 receipt passes): write the brief to `git rev-parse --path-format=absolute --git-path rk-trust/review-brief.md`, with Bash, not Write / Edit (`.git/` paths can prompt even in bypass mode) — the original request verbatim, the card's AC and SPEC / SD links, the SPEC checklist verbatim, the step 1 reach list, the step 3 red / green outputs, the base as a merge-base SHA, the branch. A new run writes it fresh and deletes the round log; a resume (after `BLOCKED` or a human answer) or a `/rk:pr-follow-up` fix keeps both, records the human's answer or the new request, and recomputes the base (`references/review-round.md` §1, entries). After this only the follow-up requests, `## Red / green` (a test added by a fix), `## Disputed` and `## Settled` grow. Both files sit in the git dir: the receipt stays valid and nothing gets committed.
 
 Each round:
 1. In one message, spawn two new `rk:code-reviewer` agents with `effort: "high"`: **quality** (Stage 0, conventions, the intent check) and **adversarial**. Prompts from `references/review-round.md`, only the placeholders filled: no line about this round, earlier rounds or what was fixed. Both review the whole diff against the base, every round; no fix-diff-only re-review.
@@ -97,20 +100,21 @@ Commit as soon as the receipt passes; the receipt is the gate, not a human. Chec
 ```bash
 node $SKILL_DIR/scripts/verify-change.cjs --status && git add -A && git commit -m "<subject>" -m "<body>"
 ```
-- Subject = the repo's rule (e.g. `type(scope): CARD summary`). Body: intent summary + how it was verified (tiers + runtime evidence). Pass the message inline: a message file inside the repo is untracked content and makes the receipt stale.
+- Subject = the repo's rule (e.g. `type(scope): CARD summary`). Body: intent summary + the SPEC items it delivers + how it was verified (tiers + runtime evidence). Pass the message inline: a message file inside the repo is untracked content and makes the receipt stale.
 - `--status` refuses while `.claude/trust.json` is untracked and not ignored (`git add -A` would commit it): add it to the file `git rev-parse --git-path info/exclude` prints, verify again. Never commit it inside the change.
 - A pre-commit hook fails → fix, back to step 4. Never `--no-verify`.
 - Exception (hard rules): the repo forbids auto-commit and the task did not ask to commit → show the diff and the message, wait.
 
 ## 7. Hand-off
 Runs right after the commit when the hand-off was settled at intake; otherwise confirm once with the human before the first step.
-1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --spec=<url> --sd=<url> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, an **Impact** section (the consumers outside the repo from step 1 and why each still works, or `no consumer outside this repo (searched: <dirs>)`), and what is not in this PR.
+1. **PR**: `/rk:ef-ship --feature=<scope> --subtitle=<subtitle> --spec=<url> --sd=<url> --yes` with the commit's scope and subtitle: it pushes the commit, opens the PR against the base and chains `/rk:ef-pr-description`. Do not pass its `--slack` flags; step 2 posts the review request. The body carries a **SPEC coverage** table (`S<n>` · quote · proof · status; the `out` items with their reasons, the human's answers, the assumed details), a verification table — per test: old code red / new code green — the receipt tiers, runtime evidence, an **Impact** section (the consumers outside the repo from step 1 and why each still works, or `no consumer outside this repo (searched: <dirs>)`), and what is not in this PR.
 2. **Review request**: the channel and reviewers settled at intake; the evidence goes in the PR or the thread, not only in chat. Every Slack post (request, evidence) follows `references/slack-messages.md`: short verdict lines, no tables, no receipt hashes; the detail stays in the PR. The loop ends here: it does not watch the PR, the merge or the dev deploy. The Slack bot picks up the review thread and runs `/rk:pr-follow-up`; do not run `follow-up-state.cjs`, ask for deploy pipelines or start `/loop` from this session.
 3. **Jira** (only when the loop implements a card): move the card to **In Review**. Nothing else on the card: no worklog, and do not close it while acceptance criteria outside this PR are open.
 4. **Report**:
    ```
    Change: <one line> · Branch: <...> · Commit: <sha>
    Intent: <what was asked, what the diff does>
+   SPEC: <k>/<n> in items proven · out <m> · asked <a> · assumed <d>, or none
    Verified: <tiers from the receipt> · Red/green: <tests> · Runtime: <what was exercised>
    Not verified: <anything skipped and why>
    Impact: <n> consumers outside the repo · <repos>, or none (searched: <dirs>)

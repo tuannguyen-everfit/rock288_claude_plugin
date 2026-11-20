@@ -17,10 +17,10 @@ Written before round 1 to `rk-trust/review-brief.md` in the git dir: outside the
 
 An **entry** into step 5 is one of three events; main appends `## Entry — new|resume|follow-up` to the round log for each. A step 4 → step 5 return inside the loop is not an entry.
 - **new**: a new `/rk:trust-loop` run. Write the brief fresh, delete the round log.
-- **resume**: the same loop goes on after `BLOCKED` or a human answer. Keep both files. Record the answer first: "keep it as is" → the finding moves to `## Settled` as `Human: <answer verbatim>`; "fix it" → main fixes it, removes it from `## Disputed`, logs it `fixed (human)`; an answer that changes the asked-for behavior → appended under `## Request` as `Follow-up: <verbatim>`.
+- **resume**: the same loop goes on after `BLOCKED` or a human answer. Keep both files. Record the answer first: "keep it as is" → the finding moves to `## Settled` as `Human: <answer verbatim>`; "fix it" → main fixes it, removes it from `## Disputed`, logs it `fixed (human)`; an answer that changes the asked-for behavior → appended under `## Request` as `Follow-up: <verbatim>`. An answer that settles or changes a SPEC item → also appended to `rk-trust/spec.md` `## Answers`, and the brief's `## SPEC checklist` is re-copied from it.
 - **follow-up**: a `/rk:pr-follow-up` code fix on this branch. Keep both files. The PR comment is appended under `## Request` as `Follow-up: <verbatim>`.
 
-On every entry, recompute `git merge-base HEAD <base branch>` and rewrite the `Base:` line: the base may have been merged in or the branch rebased since. Otherwise only `## Request` (follow-ups), `## Red / green` (a test added by a fix), `## Disputed` and `## Settled` change.
+On every entry, recompute `git merge-base HEAD <base branch>` and rewrite the `Base:` line: the base may have been merged in or the branch rebased since. Otherwise only `## Request` (follow-ups), `## SPEC checklist` (a human answer), `## Red / green` (a test added by a fix), `## Disputed` and `## Settled` change.
 
 ```
 # Review brief — <ticket or one-line task>
@@ -31,6 +31,9 @@ Base: <merge-base SHA>   Branch: <name>   Repo: <absolute path>
 
 ## Acceptance criteria / SPEC / SD links
 <the card's AC; SPEC and Solution design links, or "none">
+
+## SPEC checklist
+<rk-trust/spec.md copied verbatim: Items (in / out), Answers, Assumed>
 
 ## Reach list (step 1)
 <file:line per caller, test, fixture, config, export>
@@ -76,8 +79,13 @@ You are a fresh code reviewer. You know nothing outside the brief and the repo.
 3. Quality and conventions: Stage 2 of {CODE_REVIEW_DIR}/SKILL.md, the checklist in
    {CODE_REVIEW_DIR}/references/checklists/base.md, plus checklists/api.md when an API is touched.
    Find the expected load in the repo, state it in one line, judge scale against it.
-4. Intent check, against the brief's Request (not a plan). Each "no" is a [Must fix]:
+4. Intent check, against the brief's Request and SPEC checklist (not a plan). Each "no" is a [Must fix]:
    - Does the diff do exactly what was asked — nothing missing, nothing extra?
+   - For every `in` item of the SPEC checklist: does the code do what its quote says — same values,
+     limits, field names and types, error codes, permissions, edge cases — and is it proven by the test
+     or runtime check its `proof:` names? Read the code; a test name alone is not proof. A missing or
+     wrong item → [Must fix] with the item id in the defect (`S3: ...`), path:line `-` when the code is
+     absent. Does any change contradict an `out` item, an Answer or an Assumed line?
    - Is every behavior proven by a test that was red on the old code? Use the brief's Red / green.
    - Is every entry of the reach list updated or proven unaffected?
    - Does the diff change a route, a payload or DB field, an event name, an env var or a shared export
@@ -128,7 +136,8 @@ Finding gate: a bug, risk or scale finding names a concrete input or situation a
 it leads to. No concrete case → drop it; do not downgrade it to a nit. A convention finding cites the
 written rule (file:line) or the sibling module instead.
 spec-conflict: yes only when the fix would change the behavior asked for, the acceptance criteria,
-the API contract or the response shape, or the diff holds two concerns. Otherwise no.
+a SPEC checklist item or Answer, the API contract or the response shape, or the diff holds two
+concerns. A fix that makes the code match an item is not a conflict: spec-conflict: no. Otherwise no.
 Disputed entries: rule UPHELD (still a must-fix; say why the evidence does not cover it) or WITHDRAWN
 (the evidence holds). Judge from the code and the evidence only; read the code at the cited lines
 yourself. The implementer's wording carries no weight on its own. Do not report a disputed finding

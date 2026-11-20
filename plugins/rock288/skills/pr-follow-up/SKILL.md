@@ -4,7 +4,7 @@ description: "Follow a PR after the trust-loop hand-off until it runs on dev: tr
 argument-hint: "<PR url | owner/repo#n> [slack thread ts] [jira key]"
 metadata:
   author: rock288
-  version: "1.1.1"
+  version: "1.1.2"
 ---
 
 # PR follow-up
@@ -64,7 +64,7 @@ One action per new item, at most one reply per thread per run.
 | Question | No code change. | The answer, with `file:line` or test evidence |
 | Wrong or out of scope | No code change; a valid point outside this PR → suggest a follow-up ticket. | The reason. Leave the thread open. |
 | Reverses a decision tests or runtime evidence prove | Keep it unless the reviewer brings new evidence. | The evidence |
-| Product behavior, a threshold, an API contract, or a debate past 2 replies | Ask the human in the session, then step 6. | "Checking with the author", once |
+| Product behavior, a threshold, an API contract, a request that changes an `in` item of the SPEC checklist (`rk-trust/spec.md` in the git dir) or asks for an `out` one, or a debate past 2 replies | Ask the human in the session, then step 6. | "Checking with the author", once |
 
 - Inline thread reply: `gh api repos/<owner>/<repo>/pulls/<n>/comments/<comment id>/replies -f body=...`. Top-level: `gh pr comment <n> --repo <owner>/<repo> --body-file <file>` (file outside the repo).
 - After a fix round, re-request review: `gh api -X POST repos/<owner>/<repo>/pulls/<n>/requested_reviewers -f 'reviewers[]=<login>'`, and post one **Round N** reply in the Slack thread.
