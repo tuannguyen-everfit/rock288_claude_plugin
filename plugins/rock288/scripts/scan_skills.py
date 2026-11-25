@@ -80,6 +80,7 @@ EXACT_CATEGORY_MAP = {
     # Security (mapped to utilities)
     "ck-security": "utilities",
     "security-scan": "utilities",
+    "security-review": "utilities",
 }
 
 def extract_frontmatter(content: str) -> Dict:

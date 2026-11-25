@@ -89,7 +89,7 @@
   has_scripts: true
   name: chrome-devtools
   path: chrome-devtools/SKILL.md
-- argument_hint: '[#PR | COMMIT | --pending | codebase [parallel]]'
+- argument_hint: '[#PR | COMMIT | --pending | codebase [parallel]] [--effort=<level>]'
   category: utilities
   description: 'Review code quality with adversarial rigor. Supports input modes:
     pending changes, PR number, commit hash, codebase scan. Always-on red-team analysis
@@ -243,11 +243,12 @@
     [--dry-run]'
   category: utilities
   description: 'Generate an Everfit daily standup report from Jira worklogs and post
-    it as a reply into a Slack thread you provide. Pulls cards you logged work on
-    the target date (DONE / PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY,
-    max 5), derives progress % from time tracking, then drafts the report for your
-    review before replying into the thread. Triggers on: ''daily report'', ''standup'',
-    ''daily'', ''EOD report'', ''báo cáo ngày'', ''wrap up''.'
+    it as a reply into a Slack thread you provide. Pulls cards you moved to QA Ready
+    on the target date (DONE) and cards you logged work on that day but did not finish
+    (PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY, max 5), derives progress
+    % from time tracking, then drafts the report for your review before replying into
+    the thread. Triggers on: ''daily report'', ''standup'', ''daily'', ''EOD report'',
+    ''báo cáo ngày'', ''wrap up''.'
   has_references: true
   has_scripts: false
   name: ef-daily-report
@@ -276,10 +277,9 @@
     cards and descriptions, you type the hours, asks the remaining of each own card,
     shows a draft with the daily total vs 7h, then logs + sets the remaining on confirm.
     --by-points=CARD logs one card with no question: story points × 4h, remaining
-    0m. --audit reports days under 7h, empty days and badly
-    formatted worklogs (read-only). Triggers on: ''logwork'', ''log work'', ''log
-    time'', ''timesheet'', ''log giờ'', ''chấm công'', ''log theo point'', ''audit
-    worklog''.'
+    0m. --audit reports days under 7h, empty days and badly formatted worklogs (read-only).
+    Triggers on: ''logwork'', ''log work'', ''log time'', ''timesheet'', ''log giờ'',
+    ''chấm công'', ''log theo point'', ''audit worklog''.'
   has_references: true
   has_scripts: true
   name: ef-logwork
@@ -296,7 +296,8 @@
   has_scripts: false
   name: ef-pr-comment
   path: ef-pr-comment/SKILL.md
-- argument_hint: <jira-link-or-card-id> [--scope=<scope>] [--lang=en|vi] [--draft]
+- argument_hint: <jira-link-or-card-id> [--spec=<url>] [--sd=<url>] [--scope=<scope>]
+    [--lang=en|vi] [--draft]
   category: other
   description: 'Generate full PR descriptions in English (default) from code changes
     + Jira card link. Produces Everfit-style markdown (Summary, Ticket, What changed,
@@ -308,9 +309,10 @@
   name: ef-pr-description
   path: ef-pr-description/SKILL.md
 - argument_hint: '[--feature=<scope>] [--subtitle=<text>] [--pr-summary=<text>] [--draft]
-    [--no-desc] [--assignee=<user>] [--no-assign] [--slack] [--slack-channel=<name>]
-    [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>] [--slack-set-default-mentors=<n1,n2,n3>]
-    [--slack-clear-default-mentors] [--yes] [--dry-run]'
+    [--no-desc] [--spec=<url>] [--sd=<url>] [--assignee=<user>] [--no-assign] [--slack]
+    [--slack-channel=<name>] [--slack-group=<group>] [--slack-mentors=<n1,n2,n3>]
+    [--slack-set-default-mentors=<n1,n2,n3>] [--slack-clear-default-mentors] [--yes]
+    [--dry-run]'
   category: other
   description: 'Commit + push the current Everfit feature branch and open a PR targeting
     develop in one shot. Parses the branch (dev_<sprint>.<type>/<CARD-ID>-<slug>)
@@ -493,7 +495,7 @@
   has_scripts: true
   name: payment-integration
   path: payment-integration/SKILL.md
-- argument_hint: '[task] [--recommend] OR [archive|red-team|validate]'
+- argument_hint: '[task] [--recommend] [--effort=<level>] OR [archive|red-team|validate]'
   category: utilities
   description: Plan implementations, design architectures, create technical roadmaps
     with detailed phases. Use for feature planning, system design, solution architecture,
@@ -519,9 +521,10 @@
     in Slack #non-prod-ci-cd, run the dev check, then report to the Slack review thread
     and move the Jira card to QA Ready. One step per run, self-paced (15 min while
     in review, 5 min while waiting for the deploy), stops itself when done, idle 24
-    h or waiting on the human; driven by the Slack bot from the state /rk:trust-loop
-    records, or run by hand as `/loop /rk:pr-follow-up <PR>`. Triggers on: ''follow
-    up PR'', ''watch PR'', ''theo dõi PR'', ''check comment và deploy''.'
+    h or waiting on the human; driven by the Slack bot, which records the state when
+    the review thread is created, or run by hand as `/loop /rk:pr-follow-up <PR>`.
+    Triggers on: ''follow up PR'', ''watch PR'', ''theo dõi PR'', ''check comment
+    và deploy''.'
   has_references: false
   has_scripts: true
   name: pr-follow-up
@@ -643,6 +646,20 @@
   has_scripts: false
   name: security
   path: security/SKILL.md
+- argument_hint: <PR-URL> [--head=<sha>] [--base=<ref>] [--effort=<level>]
+  category: utilities
+  description: 'Security pass over ONE GitHub pull request: threat model first (public
+    edge vs internal RPC vs queue consumer), then authN/token lifecycle, authZ/tenant
+    isolation, credential & PII crossing a boundary, injection, atomicity of security
+    controls, audit integrity and committed secrets. PR-scoped — reads the diff with
+    gh, never the working tree. Returns findings with attacker story, evidence chain,
+    fix, severity mapped to Critical/Important/Nice-to-have; posts nothing. Use after
+    /rk:code-review on a PR, or alone. Triggers on: ''security review PR'', ''security
+    pass'', ''review bảo mật PR''.'
+  has_references: true
+  has_scripts: false
+  name: security-review
+  path: security-review/SKILL.md
 - argument_hint: '[scope] [--secrets-only] [--deps-only] [--full]'
   category: utilities
   description: Scan codebase for security vulnerabilities, hardcoded secrets, dependency
@@ -703,13 +720,14 @@
   category: utilities
   description: 'Review the PR(s) linked inside a Slack message, then act on the result
     end-to-end. Given a Slack message URL (whose text contains one or more GitHub
-    PR links), run rk:code-review on each; post every finding inline via rk:pr-comment,
-    labelled [Must fix] (Critical/Important) or [Optional] (Nice-to-have); if a PR
-    has any [Must fix], reply in the Slack thread ''<@author> Please check my comments'',
-    otherwise also comment ''LGTM!'' on the PR and reply ''<@author> approved''. Ends
-    with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block. Fully automatic
-    — no confirmation gate. Triggers on: ''review pr from slack'', ''review slack
-    pr link'', ''check pr in this slack message'', ''review code từ link slack''.'
+    PR links), run rk:code-review then rk:security-review on each; post every finding
+    inline via rk:pr-comment, labelled [Must fix] (Critical/Important) or [Optional]
+    (Nice-to-have); if a PR has any [Must fix], reply in the Slack thread ''<@author>
+    Please check my comments'', otherwise also comment ''LGTM!'' on the PR and reply
+    ''<@author> approved''. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SECURITY/SUMMARY
+    block. Fully automatic — no confirmation gate. Triggers on: ''review pr from slack'',
+    ''review slack pr link'', ''check pr in this slack message'', ''review code từ
+    link slack''.'
   has_references: false
   has_scripts: false
   name: slack-pr-review
@@ -778,14 +796,14 @@
   path: threejs/SKILL.md
 - argument_hint: <task | bug report | Jira card> [--init] [--recommend]
   category: utilities
-  description: 'Verified delivery loop for a code change in any repo: intake, pre-flight
-    baseline, design (brainstorm/plan when needed), implement with red-on-old / green-on-new
+  description: 'Verified delivery loop for a code change in any repo: intake with
+    a SPEC checklist (the SPEC read, numbered, open points asked), pre-flight baseline,
+    design (brainstorm/plan when needed), implement with red-on-old / green-on-new
     tests, programmatic verification that writes a receipt bound to the exact working
-    tree, adversarial + intent review, a commit only on a passing receipt, then the
-    hand-off (PR, review request, Jira) and the follow-up state the Slack bot drives
-    until the PR runs on dev. Use for features, bug fixes and refactors when the output
-    must be proven, not just reviewed. Triggers on: ''trust loop'', ''verified change'',
-    ''implement and verify'', ''làm có kiểm chứng''.'
+    tree, adversarial + intent review against the SPEC items, a commit only on a passing
+    receipt, then the hand-off (PR, review request, Jira). Use for features, bug fixes
+    and refactors when the output must be proven, not just reviewed. Triggers on:
+    ''trust loop'', ''verified change'', ''implement and verify'', ''làm có kiểm chứng''.'
   has_references: true
   has_scripts: true
   name: trust-loop

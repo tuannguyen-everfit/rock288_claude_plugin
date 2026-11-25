@@ -1,6 +1,6 @@
 ---
 name: slack-pr-review
-description: "Review the PR(s) linked inside a Slack message, then act on the result end-to-end. Given a Slack message URL (whose text contains one or more GitHub PR links), run rk:code-review on each; post every finding inline via rk:pr-comment, labelled [Must fix] (Critical/Important) or [Optional] (Nice-to-have); if a PR has any [Must fix], reply in the Slack thread '<@author> Please check my comments', otherwise also comment 'LGTM!' on the PR and reply '<@author> approved'. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SUMMARY block. Fully automatic — no confirmation gate. Triggers on: 'review pr from slack', 'review slack pr link', 'check pr in this slack message', 'review code từ link slack'."
+description: "Review the PR(s) linked inside a Slack message, then act on the result end-to-end. Given a Slack message URL (whose text contains one or more GitHub PR links), run rk:code-review then rk:security-review on each; post every finding inline via rk:pr-comment, labelled [Must fix] (Critical/Important) or [Optional] (Nice-to-have); if a PR has any [Must fix], reply in the Slack thread '<@author> Please check my comments', otherwise also comment 'LGTM!' on the PR and reply '<@author> approved'. Ends with a machine-readable VERDICT/MUST_FIX/OPTIONAL/SECURITY/SUMMARY block. Fully automatic — no confirmation gate. Triggers on: 'review pr from slack', 'review slack pr link', 'check pr in this slack message', 'review code từ link slack'."
 argument-hint: "[<slack-message-url>] [--pr=<#N|url>] [--dry-run]"
 metadata:
   author: rock288
@@ -108,6 +108,16 @@ watching it get skipped, and the two things it buys are exactly what a diff-only
   Nice-to-have, so they change the branch at step 4. Skipping this is how a review that read the
   new file three times still ships `ref: 'foos'` against a model registered as `foo`.
 
+### 3b. Security pass
+
+After `rk:code-review`, invoke [`rk:security-review`](../security-review/SKILL.md) with the PR URL
+(plus `--head=<sha> --base=<ref>` when the caller gave them). It is PR-scoped and posts nothing.
+Merge its findings into the same Critical / Important / Nice-to-have buckets before step 4 — a
+security finding that duplicates a `code-review` one is merged, not posted twice. Every security
+finding keeps a `🛡️ Security · <HIGH|MEDIUM|LOW>` label after the severity in its inline header
+(e.g. `[Must fix] 🛡️ Security · HIGH`), and the step-7 result block counts them on its own line
+`SECURITY: <among MUST_FIX>/<among OPTIONAL>`.
+
 ### 4. Decide the branch
 
 `needs_fix = (count(Critical) + count(Important)) > 0`.
@@ -164,13 +174,14 @@ it manually.
 
 ### 7. Result block (authoritative)
 
-End your answer with **exactly these four lines**, nothing after them. A caller parses this
+End your answer with **exactly these five lines**, nothing after them. A caller parses this
 block to render the review card, so it is machine-read, not prose:
 
 ```
 VERDICT: APPROVED|NEEDS_FIX
 MUST_FIX: <count of Critical + Important>
 OPTIONAL: <count of Nice-to-have>
+SECURITY: <security findings among MUST_FIX>/<among OPTIONAL>
 SUMMARY: <one English sentence, max 200 chars>
 ```
 
@@ -178,6 +189,8 @@ SUMMARY: <one English sentence, max 200 chars>
   **If the run failed, emit no `VERDICT` line at all** — never guess a branch (see STOP rules).
 - `MUST_FIX` — exactly the `[Must fix]` comments you posted inline. `OPTIONAL` — exactly the
   `[Optional]` comments you posted inline; they never route anything.
+- `SECURITY` — subset counts of the two above that came from `rk:security-review` (step 3b);
+  `0/0` when none. Decoration only — it never routes anything.
 - `SUMMARY` — the **reason for the verdict**: what is right, plus the single most notable risk.
   Not a description of the PR. One line. Shape to copy:
   `SUMMARY: Correct, tested no-op dirty-check for profile stats; the per-client info trace adds standing Datadog log volume.`
