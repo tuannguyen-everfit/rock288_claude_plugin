@@ -1,6 +1,6 @@
 ---
 name: ef-daily-report
-description: "Generate an Everfit daily standup report from Jira worklogs and post it as a reply into a Slack thread you provide. Pulls cards you moved to QA Ready on the target date (DONE) and cards you logged work on that day but did not finish (PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY, max 5), derives progress % from time tracking, then drafts the report for your review before replying into the thread. Triggers on: 'daily report', 'standup', 'daily', 'EOD report', 'báo cáo ngày', 'wrap up'."
+description: "Generate an Everfit daily standup report from Jira worklogs and post it as a reply into a Slack thread you provide. Pulls cards you moved to QA Ready on the target date or worked on that day and that are now at QA Ready or beyond (DONE) and cards you logged work on that day but did not finish (PROGRESS CHANGED) plus your To Do cards (PLAN FOR TODAY, max 5), derives progress % from time tracking, then drafts the report for your review before replying into the thread. Triggers on: 'daily report', 'standup', 'daily', 'EOD report', 'báo cáo ngày', 'wrap up'."
 argument-hint: "[<slack-thread-url>] [--date=YYYY-MM-DD] [--thread=<url>] [--no-slack] [--platform=Backend|Web|...] [--blocker=...] [--at-risk=...] [--question=...] [--dry-run]"
 metadata:
   author: rock288
@@ -22,7 +22,7 @@ report, and posts to Slack.
 | Flag | Default | Effect |
 |---|---|---|
 | `<slack-thread-url>` (positional) or `--thread=<url>` | — | The Slack message/thread URL to reply into. Channel + thread_ts are parsed from the URL. Required to post (omit only with `--no-slack`/`--dry-run`). |
-| `--date=<YYYY-MM-DD>` | yesterday | The VN day the report covers (the "yesterday" anchor): its QA Ready moves feed DONE, its worklogs feed PROGRESS CHANGED. |
+| `--date=<YYYY-MM-DD>` | yesterday | The VN day the report covers (the "yesterday" anchor): its QA Ready moves feed DONE, its worklogs feed PROGRESS CHANGED (or DONE when the card is at QA Ready+ now). |
 | `--no-slack` | off | Print the report, do not post to Slack. |
 | `--platform=<...>` | config | Override the Platform line (`Backend / Web / Android / iOS / QA / BA`). |
 | `--blocker=<text>` | None | Fill the Blocker field without prompting. |
@@ -45,7 +45,7 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 
 [Product Item Name]
 - [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
-  - Progress: 100%                ← DONE YESTERDAY = cards moved to QA Ready on --date
+  - Progress: 100%                ← DONE YESTERDAY = moved to QA Ready on --date, or worked on --date and at QA Ready+ now
 
 **PROGRESS CHANGED**
 
@@ -53,7 +53,7 @@ is the exact shape (the template below is what the model OUTPUTS, not a code blo
 - [Task name] ([UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX))
   - Progress: X% → Y%
   - Reason: [cause]
-  - Remaining: [what is left]     ← PROGRESS CHANGED = worked on --date, not moved to QA Ready that day
+  - Remaining: [what is left]     ← PROGRESS CHANGED = worked on --date, not DONE (not at QA Ready+)
 
 **PLAN FOR TODAY**
 
@@ -103,13 +103,15 @@ Follow [`references/derivation.md`](references/derivation.md) exactly:
 - **`--date` is a Vietnam (Asia/Saigon) calendar day.** JQL dates run in the Jira account tz
   (LA, ~14h behind), so every JQL is a **widened** coarse pre-filter (`date-1 .. date+2`); the
   precise filter converts each timestamp to VN and keeps only those whose VN date == `--date`.
-- **DONE YESTERDAY = cards moved to `QA Ready` on `--date`** — a status-changelog entry
-  `→ QA Ready` whose `created` (VN) falls on `--date`. Worklogs play no part: a card moved
-  that day with no time logged that day is still DONE. Always `Progress: 100%`.
-- **PROGRESS CHANGED = cards with a worklog on `--date` that were NOT moved to QA Ready that
-  day** — work done, not finished. Never in both sections: a card that logged time and moved to
-  QA Ready the same day is DONE only. A card moved to QA Ready **after** `--date` is still
-  PROGRESS CHANGED for `--date`.
+- **DONE YESTERDAY = cards moved to `QA Ready` on `--date`, plus cards with a worklog on
+  `--date` that are now at QA Ready or beyond** (`QA Ready`, `In Test`, `Q&A`, `QA Completed`,
+  `QA Success`, `BA Success`, `Done`). A move is a status-changelog entry `→ QA Ready` whose
+  `created` (VN) falls on `--date`; a card moved that day with no time logged is still DONE. A
+  card worked on `--date` and moved to QA Ready **later** (e.g. the next morning, before the
+  report) is DONE too: it is handed to QA, so the report says so. Always `Progress: 100%`.
+- **PROGRESS CHANGED = cards with a worklog on `--date` that are NOT DONE** (not moved to QA
+  Ready that day and not at QA Ready or beyond now) — work done, not finished. Never in both
+  sections.
 - Progress % (PROGRESS CHANGED only) = `spentAtEnd / (timeSpent + remaining)`, where
   `spentAtEnd` drops worklogs started after `--date`; delta from `loggedTarget` (no state file).
   Capped at **90%** — the card was not finished that day.
@@ -132,6 +134,13 @@ and the literal `•`/`◦` glyphs collapse into one paragraph. Rendered markdow
 `[text](url)` links) is the ONLY form whose copy keeps the bullet list + clickable links in
 Slack. Invite the user to edit (they reply with corrections; apply them). Do not proceed to
 Slack until the user confirms. `--dry-run` / `--no-slack` stop here.
+
+**After the draft, add a `Worklog <DD Mon>` block — chat only, NEVER in the report or the
+Slack post.** It tells the user how many hours they logged on `--date` and on which cards:
+total vs the 7h daily target, then one line per card (`CARD — Xh Ym — <summary>`, biggest
+first), counting **every** worklog of mine on that VN day, including cards assigned to
+someone else (see [`references/derivation.md`](references/derivation.md) "Worklog summary").
+The report sections stay exactly as above.
 
 ### 5. Reply into the Slack thread
 

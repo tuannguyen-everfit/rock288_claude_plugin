@@ -68,6 +68,17 @@ the issue-changelog read on the Atlassian server).
 Only the move matters: the card is DONE even with no worklog that day, and even if it left QA
 Ready afterwards (that is the next day's report).
 
+### Worked on `--date`, now at QA → DONE YESTERDAY
+
+`QA_STATUSES = ["QA Ready", "In Test", "Q&A", "QA Completed", "QA Success", "BA Success",
+"Done"]` (QA Ready or beyond; `QA Failed`, `Pending`, `Will Not Fix` are not in it).
+`inQaNow` (per card) = current `fields.status.name` ∈ `QA_STATUSES`.
+
+A worklog candidate (below) with `loggedTarget > 0` and `inQaNow` is **DONE**, even when its
+move to QA Ready happened **after** `--date` (e.g. the next morning, before the report): the
+card is handed to QA, and the team reads "DONE" as "with QA". Verified 2026-11-26 (user
+correction on CHAL-1224 / CHAL-1225 / UP-83434).
+
 ### Worklogs → PROGRESS CHANGED
 
 The widened worklog JQL returns *candidate* cards. For each candidate, fetch its worklog
@@ -77,8 +88,8 @@ The widened worklog JQL returns *candidate* cards. For each candidate, fetch its
 3. Keep the entry only if its VN calendar date == target `--date`.
 
 `loggedTarget` (per card) = Σ `timeSpentSeconds` of the kept entries. A card belongs in
-PROGRESS CHANGED **only if `loggedTarget > 0` and `movedTarget` is false** (a card moved to QA
-Ready on `--date` is DONE only). `loggedAfter` (per card) = Σ `timeSpentSeconds` of worklogs by
+PROGRESS CHANGED **only if `loggedTarget > 0`, `movedTarget` is false and `inQaNow` is false**
+(a card moved to QA Ready on `--date`, or at QA Ready or beyond now, is DONE only). `loggedAfter` (per card) = Σ `timeSpentSeconds` of worklogs by
 **any** author started after the window — it only matters for a past `--date`; read it with
 `executeRead listJiraIssueWorklogs { issueIdOrKey, startedAfter: <window end ms> }` (the
 inline `worklog` list caps at 20). This is what
@@ -88,6 +99,7 @@ makes `--date` mean "the VN working day" regardless of the Jira account tz.
 
 Pull:
 - `fields.summary` → **Task name**
+- `fields.status.name` → `inQaNow` (DONE vs PROGRESS CHANGED)
 - `fields.parent.fields.summary` (or Epic link summary) → **Product Item Name**
 - `fields.timetracking.timeSpentSeconds` → `timeSpent`
 - `fields.timetracking.remainingEstimateSeconds` → `remaining_now`
@@ -98,10 +110,9 @@ Pull:
 
 ## Progress %
 
-- **DONE YESTERDAY** → always `100%` (the card reached QA Ready that day). No time math.
-- **PROGRESS CHANGED** → from time tracking, **capped at 90%**: the card was not finished on
-  `--date`, whatever its status is now (it may have reached QA Ready later). `remaining_now == 0`
-  prints `90%`, never `100%`. The cap applies to `before%` and `now%` alike.
+- **DONE YESTERDAY** → always `100%` (moved to QA Ready that day, or at QA Ready+ now). No time math.
+- **PROGRESS CHANGED** → from time tracking, **capped at 90%**: the card is not with QA yet.
+  `remaining_now == 0` prints `90%`, never `100%`. The cap applies to `before%` and `now%` alike.
 - `n/a` only when **both** `timeSpent == 0` and `remaining_now == 0` → print
   `Progress: n/a (no time tracked)` and skip the delta for that card.
 
@@ -128,18 +139,18 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 |---|---|
 | Product Item Name | card Epic/parent `summary` (fallback: card's own summary, or "Unassigned item") |
 | Task name | card `summary` + linked card ID `[UP-XXXXX](https://everfit.atlassian.net/browse/UP-XXXXX)` |
-| Progress 100% | DONE YESTERDAY only (moved to QA Ready on `--date`); PROGRESS CHANGED caps at 90% |
+| Progress 100% | DONE YESTERDAY only (`movedTarget`, or worked on `--date` and `inQaNow`); PROGRESS CHANGED caps at 90% |
 | Reason (PROGRESS CHANGED) | `logged <Xh Ym>, <status>` (e.g. `logged 3h30m, In Review`). Append the worklog comment if present. |
 | Remaining (text) | if not 100%: derive from `remaining_now` (e.g. `~Xh remaining`); append latest worklog comment if present |
 
 ## Section assembly rules
 
-- **DONE YESTERDAY** — **cards moved to QA Ready on `--date`** (`movedTarget`), grouped by
-  Product Item. Each card: bullet with task name + `Progress: 100%`. Logged time is not
-  required.
-- **PROGRESS CHANGED** — every card where `loggedTarget > 0` **and not `movedTarget`**, with
-  its `before% → now%` delta. A card that logged time and moved to QA Ready the same day is in
-  DONE YESTERDAY only, never in both sections. Print `None` only when no such card exists.
+- **DONE YESTERDAY** — cards with `movedTarget`, **or** `loggedTarget > 0` and `inQaNow`,
+  grouped by Product Item. Each card: bullet with task name + `Progress: 100%`. Logged time is
+  not required for a `movedTarget` card.
+- **PROGRESS CHANGED** — every card where `loggedTarget > 0` **and not `movedTarget` and not
+  `inQaNow`**, with its `before% → now%` delta. A DONE card is never in both sections. Print
+  `None` only when no such card exists.
   - `now% > before%` → `Progress: X% → Y%` + `Reason: logged <time>, <status>` (no comment needed)
     + `Remaining:` derived from `remaining_now` (+ comment if any).
   - `now% == before%` (logged time but % flat, e.g. remaining grew) → `Progress: Still X%` +
@@ -163,13 +174,36 @@ Worklog **comments are NOT required**. The % delta is computed purely from logge
 - **Every sub-field (Progress / Remaining / Reason / AI) is its own 2-space-indented `-` line**
   across all sections — never write two sub-fields on one line, and never use the `•`/`◦` glyphs.
 
+## Worklog summary (chat only — not part of the report)
+
+Shown under the chat draft so the user sees how much they logged on `--date`. Never copied
+into the report or the Slack post.
+
+- Candidates: `worklogAuthor = currentUser() AND worklogDate >= "<date-1>" AND worklogDate <
+  "<date+2>"` — **no assignee filter**: a card assigned to someone else still counts toward my
+  logged time. Fields: `summary`, `status`. Cards already fetched for DONE / PROGRESS reuse that
+  fetch.
+- Per card, sum `timeSpentSeconds` of **my** worklogs whose `started` (VN) == `--date` (same
+  bucketing as PROGRESS CHANGED). Drop cards with 0.
+- Print, sorted by time desc:
+  ```
+  **Worklog 19 Nov:** 4h30m / 7h (2h30m short)
+  - CHAL-1182 — 1h30m — <summary> (In Progress)
+  - CHAL-1181 — 1h30m — <summary> (In Progress)
+  - UP-12345 — 30m — <summary> (assigned to someone else)
+  ```
+  Total ≥ 7h → `(OK)`; nothing logged → `**Worklog 19 Nov:** 0h / 7h — nothing logged`.
+  Link each card key like the report does.
+
 ## Edge cases
 
 - No QA Ready move on `--date` → DONE YESTERDAY `None`; no worklog on `--date` → PROGRESS
   CHANGED `None`.
 - Card moved to QA Ready twice on `--date` (QA Failed and back) → listed once.
-- Card already in QA Ready before `--date` that logged time on `--date` (a fix after QA) → not
-  moved that day → PROGRESS CHANGED, capped at 90%.
+- Card worked on `--date` (In Review that day) and moved to QA Ready after `--date` → DONE
+  (`inQaNow`), not PROGRESS CHANGED.
+- Card already in QA Ready before `--date` that logged time on `--date` (a fix after QA) → still
+  at QA now → DONE. Back in `QA Failed` / `In Progress` now → PROGRESS CHANGED, capped at 90%.
 - Card with no Epic/parent → group under its own summary (or "Unassigned item").
 - `--date` crossing a weekend → still a single-day window; user can widen via repeated runs.
 - A card appearing in both PROGRESS CHANGED and the plan queries → list it in PROGRESS for
